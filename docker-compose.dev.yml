@@ -1,0 +1,61 @@
+services:
+  mongodb:
+    extends:
+      file: docker-compose.yml
+      service: mongodb
+    ports:
+      - '27017:27017'
+
+  rabbitmq:
+    extends:
+      file: docker-compose.yml
+      service: rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+
+  redis:
+    extends:
+      file: docker-compose.yml
+      service: redis
+    ports:
+      - '6379:6379'
+
+  gateway:
+    extends:
+      file: docker-compose.yml
+      service: gateway
+    ports:
+      - '3000:3000'
+
+  user-service:
+    extends:
+      file: docker-compose.yml
+      service: user-service
+
+  notification-service:
+    extends:
+      file: docker-compose.yml
+      service: notification-service
+
+  web:
+    extends:
+      file: docker-compose.yml
+      service: web
+    ports:
+      - '4200:4200'
+
+  nginx:
+    extends:
+      file: docker-compose.yml
+      service: nginx
+
+networks:
+  app-network:
+    driver: bridge
+  cloudflare:
+    external: true
+
+volumes:
+  mongodb_data:
+  rabbitmq_data:

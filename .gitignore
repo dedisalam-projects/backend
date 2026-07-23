@@ -43,3 +43,11 @@ Thumbs.db
 .nx/migrate-runs
 .claude/worktrees
 .claude/settings.local.json
+
+# environments config
+/environments/.env.*
+!/environments/.env.example
+
+# Docker local persistence data
+.docker-data/
+

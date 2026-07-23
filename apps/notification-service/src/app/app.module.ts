@@ -1,0 +1,59 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { LoggerModule } from 'nestjs-pino';
+import { TerminusModule } from '@nestjs/terminus';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { HealthController } from '../health/health.controller';
+import { validate } from '../config/notification-service.config';
+import { Notification, NotificationSchema } from '../schemas/notification.schema';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate,
+      envFilePath:
+        process.env.NODE_ENV === 'test'
+          ? 'environments/.env.test'
+          : 'environments/.env.development',
+    }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        transport:
+          process.env.NODE_ENV !== 'production'
+            ? { target: 'pino-pretty', options: { colorize: true } }
+            : undefined,
+      },
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        uri: configService.get<string>('NOTIFICATION_SERVICE_MONGO_URI'),
+      }),
+      inject: [ConfigService],
+    }),
+    MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }]),
+    ClientsModule.registerAsync([
+      {
+        name: 'GATEWAY_SERVICE',
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>('GATEWAY_TCP_HOST') || '127.0.0.1',
+            port: configService.get<number>('GATEWAY_TCP_PORT') || 4000,
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
+    TerminusModule,
+  ],
+  controllers: [AppController, HealthController],
+  providers: [AppService],
+})
+export class AppModule {}
