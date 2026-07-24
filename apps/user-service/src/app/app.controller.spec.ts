@@ -20,6 +20,8 @@ describe('AppController', () => {
 
     const mockRedisClient = {
       ping: jest.fn().mockResolvedValue('PONG'),
+      set: jest.fn().mockResolvedValue('OK'),
+      get: jest.fn().mockResolvedValue('hello_redis'),
     };
 
     const mockConnection = {

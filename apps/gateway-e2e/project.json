@@ -9,7 +9,7 @@
       "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
       "dependsOn": ["gateway:build", "gateway:serve"],
       "options": {
-        "jestConfig": "apps/gateway-e2e/jest.config.cts",
+        "jestConfig": "apps/gateway-e2e/jest.config.ts",
         "passWithNoTests": true
       }
     }

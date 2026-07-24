@@ -53,10 +53,7 @@ describe('AppController', () => {
 
       const spyProcess = jest.spyOn(appService, 'processNotification');
 
-      await appController.handleTestHello(
-        { message: 'Test message', correlationId: 'notif-123' },
-        mockContext,
-      );
+      await appController.handleTestHello({ message: 'Test message', correlationId: 'notif-123' });
 
       expect(spyProcess).toHaveBeenCalledWith('Test message');
       expect(mockPinoLogger.assign).toHaveBeenCalledWith({ correlationId: 'notif-123' });

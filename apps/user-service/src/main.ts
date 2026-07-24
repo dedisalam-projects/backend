@@ -29,7 +29,7 @@ async function bootstrap() {
   await app.startAllMicroservices();
 
   // Start HTTP server for Health Checks
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`🚀 User Service (HTTP/Health Check) is running on: http://localhost:${port}`);
   logger.log(`🔌 User Service (TCP Microservice) is listening on port: ${tcpPort}`);

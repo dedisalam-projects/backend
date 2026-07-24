@@ -74,7 +74,7 @@ async function bootstrap() {
   });
 
   await app.startAllMicroservices();
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   logger.log(`🚀 API Gateway is running on: http://localhost:${port}/${globalPrefix}`);
   logger.log(`🔌 API Gateway TCP listener is running on port: ${tcpPort}`);
   logger.log(`📚 Swagger documentation available at: http://localhost:${port}/api/docs`);

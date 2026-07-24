@@ -11,11 +11,12 @@ import { AppService } from './app.service';
 import { HealthController } from '../health/health.controller';
 import { validate } from '../config/user-service.config';
 import { User, UserSchema } from '../schemas/user.schema';
-
+import { vaultLoader } from '@dedisalam/common';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [vaultLoader],
       validate,
       envFilePath:
         process.env.NODE_ENV === 'test'
@@ -28,6 +29,7 @@ import { User, UserSchema } from '../schemas/user.schema';
           process.env.NODE_ENV !== 'production'
             ? { target: 'pino-pretty', options: { colorize: true } }
             : undefined,
+        customProps: () => ({ service: 'user-service' }),
       },
     }),
     MongooseModule.forRootAsync({

@@ -14,12 +14,13 @@ import { AppService } from './app.service';
 import { HealthController } from '../health/health.controller';
 import { validate } from '../config/gateway.config';
 import { NotificationGateway } from '../notification/notification.gateway';
-import { JwtAuthGuard, RolesGuard, JwtStrategy } from '@dedisalam/common';
+import { JwtAuthGuard, RolesGuard, JwtStrategy, vaultLoader } from '@dedisalam/common';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [vaultLoader],
       validate,
       envFilePath:
         process.env.NODE_ENV === 'test'
@@ -39,6 +40,7 @@ import { JwtAuthGuard, RolesGuard, JwtStrategy } from '@dedisalam/common';
         },
         customProps: (req: any) => ({
           correlationId: req.headers['x-correlation-id'],
+          service: 'gateway',
         }),
       },
     }),
