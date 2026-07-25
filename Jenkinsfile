@@ -1,6 +1,10 @@
 pipeline {
     agent any
     
+    tools {
+        nodejs 'Node20'
+    }
+    
     options {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
