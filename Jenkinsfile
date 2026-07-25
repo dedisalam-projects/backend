@@ -7,6 +7,7 @@ pipeline {
     
     environment {
         NX_BASE = 'HEAD~1'
+        NPM_CONFIG_UPDATE_NOTIFIER = 'false'
     }
     
     options {
