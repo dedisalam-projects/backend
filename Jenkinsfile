@@ -53,13 +53,13 @@ pipeline {
         stage('Docker Build & Push') {
             steps {
                 echo 'Building and pushing backend images...'
-                sh 'docker build -t dedisalam/fullstack-gateway:latest -f docker/gateway/Dockerfile .'
-                sh 'docker build -t dedisalam/fullstack-user-service:latest -f docker/user-service/Dockerfile .'
-                sh 'docker build -t dedisalam/fullstack-notification-service:latest -f docker/notification-service/Dockerfile .'
+                sh 'docker build -t dedisalam/backend-gateway:latest -f docker/gateway/Dockerfile .'
+                sh 'docker build -t dedisalam/backend-user-service:latest -f docker/user-service/Dockerfile .'
+                sh 'docker build -t dedisalam/backend-notification-service:latest -f docker/notification-service/Dockerfile .'
                 
-                sh 'docker push dedisalam/fullstack-gateway:latest'
-                sh 'docker push dedisalam/fullstack-user-service:latest'
-                sh 'docker push dedisalam/fullstack-notification-service:latest'
+                sh 'docker push dedisalam/backend-gateway:latest'
+                sh 'docker push dedisalam/backend-user-service:latest'
+                sh 'docker push dedisalam/backend-notification-service:latest'
             }
         }
         
