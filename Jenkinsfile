@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'node:20-alpine'
-            args '-u root'
-        }
-    }
+    agent any
     
     options {
         timeout(time: 30, unit: 'MINUTES')
