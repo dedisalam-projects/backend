@@ -54,11 +54,11 @@ pipeline {
             }
         }
         
-        stage('Deploy (Webhook)') {
+        stage('Deploy') {
             steps {
-                echo 'Triggering deployment webhook on remote server...'
-                // Pastikan environment variable WEBHOOK_URL_BACKEND diisi di setting Jenkins jika ada URL spesifik
-                sh 'curl -X POST ${WEBHOOK_URL_BACKEND} || echo "No webhook triggered"'
+                echo 'Deploying to remote server via SSH...'
+                // Menarik image terbaru dari Docker Hub dan me-restart container
+                sh 'ssh -o StrictHostKeyChecking=no dedisalam@172.16.254.2 "cd ~/fullstack/backend && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d"'
             }
         }
     }
