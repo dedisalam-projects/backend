@@ -5,6 +5,10 @@ pipeline {
         nodejs 'Node22'
     }
     
+    environment {
+        NX_BASE = 'HEAD~1'
+    }
+    
     options {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
