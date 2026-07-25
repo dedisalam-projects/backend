@@ -64,9 +64,9 @@ pipeline {
         
         stage('Deploy') {
             steps {
-                echo 'Deploying to remote server via SSH...'
-                // Menarik image terbaru dari Docker Hub dan me-restart container
-                sh 'ssh -o StrictHostKeyChecking=no dedisalam@172.16.254.2 "cd ~/fullstack/backend && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d"'
+                echo 'Deploying to local Docker host...'
+                // Menarik image terbaru dan me-restart container secara lokal (karena Jenkins ada di server yang sama)
+                sh 'cd /home/dedisalam/fullstack/backend && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d'
             }
         }
     }

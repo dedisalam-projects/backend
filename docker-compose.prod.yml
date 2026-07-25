@@ -45,6 +45,7 @@ services:
       retries: 3
 
   gateway:
+    image: dedisalam/backend-gateway:latest
     build:
       context: .
       dockerfile: docker/gateway/Dockerfile
@@ -74,6 +75,7 @@ services:
       start_period: 30s
 
   user-service:
+    image: dedisalam/backend-user-service:latest
     build:
       context: .
       dockerfile: docker/user-service/Dockerfile
@@ -103,6 +105,7 @@ services:
       start_period: 30s
 
   notification-service:
+    image: dedisalam/backend-notification-service:latest
     build:
       context: .
       dockerfile: docker/notification-service/Dockerfile
@@ -131,6 +134,7 @@ services:
       start_period: 30s
 
   web:
+    image: dedisalam/frontend-web:latest
     build:
       context: ../frontend
       dockerfile: docker/web/Dockerfile.prod
