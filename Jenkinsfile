@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'node:20'
-            args '-u root'
-        }
-    }
+    agent any
     
     options {
         timeout(time: 30, unit: 'MINUTES')
@@ -43,6 +38,27 @@ pipeline {
             steps {
                 echo 'Building affected projects...'
                 sh 'npx nx affected -t build'
+            }
+        }
+        
+        stage('Docker Build & Push') {
+            steps {
+                echo 'Building and pushing backend images...'
+                sh 'docker build -t dedisalam/fullstack-gateway:latest -f docker/gateway/Dockerfile .'
+                sh 'docker build -t dedisalam/fullstack-user-service:latest -f docker/user-service/Dockerfile .'
+                sh 'docker build -t dedisalam/fullstack-notification-service:latest -f docker/notification-service/Dockerfile .'
+                
+                sh 'docker push dedisalam/fullstack-gateway:latest'
+                sh 'docker push dedisalam/fullstack-user-service:latest'
+                sh 'docker push dedisalam/fullstack-notification-service:latest'
+            }
+        }
+        
+        stage('Deploy (Webhook)') {
+            steps {
+                echo 'Triggering deployment webhook on remote server...'
+                // Pastikan environment variable WEBHOOK_URL_BACKEND diisi di setting Jenkins jika ada URL spesifik
+                sh 'curl -X POST ${WEBHOOK_URL_BACKEND} || echo "No webhook triggered"'
             }
         }
     }
