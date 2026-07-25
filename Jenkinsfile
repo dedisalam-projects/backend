@@ -7,6 +7,7 @@ pipeline {
     
     environment {
         NX_BASE = 'HEAD~1'
+        NX_DAEMON = 'false'
         NPM_CONFIG_UPDATE_NOTIFIER = 'false'
     }
     
@@ -24,6 +25,8 @@ pipeline {
         
         stage('Install Dependencies') {
             steps {
+                echo 'Cleaning up existing node_modules to avoid permission locks...'
+                sh 'rm -rf node_modules || true'
                 echo 'Installing dependencies...'
                 sh 'npm ci --legacy-peer-deps'
             }
