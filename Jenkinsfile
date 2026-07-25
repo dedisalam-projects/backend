@@ -67,7 +67,8 @@ pipeline {
             steps {
                 echo 'Deploying to local Docker host...'
                 // Menarik image terbaru dan me-restart container menggunakan file compose di workspace
-                sh 'docker compose -p fullstack -f docker-compose.prod.yml pull && docker compose -p fullstack -f docker-compose.prod.yml up -d'
+                sh 'docker compose -p fullstack -f docker-compose.prod.yml pull gateway user-service notification-service'
+                sh 'docker compose -p fullstack -f docker-compose.prod.yml up -d gateway user-service notification-service'
             }
         }
     }
