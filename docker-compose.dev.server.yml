@@ -1,0 +1,274 @@
+# =============================================================================
+# docker-compose.dev.server.yml
+# =============================================================================
+# Docker Compose untuk deployment DEVELOPMENT di server 172.16.254.2.
+# JANGAN digabung dengan docker-compose.prod.yml.
+#
+# Isolasi dari stack production:
+#   - Project name : fullstack-dev  (vs fullstack di prod)
+#   - Network      : app-network-dev (vs app-network di prod)
+#   - Container    : <name>-dev suffix
+#   - Volume       : dev_<name> prefix
+#   - Port host    : berbeda (Nginx 8088, dll.)
+#   - Cloudflare   : TIDAK terhubung (traffic publik tetap ke prod)
+#
+# Cara deploy manual via SSH:
+#   ssh dedisalam@172.16.254.2
+#   cd /path/to/backend
+#   docker compose -p fullstack-dev -f docker-compose.dev.server.yml up -d --build
+#
+# Cara stop:
+#   docker compose -p fullstack-dev -f docker-compose.dev.server.yml down
+#
+# Cara melihat log:
+#   docker compose -p fullstack-dev -f docker-compose.dev.server.yml logs -f
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure Services
+  # ---------------------------------------------------------------------------
+
+  mongodb-dev:
+    image: mongo:7
+    container_name: mongodb-dev
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=app_db
+    ports:
+      - '27017:27017'
+    volumes:
+      - dev_mongodb_data:/data/db
+    networks:
+      - app-network-dev
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.runCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  rabbitmq-dev:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq-dev
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - dev_rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app-network-dev
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'check_port_connectivity']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis-dev:
+    image: redis:7-alpine
+    container_name: redis-dev
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    networks:
+      - app-network-dev
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # Application Services
+  # ---------------------------------------------------------------------------
+
+  gateway-dev:
+    image: dedisalam/backend-gateway:dev
+    build:
+      context: .
+      dockerfile: docker/gateway/Dockerfile
+    container_name: gateway-dev
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - GATEWAY_TCP_PORT=4000
+      - USER_SERVICE_TCP_HOST=user-service-dev
+      - USER_SERVICE_TCP_PORT=4001
+      - JWT_SECRET=supersecretjwtkey12345
+      - JWT_EXPIRES_IN=15m
+      - REDIS_URL=redis://redis-dev:6379
+    ports:
+      - '3000:3000'
+    networks:
+      - app-network-dev
+    depends_on:
+      user-service-dev:
+        condition: service_healthy
+      redis-dev:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1:3000/api/v1/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  user-service-dev:
+    image: dedisalam/backend-user-service:dev
+    build:
+      context: .
+      dockerfile: docker/user-service/Dockerfile
+    container_name: user-service-dev
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - USER_SERVICE_PORT=3001
+      - USER_SERVICE_TCP_PORT=4001
+      - USER_SERVICE_MONGO_URI=mongodb://mongodb-dev:27017/user_db
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq-dev:5672
+      - REDIS_URL=redis://redis-dev:6379
+    networks:
+      - app-network-dev
+    depends_on:
+      mongodb-dev:
+        condition: service_healthy
+      rabbitmq-dev:
+        condition: service_healthy
+      redis-dev:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1:3001/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  notification-service-dev:
+    image: dedisalam/backend-notification-service:dev
+    build:
+      context: .
+      dockerfile: docker/notification-service/Dockerfile
+    container_name: notification-service-dev
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - NOTIFICATION_SERVICE_PORT=3002
+      - NOTIFICATION_SERVICE_TCP_PORT=4002
+      - NOTIFICATION_SERVICE_MONGO_URI=mongodb://mongodb-dev:27017/notification_db
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq-dev:5672
+      - GATEWAY_TCP_HOST=gateway-dev
+      - GATEWAY_TCP_PORT=4000
+    networks:
+      - app-network-dev
+    depends_on:
+      mongodb-dev:
+        condition: service_healthy
+      rabbitmq-dev:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1:3002/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  web-dev:
+    image: dedisalam/frontend-web:dev
+    build:
+      context: ../frontend
+      dockerfile: docker/web/Dockerfile.dev
+    container_name: web-dev
+    restart: unless-stopped
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    ports:
+      - '4200:4200'
+    networks:
+      - app-network-dev
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1:4200']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  nginx-dev:
+    image: nginx:1.25-alpine
+    container_name: nginx-dev
+    restart: unless-stopped
+    ports:
+      - '8088:80'
+    volumes:
+      - ./docker/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - app-network-dev
+    depends_on:
+      gateway-dev:
+        condition: service_healthy
+      user-service-dev:
+        condition: service_healthy
+      notification-service-dev:
+        condition: service_healthy
+      web-dev:
+        condition: service_healthy
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1:80/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Observability (Dev)
+  # ---------------------------------------------------------------------------
+
+  prometheus-dev:
+    image: prom/prometheus:latest
+    container_name: prometheus-dev
+    restart: unless-stopped
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - dev_prometheus_data:/prometheus
+    networks:
+      - app-network-dev
+
+  grafana-dev:
+    image: grafana/grafana:latest
+    container_name: grafana-dev
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - '3005:3000'
+    volumes:
+      - dev_grafana_data:/var/lib/grafana
+    networks:
+      - app-network-dev
+    depends_on:
+      - prometheus-dev
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  app-network-dev:
+    driver: bridge
+    # TIDAK menghubungkan ke network 'cloudflare' —
+    # traffic publik (Cloudflare Tunnel) tetap hanya masuk ke stack production.
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  dev_mongodb_data:
+  dev_rabbitmq_data:
+  dev_prometheus_data:
+  dev_grafana_data:

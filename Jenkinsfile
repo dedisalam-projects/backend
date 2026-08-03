@@ -44,6 +44,15 @@ pipeline {
             }
         }
         
+        stage('Dependency Audit') {
+            steps {
+                echo 'Running security scan and dependency checks...'
+                sh 'npm audit --audit-level=high'
+                sh 'npx depcheck --json || true'
+                sh 'npx npm-check-updates --errorLevel 2 || echo "WARNING: Outdated deps found"'
+            }
+        }
+        
         stage('Test') {
             steps {
                 echo 'Running unit tests for affected projects...'

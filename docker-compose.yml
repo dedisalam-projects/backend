@@ -149,13 +149,15 @@ services:
       start_period: 30s
 
   nginx:
-    image: nginx:1.25-alpine
+    image: nginxinc/nginx-unprivileged:1.25-alpine
     container_name: nginx
     restart: unless-stopped
     ports:
-      - '80:80'
+      - '80:8080'
+      - '443:8443'
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/certs:/etc/nginx/certs:ro
     networks:
       - app-network
       - cloudflare
@@ -171,7 +173,7 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     healthcheck:
-      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:80/health']
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8080/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -198,6 +200,8 @@ services:
       - '3005:3000'
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/etc/grafana/dashboards:ro
     networks:
       - app-network
     depends_on:
