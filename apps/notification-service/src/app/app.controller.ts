@@ -1,5 +1,12 @@
 import { Controller, Logger, Inject } from '@nestjs/common';
-import { EventPattern, Payload, Ctx, RmqContext, ClientProxy } from '@nestjs/microservices';
+import {
+  EventPattern,
+  Payload,
+  Ctx,
+  RmqContext,
+  ClientProxy,
+  MessagePattern,
+} from '@nestjs/microservices';
 import { AppService } from './app.service';
 import { PinoLogger } from 'nestjs-pino';
 
