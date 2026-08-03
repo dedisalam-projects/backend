@@ -16,12 +16,15 @@ async function bootstrap() {
   const port = configService.get<number>('USER_SERVICE_PORT') || 3011;
   const tcpPort = configService.get<number>('USER_SERVICE_TCP_PORT') || 3001;
 
-  // Connect TCP Microservice
+  // Connect RabbitMQ Microservice
   app.connectMicroservice({
-    transport: Transport.TCP,
+    transport: Transport.RMQ,
     options: {
-      host: '0.0.0.0',
-      port: tcpPort,
+      urls: [configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672'],
+      queue: 'user-service',
+      queueOptions: {
+        durable: true,
+      },
     },
   });
 
@@ -32,7 +35,7 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
 
   logger.log(`🚀 User Service (HTTP/Health Check) is running on: http://localhost:${port}`);
-  logger.log(`🔌 User Service (TCP Microservice) is listening on port: ${tcpPort}`);
+  logger.log(`🔌 User Service (RMQ Microservice) is connected`);
 }
 
 bootstrap();

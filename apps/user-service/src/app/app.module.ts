@@ -12,6 +12,9 @@ import { HealthController } from '../health/health.controller';
 import { validate } from '../config/user-service.config';
 import { User, UserSchema } from '../schemas/user.schema';
 import { vaultLoader } from '@dedisalam/common';
+import { RedisService } from '../redis/redis.service';
+import { AuthController } from '../auth/auth.controller';
+import { AuthService } from '../auth/auth.service';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -65,9 +68,10 @@ import { vaultLoader } from '@dedisalam/common';
     ]),
     TerminusModule,
   ],
-  controllers: [AppController, HealthController],
+  controllers: [AppController, HealthController, AuthController],
   providers: [
     AppService,
+    AuthService,
     {
       provide: 'REDIS_CLIENT',
       useFactory: (configService: ConfigService) => {

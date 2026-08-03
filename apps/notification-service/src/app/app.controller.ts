@@ -13,8 +13,10 @@ export class AppController {
     @Inject('GATEWAY_SERVICE') private readonly gatewayClient: ClientProxy,
   ) {}
 
-  @EventPattern('test.hello')
-  async handleTestHello(@Payload() data: { message?: string; correlationId?: string }) {
+  @EventPattern('notification.send')
+  async handleNotificationSend(
+    @Payload() data: { message?: string; userId?: string; type?: string; correlationId?: string },
+  ) {
     const correlationId = data?.correlationId || 'unknown';
 
     // Attempt to assign correlationId to the request-scoped Pino logger context
@@ -30,12 +32,17 @@ export class AppController {
       `Received test.hello event with message: ${data?.message || 'None'}`,
     );
 
-    await this.appService.processNotification(data?.message);
+    await this.appService.processNotification(data?.message, data?.userId, data?.type);
 
-    // Forward the event notification to API Gateway over TCP
+    // Forward the event notification to API Gateway over TCP/RMQ
     this.gatewayClient.emit('notification.push', {
       message: `Notification processed: ${data?.message || 'Hello World'}`,
       correlationId,
     });
+  }
+
+  @MessagePattern('notification.list')
+  async handleNotificationList(@Payload() data: { userId: string }) {
+    return this.appService.getNotifications(data.userId);
   }
 }

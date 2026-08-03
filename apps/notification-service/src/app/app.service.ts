@@ -11,14 +11,23 @@ export class AppService {
     @InjectModel(Notification.name) private readonly notificationModel: Model<Notification>,
   ) {}
 
-  async processNotification(message?: string): Promise<Notification> {
+  async processNotification(
+    message?: string,
+    userId?: string,
+    type?: string,
+  ): Promise<Notification> {
     this.logger.log(`Processing and persisting notification: ${message || 'No message'}`);
     const notification = new this.notificationModel({
-      title: 'Hello World Event',
+      title: type || 'System Alert',
       message: message || 'Hello World Notification',
-      userId: 'system-user-id',
-      read: false,
+      userId: userId || 'system-user-id',
+      type: type || 'INFO',
+      isRead: false,
     });
     return await notification.save();
+  }
+
+  async getNotifications(userId: string): Promise<Notification[]> {
+    return this.notificationModel.find({ userId }).sort({ createdAt: -1 }).exec();
   }
 }

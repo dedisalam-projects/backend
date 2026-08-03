@@ -64,12 +64,18 @@ async function bootstrap() {
   await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);
 
-  // Connect TCP Microservice (Hybrid App)
+  const rabbitmqUrl =
+    configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672';
+
+  // Connect RabbitMQ Microservice (Hybrid App)
   app.connectMicroservice({
-    transport: Transport.TCP,
+    transport: Transport.RMQ,
     options: {
-      host: '0.0.0.0',
-      port: tcpPort,
+      urls: [rabbitmqUrl],
+      queue: 'gateway',
+      queueOptions: {
+        durable: true,
+      },
     },
   });
 
