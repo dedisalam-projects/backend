@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { PinoLogger } from 'nestjs-pino';
 import { RmqContext } from '@nestjs/microservices';
 import { getModelToken } from '@nestjs/mongoose';
-import { Notification } from '../schemas/notification.schema';
+import { Notification, NotificationDocument } from '@dedisalam/database';
 
 describe('AppController', () => {
   let app: TestingModule;

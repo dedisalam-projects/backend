@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { AppService } from './app.service';
 import { getModelToken } from '@nestjs/mongoose';
-import { Notification } from '../schemas/notification.schema';
+import { Notification, NotificationDocument } from '@dedisalam/database';
 
 describe('AppService', () => {
   let service: AppService;
