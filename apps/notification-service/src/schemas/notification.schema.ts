@@ -9,11 +9,14 @@ export class Notification extends Document {
   @Prop({ required: true })
   message!: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, index: true })
   userId!: string;
 
+  @Prop({ required: true })
+  type!: string;
+
   @Prop({ default: false })
-  read!: boolean;
+  isRead!: boolean;
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);

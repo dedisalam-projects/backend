@@ -79,6 +79,7 @@ import { AuthService } from '../auth/auth.service';
       },
       inject: [ConfigService],
     },
+    RedisService,
   ],
 })
 export class AppModule implements OnModuleDestroy {
