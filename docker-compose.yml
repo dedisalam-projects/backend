@@ -13,6 +13,8 @@ services:
     restart: unless-stopped
     environment:
       - MONGO_INITDB_DATABASE=app_db
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
       - mongodb_data:/data/db
     networks:
@@ -36,8 +38,8 @@ services:
     container_name: rabbitmq
     restart: unless-stopped
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -57,7 +59,7 @@ services:
         reservations:
           cpus: '0.2'
           memory: 256M
-    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
     image: redis:7-alpine
     container_name: redis
     restart: unless-stopped
@@ -90,9 +92,9 @@ services:
       - GATEWAY_TCP_PORT=4000
       - USER_SERVICE_TCP_HOST=user-service
       - USER_SERVICE_TCP_PORT=4001
-      - JWT_SECRET=supersecretjwtkey12345
+      - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=15m
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
     networks:
       - backend_network
     depends_on:
@@ -126,9 +128,9 @@ services:
       - NODE_ENV=development
       - USER_SERVICE_PORT=3001
       - USER_SERVICE_TCP_PORT=4001
-      - USER_SERVICE_MONGO_URI=mongodb://mongodb:27017/user_db
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - REDIS_URL=redis://redis:6379
+      - USER_SERVICE_MONGO_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/user_db?authSource=admin
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
     networks:
       - backend_network
     depends_on:
@@ -164,8 +166,8 @@ services:
       - NODE_ENV=development
       - NOTIFICATION_SERVICE_PORT=3002
       - NOTIFICATION_SERVICE_TCP_PORT=4002
-      - NOTIFICATION_SERVICE_MONGO_URI=mongodb://mongodb:27017/notification_db
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - NOTIFICATION_SERVICE_MONGO_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/notification_db?authSource=admin
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
       - GATEWAY_TCP_HOST=gateway
       - GATEWAY_TCP_PORT=4000
     networks:
