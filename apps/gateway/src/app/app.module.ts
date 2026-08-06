@@ -15,6 +15,9 @@ import { HealthController } from '../health/health.controller';
 import { validate } from '../config/gateway.config';
 import { NotificationGateway } from '../notification/notification.gateway';
 import { JwtAuthGuard, RolesGuard, JwtStrategy, vaultLoader } from '@dedisalam/common';
+import { AuthController } from '../auth/auth.controller';
+import { UserController } from '../user/user.controller';
+import { NotificationController } from '../notification/notification.controller';
 
 @Module({
   imports: [
@@ -55,10 +58,32 @@ import { JwtAuthGuard, RolesGuard, JwtStrategy, vaultLoader } from '@dedisalam/c
         name: 'USER_SERVICE',
         imports: [ConfigModule],
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get<string>('USER_SERVICE_TCP_HOST') || '127.0.0.1',
-            port: configService.get<number>('USER_SERVICE_TCP_PORT') || 4001,
+            urls: [
+              configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672',
+            ],
+            queue: 'user-service',
+            queueOptions: {
+              durable: true,
+            },
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
+        name: 'NOTIFICATION_SERVICE',
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [
+              configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672',
+            ],
+            queue: 'notification-service',
+            queueOptions: {
+              durable: true,
+            },
           },
         }),
         inject: [ConfigService],
@@ -74,7 +99,13 @@ import { JwtAuthGuard, RolesGuard, JwtStrategy, vaultLoader } from '@dedisalam/c
     }),
     TerminusModule,
   ],
-  controllers: [AppController, HealthController],
+  controllers: [
+    AppController,
+    HealthController,
+    AuthController,
+    UserController,
+    NotificationController,
+  ],
   providers: [
     AppService,
     NotificationGateway,

@@ -1,2 +1,1 @@
-// DTOs placeholder
-export {};
+export * from './auth.dto';

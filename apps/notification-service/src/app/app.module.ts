@@ -44,10 +44,15 @@ import { vaultLoader } from '@dedisalam/common';
         name: 'GATEWAY_SERVICE',
         imports: [ConfigModule],
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get<string>('GATEWAY_TCP_HOST') || '127.0.0.1',
-            port: configService.get<number>('GATEWAY_TCP_PORT') || 4000,
+            urls: [
+              configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672',
+            ],
+            queue: 'gateway',
+            queueOptions: {
+              durable: true,
+            },
           },
         }),
         inject: [ConfigService],
