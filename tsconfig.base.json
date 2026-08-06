@@ -15,7 +15,8 @@
     "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "paths": {
-      "@dedisalam/common": ["./libs/common/src/index.ts"]
+      "@dedisalam/common": ["./libs/common/src/index.ts"],
+      "@dedisalam/database": ["./libs/database/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

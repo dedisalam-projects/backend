@@ -10,8 +10,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthController } from '../health/health.controller';
 import { validate } from '../config/user-service.config';
-import { User, UserSchema } from '../schemas/user.schema';
 import { vaultLoader } from '@dedisalam/common';
+import { User, UserSchema, RedisService } from '@dedisalam/database';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -75,6 +75,7 @@ import { vaultLoader } from '@dedisalam/common';
       },
       inject: [ConfigService],
     },
+    RedisService,
   ],
 })
 export class AppModule implements OnModuleDestroy {
