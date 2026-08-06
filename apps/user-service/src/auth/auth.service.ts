@@ -4,8 +4,7 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
-import { User, UserDocument } from '../schemas/user.schema';
-import { RedisService } from '../redis/redis.service';
+import { User, UserDocument, RedisService } from '@dedisalam/database';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()

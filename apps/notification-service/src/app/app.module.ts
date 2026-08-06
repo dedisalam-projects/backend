@@ -9,7 +9,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthController } from '../health/health.controller';
 import { validate } from '../config/notification-service.config';
-import { Notification, NotificationSchema } from '../schemas/notification.schema';
+import { Notification, NotificationSchema } from '@dedisalam/database';
 import { vaultLoader } from '@dedisalam/common';
 @Module({
   imports: [

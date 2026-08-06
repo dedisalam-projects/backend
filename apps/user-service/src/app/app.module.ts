@@ -1,20 +1,19 @@
-import { Module, OnModuleDestroy, Inject } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { LoggerModule } from 'nestjs-pino';
 import { TerminusModule } from '@nestjs/terminus';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import Redis from 'ioredis';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthController } from '../health/health.controller';
 import { validate } from '../config/user-service.config';
-import { User, UserSchema } from '../schemas/user.schema';
 import { vaultLoader } from '@dedisalam/common';
-import { RedisService } from '../redis/redis.service';
+import { User, UserSchema, RedisModule } from '@dedisalam/database';
 import { AuthController } from '../auth/auth.controller';
 import { AuthService } from '../auth/auth.service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -43,6 +42,7 @@ import { AuthService } from '../auth/auth.service';
       inject: [ConfigService],
     }),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    RedisModule,
     ClientsModule.registerAsync([
       {
         name: 'NOTIFICATION_SERVICE_RMQ',
@@ -69,23 +69,6 @@ import { AuthService } from '../auth/auth.service';
     TerminusModule,
   ],
   controllers: [AppController, HealthController, AuthController],
-  providers: [
-    AppService,
-    AuthService,
-    {
-      provide: 'REDIS_CLIENT',
-      useFactory: (configService: ConfigService) => {
-        return new Redis(configService.get<string>('REDIS_URL') || 'redis://localhost:6379');
-      },
-      inject: [ConfigService],
-    },
-    RedisService,
-  ],
+  providers: [AppService, AuthService],
 })
-export class AppModule implements OnModuleDestroy {
-  constructor(@Inject('REDIS_CLIENT') private readonly redis: Redis) {}
-
-  onModuleDestroy() {
-    this.redis.disconnect();
-  }
-}
+export class AppModule {}
