@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 import { User, UserDocument, RedisService } from '@dedisalam/database';
 import { ConfigService } from '@nestjs/config';
 
@@ -16,7 +16,11 @@ export class AuthService {
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
   ) {
-    this.jwtSecret = this.configService.get<string>('JWT_SECRET') || 'supersecretjwtkey12345';
+    const secret = this.configService.get<string>('JWT_SECRET');
+    if (!secret) {
+      throw new Error('FATAL: JWT_SECRET environment variable is not defined');
+    }
+    this.jwtSecret = secret;
   }
 
   async register(data: any) {
@@ -61,8 +65,9 @@ export class AuthService {
     );
 
     const refreshToken = randomBytes(40).toString('hex');
-    // Store refresh token in Redis for 7 days
-    await this.redisService.set(`refresh_token:${user._id}`, refreshToken, 7 * 24 * 60 * 60);
+    const hashedRefreshToken = createHash('sha256').update(refreshToken).digest('hex');
+    // Store hashed refresh token in Redis for 7 days
+    await this.redisService.set(`refresh_token:${user._id}`, hashedRefreshToken, 7 * 24 * 60 * 60);
 
     return {
       accessToken,
@@ -82,8 +87,10 @@ export class AuthService {
       throw new UnauthorizedException('Missing refresh token or userId');
     }
 
-    const storedToken = await this.redisService.get(`refresh_token:${userId}`);
-    if (storedToken !== refreshToken) {
+    const storedHashedToken = await this.redisService.get(`refresh_token:${userId}`);
+    const incomingHashedToken = createHash('sha256').update(refreshToken).digest('hex');
+
+    if (!storedHashedToken || storedHashedToken !== incomingHashedToken) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -94,7 +101,8 @@ export class AuthService {
 
     // Rotate refresh token
     const newRefreshToken = randomBytes(40).toString('hex');
-    await this.redisService.set(`refresh_token:${userId}`, newRefreshToken, 7 * 24 * 60 * 60);
+    const newHashedRefreshToken = createHash('sha256').update(newRefreshToken).digest('hex');
+    await this.redisService.set(`refresh_token:${userId}`, newHashedRefreshToken, 7 * 24 * 60 * 60);
 
     const accessToken = jwt.sign(
       { sub: user._id, email: user.email, role: user.role },

@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { LoginDto, RegisterDto, RefreshTokenDto } from '@dedisalam/common';
 import { AuthService } from './auth.service';
 
 @Controller()
@@ -7,17 +8,17 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @MessagePattern('auth.login')
-  async login(@Payload() data: any) {
+  async login(@Payload() data: LoginDto) {
     return this.authService.login(data);
   }
 
   @MessagePattern('auth.register')
-  async register(@Payload() data: any) {
+  async register(@Payload() data: RegisterDto) {
     return this.authService.register(data);
   }
 
   @MessagePattern('auth.refresh')
-  async refresh(@Payload() data: any) {
+  async refresh(@Payload() data: RefreshTokenDto) {
     return this.authService.refresh(data);
   }
 

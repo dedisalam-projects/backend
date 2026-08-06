@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Inject, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { Public } from '@dedisalam/common';
+import { Public, LoginDto, RegisterDto, RefreshTokenDto } from '@dedisalam/common';
 import { firstValueFrom, timeout } from 'rxjs';
 
 @Controller('api/v1/auth')
@@ -11,7 +11,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  async login(@Body() body: any) {
+  async login(@Body() body: LoginDto) {
     try {
       const response = await firstValueFrom(
         this.userService.send('auth.login', body).pipe(timeout(5000)),
@@ -28,7 +28,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  async register(@Body() body: any) {
+  async register(@Body() body: RegisterDto) {
     try {
       const response = await firstValueFrom(
         this.userService.send('auth.register', body).pipe(timeout(5000)),
@@ -45,7 +45,7 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
-  async refresh(@Body() body: any) {
+  async refresh(@Body() body: RefreshTokenDto) {
     try {
       const response = await firstValueFrom(
         this.userService.send('auth.refresh', body).pipe(timeout(5000)),
