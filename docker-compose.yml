@@ -1,5 +1,13 @@
 services:
   mongodb:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     image: mongo:7
     container_name: mongodb
     restart: unless-stopped
@@ -16,6 +24,14 @@ services:
       retries: 3
 
   rabbitmq:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     image: rabbitmq:3.13-management-alpine
     container_name: rabbitmq
     restart: unless-stopped
@@ -33,6 +49,15 @@ services:
       retries: 3
 
   redis:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
     image: redis:7-alpine
     container_name: redis
     restart: unless-stopped
@@ -45,12 +70,21 @@ services:
       retries: 3
 
   gateway:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/gateway/Dockerfile
     container_name: gateway
     restart: unless-stopped
     environment:
+      - NODE_OPTIONS=--max-old-space-size=512
       - NODE_ENV=development
       - PORT=3000
       - GATEWAY_TCP_PORT=4000
@@ -74,12 +108,21 @@ services:
       start_period: 30s
 
   user-service:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/user-service/Dockerfile
     container_name: user-service
     restart: unless-stopped
     environment:
+      - NODE_OPTIONS=--max-old-space-size=512
       - NODE_ENV=development
       - USER_SERVICE_PORT=3001
       - USER_SERVICE_TCP_PORT=4001
@@ -103,12 +146,21 @@ services:
       start_period: 30s
 
   notification-service:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/notification-service/Dockerfile
     container_name: notification-service
     restart: unless-stopped
     environment:
+      - NODE_OPTIONS=--max-old-space-size=512
       - NODE_ENV=development
       - NOTIFICATION_SERVICE_PORT=3002
       - NOTIFICATION_SERVICE_TCP_PORT=4002
@@ -131,6 +183,14 @@ services:
       start_period: 30s
 
   web:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     build:
       context: ../frontend
       dockerfile: docker/web/Dockerfile.dev
@@ -149,6 +209,14 @@ services:
       start_period: 30s
 
   nginx:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     image: nginxinc/nginx-unprivileged:1.25-alpine
     container_name: nginx
     restart: unless-stopped
@@ -180,6 +248,14 @@ services:
       start_period: 30s
 
   prometheus:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     image: prom/prometheus:latest
     container_name: prometheus
     restart: unless-stopped
@@ -190,6 +266,14 @@ services:
       - backend_network
 
   grafana:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     image: grafana/grafana:latest
     container_name: grafana
     restart: unless-stopped
@@ -209,12 +293,60 @@ services:
 
 networks:
   backend_network:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     driver: bridge
   cloudflare:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     external: true
 
 volumes:
   mongodb_data:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
   rabbitmq_data:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
   prometheus_data:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
   grafana_data:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
