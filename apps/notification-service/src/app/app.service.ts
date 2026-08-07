@@ -30,4 +30,13 @@ export class AppService {
   async getNotifications(userId: string): Promise<Notification[]> {
     return this.notificationModel.find({ userId }).sort({ createdAt: -1 }).exec();
   }
+
+  async markAsRead(id: string, userId: string): Promise<Notification | null> {
+    const notification = await this.notificationModel.findOneAndUpdate(
+      { _id: id, userId },
+      { isRead: true },
+      { new: true },
+    );
+    return notification;
+  }
 }

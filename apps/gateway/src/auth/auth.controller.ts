@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Inject, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Inject,
+  Logger,
+  HttpException,
+  HttpStatus,
+  Req,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Public, LoginDto, RegisterDto, RefreshTokenDto } from '@dedisalam/common';
 import { firstValueFrom, timeout } from 'rxjs';
@@ -53,6 +62,29 @@ export class AuthController {
       return response;
     } catch (error: any) {
       this.logger.error('Error in refresh', error);
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('logout')
+  async logout(@Req() req: any, @Body() body: any) {
+    try {
+      const accessToken = req.headers.authorization?.split(' ')[1];
+      const response = await firstValueFrom(
+        this.userService
+          .send('auth.logout', {
+            refreshToken: body.refreshToken,
+            accessToken,
+            userId: req.user?.sub,
+          })
+          .pipe(timeout(5000)),
+      );
+      return response;
+    } catch (error: any) {
+      this.logger.error('Error in logout', error);
       throw new HttpException(
         error.message || 'Internal Server Error',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,

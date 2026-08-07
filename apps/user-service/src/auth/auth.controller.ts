@@ -31,4 +31,14 @@ export class AuthController {
   async getAllUsers() {
     return this.authService.getAllUsers();
   }
+
+  @MessagePattern('auth.logout')
+  async logout(@Payload() data: { refreshToken: string; accessToken?: string }) {
+    return this.authService.logout(data);
+  }
+
+  @MessagePattern('user.update')
+  async updateProfile(@Payload() data: any) {
+    return this.authService.updateProfile(data);
+  }
 }

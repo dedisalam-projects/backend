@@ -1,4 +1,4 @@
-import { Controller, Get, Req, Inject, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Get, Req, Inject, Logger, UseGuards, Patch, Body } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Roles, RolesGuard } from '@dedisalam/common';
 import { firstValueFrom, timeout } from 'rxjs';
@@ -24,8 +24,22 @@ export class UserController {
     }
   }
 
+  @Patch('me')
+  async updateProfile(@Req() req: any, @Body() body: any) {
+    const userId = req.user.sub;
+    try {
+      const response = await firstValueFrom(
+        this.userService.send('user.update', { userId, ...body }).pipe(timeout(5000)),
+      );
+      return response;
+    } catch (error) {
+      this.logger.error('Error updating profile', error);
+      throw error;
+    }
+  }
+
   @Get()
-  @Roles('admin')
+  @Roles('admin', 'super_admin')
   async getAllUsers() {
     try {
       const response = await firstValueFrom(
