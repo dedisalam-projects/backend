@@ -305,14 +305,6 @@ networks:
           memory: 256M
     driver: bridge
   cloudflare:
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.2'
-          memory: 256M
     external: true
 
 volumes:
