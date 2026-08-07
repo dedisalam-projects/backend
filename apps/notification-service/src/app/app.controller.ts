@@ -59,7 +59,7 @@ export class AppController {
     const message = `Welcome to our platform, ${data.name}!`;
     await this.appService.processNotification(message, data.userId, 'WELCOME');
 
-    this.gatewayClient.emit('notification.push', {
+    this.gatewayClient.emit('gateway.notify.user', {
       message: `Notification processed: ${message}`,
       correlationId: 'system',
     });
