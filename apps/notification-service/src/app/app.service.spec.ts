@@ -9,7 +9,7 @@ describe('AppService', () => {
   const mockNotificationModel = jest.fn().mockImplementation((dto) => ({
     ...dto,
     save: jest.fn().mockResolvedValue({
-      title: dto.title || 'Hello World Event',
+      title: dto.title || 'System Alert',
       message: dto.message || 'Hello World Notification',
       userId: dto.userId || 'system-user-id',
       read: dto.read || false,
@@ -35,7 +35,7 @@ describe('AppService', () => {
       const result = await service.processNotification('Hello');
       expect(result).toBeDefined();
       expect(result.message).toBe('Hello');
-      expect(result.title).toBe('Hello World Event');
+      expect(result.title).toBe('System Alert');
     });
   });
 });
