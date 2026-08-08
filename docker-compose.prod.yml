@@ -81,6 +81,7 @@ services:
     restart: unless-stopped
     environment:
       - USER_SERVICE_MONGO_URI=mongodb://root:supersecretpassword@mongodb:27017/user-db?authSource=admin
+      - JWT_SECRET=supersecret123
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
       - REDIS_URL=redis://:supersecretredis@redis:6379
       - USER_SERVICE_TCP_PORT=3001
@@ -151,6 +152,7 @@ services:
     restart: unless-stopped
     environment:
       - JWT_SECRET=supersecret123
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
       - REDIS_URL=redis://:supersecretredis@redis:6379
       - USER_SERVICE_TCP_PORT=3001
       - USER_SERVICE_TCP_HOST=user-service
