@@ -1,2 +1,1 @@
-// Constants placeholder
-export {};
+export * from './user-role.enum';

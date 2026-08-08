@@ -1,5 +1,6 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsString, MinLength, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { UserRole } from '../constants/user-role.enum';
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com', description: 'User email address' })
@@ -18,6 +19,11 @@ export class RegisterDto {
   @MinLength(3, { message: 'Name must be at least 3 characters long' })
   @IsNotEmpty()
   name!: string;
+
+  @ApiPropertyOptional({ example: 'user', enum: UserRole, description: 'Role of the user' })
+  @IsOptional()
+  @IsEnum(UserRole, { message: 'Invalid role' })
+  role?: UserRole;
 }
 
 export class LoginDto {
