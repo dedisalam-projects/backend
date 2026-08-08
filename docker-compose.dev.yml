@@ -51,7 +51,7 @@ services:
       service: nginx
 
 networks:
-  app-network:
+  backend_network:
     driver: bridge
   cloudflare:
     external: true
@@ -59,3 +59,5 @@ networks:
 volumes:
   mongodb_data:
   rabbitmq_data:
+  prometheus_data:
+  grafana_data:
