@@ -129,6 +129,7 @@ services:
       - USER_SERVICE_PORT=3001
       - USER_SERVICE_TCP_PORT=4001
       - USER_SERVICE_MONGO_URI=mongodb://mongodb-dev:27017/user_db
+      - JWT_SECRET=supersecretjwtkey12345
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq-dev:5672
       - REDIS_URL=redis://redis-dev:6379
     networks:
