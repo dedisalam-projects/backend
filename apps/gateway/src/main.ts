@@ -9,7 +9,11 @@ import { ConfigService } from '@nestjs/config';
 import { Transport } from '@nestjs/microservices';
 
 import { AppModule } from './app/app.module';
-import { HttpExceptionFilter, CorrelationIdInterceptor } from '@dedisalam/common';
+import {
+  HttpExceptionFilter,
+  CorrelationIdInterceptor,
+  TransformInterceptor,
+} from '@dedisalam/common';
 import { RedisIoAdapter } from './config/redis-io.adapter';
 
 async function bootstrap() {
@@ -41,6 +45,7 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new CorrelationIdInterceptor());
+  app.useGlobalInterceptors(new TransformInterceptor());
 
   // Swagger Documentation Setup (served at /api/docs)
   const config = new DocumentBuilder()
@@ -79,6 +84,7 @@ async function bootstrap() {
     },
   });
 
+  app.enableShutdownHooks();
   await app.startAllMicroservices();
   await app.listen(port, '0.0.0.0');
   logger.log(`🚀 API Gateway is running on: http://localhost:${port}/${globalPrefix}`);

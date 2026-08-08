@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -6,6 +6,7 @@ import * as jwt from 'jsonwebtoken';
 import { randomBytes, createHash } from 'crypto';
 import { User, UserDocument, RedisService } from '@dedisalam/database';
 import { ConfigService } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,7 @@ export class AuthService {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
+    @Inject('NOTIFICATION_SERVICE_RMQ') private readonly notificationClient: ClientProxy,
   ) {
     const secret = this.configService.get<string>('JWT_SECRET');
     if (!secret) {
@@ -40,6 +42,8 @@ export class AuthService {
       name,
       password: hashedPassword,
     });
+
+    this.notificationClient.emit('user.created', { userId: newUser._id, name: newUser.name });
 
     return {
       message: 'User registered successfully',
@@ -137,5 +141,49 @@ export class AuthService {
       role: user.role,
       isActive: user.isActive,
     }));
+  }
+
+  async logout(data: any) {
+    const { refreshToken, accessToken, userId } = data;
+
+    if (accessToken) {
+      const decoded: any = jwt.decode(accessToken);
+      if (decoded && decoded.exp) {
+        const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+        if (ttl > 0) {
+          await this.redisService.set(`blacklist:${accessToken}`, 'true', ttl);
+        }
+      }
+    }
+
+    if (userId) {
+      // Assuming redisService has a del method. If not, setting it with 0 ttl or empty is an alternative.
+      // We will try set with 1 second if del fails, but typically del is available.
+      await this.redisService.set(`refresh_token:${userId}`, '', 1);
+    }
+
+    return { message: 'Logged out successfully' };
+  }
+
+  async updateProfile(data: any) {
+    const { userId, name, password } = data;
+    if (!userId) throw new BadRequestException('userId is required');
+
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const updatedUser = await this.userModel.findByIdAndUpdate(userId, updateData, { new: true });
+    if (!updatedUser) throw new BadRequestException('User not found');
+
+    return {
+      id: updatedUser._id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      role: updatedUser.role,
+      isActive: updatedUser.isActive,
+    };
   }
 }

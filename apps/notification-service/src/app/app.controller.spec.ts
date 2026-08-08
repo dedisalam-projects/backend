@@ -45,21 +45,22 @@ describe('AppController', () => {
     appService = app.get<AppService>(AppService);
   });
 
-  describe('handleTestHello', () => {
-    it('should process notification, log correlation ID, and emit notification.push to Gateway', async () => {
+  describe('handleUserCreated', () => {
+    it('should process notification, log user creation, and emit gateway.notify.user to Gateway', async () => {
       const appController = app.get<AppController>(AppController);
-      const mockContext = {} as RmqContext;
       const mockGatewayClient = app.get('GATEWAY_SERVICE');
-
       const spyProcess = jest.spyOn(appService, 'processNotification');
 
-      await appController.handleTestHello({ message: 'Test message', correlationId: 'notif-123' });
+      await appController.handleUserCreated({ userId: 'u1', name: 'John Doe' });
 
-      expect(spyProcess).toHaveBeenCalledWith('Test message');
-      expect(mockPinoLogger.assign).toHaveBeenCalledWith({ correlationId: 'notif-123' });
-      expect(mockGatewayClient.emit).toHaveBeenCalledWith('notification.push', {
-        message: 'Notification processed: Test message',
-        correlationId: 'notif-123',
+      expect(spyProcess).toHaveBeenCalledWith(
+        'Welcome to our platform, John Doe!',
+        'u1',
+        'WELCOME',
+      );
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith('gateway.notify.user', {
+        message: 'Notification processed: Welcome to our platform, John Doe!',
+        correlationId: 'system',
       });
     });
   });

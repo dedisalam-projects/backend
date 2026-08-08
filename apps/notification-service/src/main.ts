@@ -3,6 +3,7 @@ import { Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import { AppModule } from './app/app.module';
+import { TransformInterceptor } from '@dedisalam/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -41,6 +42,11 @@ async function bootstrap() {
       },
     },
   });
+
+  // Global Interceptor
+  app.useGlobalInterceptors(new TransformInterceptor());
+
+  app.enableShutdownHooks();
 
   // Start all microservices
   await app.startAllMicroservices();

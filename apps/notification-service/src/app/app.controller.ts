@@ -52,4 +52,21 @@ export class AppController {
   async handleNotificationList(@Payload() data: { userId: string }) {
     return this.appService.getNotifications(data.userId);
   }
+
+  @EventPattern('user.created')
+  async handleUserCreated(@Payload() data: { userId: string; name: string }) {
+    this.logger.log(`Received user.created event for ${data.userId}`);
+    const message = `Welcome to our platform, ${data.name}!`;
+    await this.appService.processNotification(message, data.userId, 'WELCOME');
+
+    this.gatewayClient.emit('gateway.notify.user', {
+      message: `Notification processed: ${message}`,
+      correlationId: 'system',
+    });
+  }
+
+  @MessagePattern('notification.markAsRead')
+  async handleMarkAsRead(@Payload() data: { id: string; userId: string }) {
+    return this.appService.markAsRead(data.id, data.userId);
+  }
 }
