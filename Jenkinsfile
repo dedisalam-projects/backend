@@ -30,8 +30,8 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Cleaning up existing node_modules to avoid permission locks...'
+                sh 'docker run --rm -v $(pwd):/app alpine rm -rf /app/.nx /app/node_modules /app/node_modules_del_* || true'
                 sh 'pkill -f "nx daemon" || true'
-                sh 'mv node_modules node_modules_del_${BUILD_NUMBER} || rm -rf node_modules_del_${BUILD_NUMBER} || true'
                 echo 'Installing dependencies...'
                 sh 'npm ci --legacy-peer-deps'
             }

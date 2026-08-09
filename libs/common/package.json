@@ -12,7 +12,8 @@
     "@nestjs/passport": "^11.0.5",
     "passport-jwt": "^4.0.1",
     "@nestjs/config": "^4.0.4",
-    "node-vault": "^0.12.0"
+    "node-vault": "^0.12.0",
+    "ioredis": "*"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.1.28",
