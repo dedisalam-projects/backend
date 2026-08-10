@@ -14,6 +14,7 @@ The entry point for all client requests. It exposes RESTful APIs to the frontend
 Responsible for all user identity and authentication operations.
 - **Database**: MongoDB (Stores User credentials and profiles)
 - **Caching/Session**: Redis (Stores hashed refresh tokens with TTL)
+- **Dependency Injection**: Uses a Singleton `useFactory` pattern in `RedisModule` to globally export the `REDIS_CLIENT` token, minimizing connection pool overhead.
 - **Security**: Uses bcrypt (Cost Factor: 10) for password hashing and JSON Web Tokens (JWT) for stateless access validation.
 
 ### 3. Notification Service (`apps/notification-service`)
