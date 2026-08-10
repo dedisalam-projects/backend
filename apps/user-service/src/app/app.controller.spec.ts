@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { PinoLogger } from 'nestjs-pino';
 import { TcpContext } from '@nestjs/microservices';
 import { getConnectionToken } from '@nestjs/mongoose';
+import { RedisService } from '@dedisalam/database';
 
 describe('AppController', () => {
   let app: TestingModule;
@@ -19,7 +20,7 @@ describe('AppController', () => {
     };
 
     const mockRedisClient = {
-      ping: jest.fn().mockResolvedValue('PONG'),
+      getClient: jest.fn().mockReturnValue({ ping: jest.fn().mockResolvedValue('PONG') }),
       set: jest.fn().mockResolvedValue('OK'),
       get: jest.fn().mockResolvedValue('hello_redis'),
     };
@@ -46,7 +47,7 @@ describe('AppController', () => {
           useValue: mockRmqClient,
         },
         {
-          provide: 'REDIS_CLIENT',
+          provide: RedisService,
           useValue: mockRedisClient,
         },
         {
