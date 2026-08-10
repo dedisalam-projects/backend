@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 
 @Injectable()
 export class AppService {
@@ -9,7 +9,9 @@ export class AppService {
   async getHello() {
     try {
       const payload = { message: 'Hello from API Gateway', correlationId: 'gateway-hello-id' };
-      const result = await firstValueFrom(this.userClient.send('user.hello', payload));
+      const result = await firstValueFrom(
+        this.userClient.send('user.hello', payload).pipe(timeout(5000)),
+      );
 
       // Trigger Step 4 E2E Event Flow (fire-and-forget TCP event)
       this.userClient.emit('test.event', {
