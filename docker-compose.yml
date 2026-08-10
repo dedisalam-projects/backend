@@ -285,7 +285,7 @@ services:
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=4r!M4n3hKuN40n
     ports:
       - '3005:3000'
     volumes:
