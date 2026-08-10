@@ -4,6 +4,8 @@ services:
   mongodb:
     image: mongo:7
     container_name: mongodb
+    ports:
+      - "172.16.254.3:27017:27017"
     restart: unless-stopped
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
@@ -31,6 +33,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
+    ports:
+      - "172.16.254.6:6379:6379"
     restart: unless-stopped
     command: redis-server --requirepass supersecretredis
     volumes:
@@ -56,6 +60,9 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq
+    ports:
+      - "172.16.254.5:5672:5672"
+      - "172.16.254.5:15672:15672"
     restart: unless-stopped
     logging:
       driver: "json-file"
