@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=supersecretpassword
+      - MONGO_INITDB_ROOT_PASSWORD=4r!M4n3hKuN40n
     volumes:
       - mongodb_data:/data/db
     logging:
@@ -18,7 +18,7 @@ services:
         max-size: "10m"
         max-file: "3"
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet -u root -p supersecretpassword --authenticationDatabase admin --eval 'db.runCommand(\"ping\").ok' localhost:27017/test"]
+      test: ["CMD-SHELL", "mongosh --quiet -u root -p 4r!M4n3hKuN40n --authenticationDatabase admin --eval 'db.runCommand(\"ping\").ok' localhost:27017/test"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -36,7 +36,7 @@ services:
     ports:
       - "172.16.254.6:6379:6379"
     restart: unless-stopped
-    command: redis-server --requirepass supersecretredis
+    command: redis-server --requirepass 4r!M4n3hKuN40n
     volumes:
       - redis_data:/data
     logging:
@@ -45,7 +45,7 @@ services:
         max-size: "10m"
         max-file: "3"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "supersecretredis", "ping"]
+      test: ["CMD", "redis-cli", "-a", "4r!M4n3hKuN40n", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -64,6 +64,9 @@ services:
       - "172.16.254.5:5672:5672"
       - "172.16.254.5:15672:15672"
     restart: unless-stopped
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=4r!M4n3hKuN40n
     logging:
       driver: "json-file"
       options:
@@ -87,10 +90,10 @@ services:
     container_name: user-service
     restart: unless-stopped
     environment:
-      - USER_SERVICE_MONGO_URI=mongodb://root:supersecretpassword@mongodb:27017/user-db?authSource=admin
-      - JWT_SECRET=supersecret123
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - REDIS_URL=redis://:supersecretredis@redis:6379
+      - USER_SERVICE_MONGO_URI=mongodb://root:4r!M4n3hKuN40n@mongodb:27017/user-db?authSource=admin
+      - JWT_SECRET=4r!M4n3hKuN40n
+      - RABBITMQ_URL=amqp://guest:4r!M4n3hKuN40n@rabbitmq:5672
+      - REDIS_URL=redis://:4r!M4n3hKuN40n@redis:6379
       - USER_SERVICE_TCP_PORT=3001
       - USER_SERVICE_PORT=3011
     logging:
@@ -123,9 +126,9 @@ services:
     container_name: notification-service
     restart: unless-stopped
     environment:
-      - NOTIFICATION_SERVICE_MONGO_URI=mongodb://root:supersecretpassword@mongodb:27017/notification-db?authSource=admin
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - REDIS_URL=redis://:supersecretredis@redis:6379
+      - NOTIFICATION_SERVICE_MONGO_URI=mongodb://root:4r!M4n3hKuN40n@mongodb:27017/notification-db?authSource=admin
+      - RABBITMQ_URL=amqp://guest:4r!M4n3hKuN40n@rabbitmq:5672
+      - REDIS_URL=redis://:4r!M4n3hKuN40n@redis:6379
       - NOTIFICATION_SERVICE_TCP_PORT=3002
       - NOTIFICATION_SERVICE_PORT=3012
     logging:
@@ -158,9 +161,9 @@ services:
     container_name: gateway
     restart: unless-stopped
     environment:
-      - JWT_SECRET=supersecret123
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - REDIS_URL=redis://:supersecretredis@redis:6379
+      - JWT_SECRET=4r!M4n3hKuN40n
+      - RABBITMQ_URL=amqp://guest:4r!M4n3hKuN40n@rabbitmq:5672
+      - REDIS_URL=redis://:4r!M4n3hKuN40n@redis:6379
       - USER_SERVICE_TCP_PORT=3001
       - USER_SERVICE_TCP_HOST=user-service
       - NOTIFICATION_SERVICE_TCP_PORT=3002

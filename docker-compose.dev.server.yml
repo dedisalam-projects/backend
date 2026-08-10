@@ -53,7 +53,7 @@ services:
     restart: unless-stopped
     environment:
       - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_PASS=4r!M4n3hKuN40n
     ports:
       - '5672:5672'
       - '15672:15672'
@@ -98,7 +98,7 @@ services:
       - GATEWAY_TCP_PORT=4000
       - USER_SERVICE_TCP_HOST=user-service-dev
       - USER_SERVICE_TCP_PORT=4001
-      - JWT_SECRET=supersecretjwtkey12345
+      - JWT_SECRET=4r!M4n3hKuN40n
       - JWT_EXPIRES_IN=15m
       - REDIS_URL=redis://redis-dev:6379
     ports:
@@ -129,8 +129,8 @@ services:
       - USER_SERVICE_PORT=3001
       - USER_SERVICE_TCP_PORT=4001
       - USER_SERVICE_MONGO_URI=mongodb://mongodb-dev:27017/user_db
-      - JWT_SECRET=supersecretjwtkey12345
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq-dev:5672
+      - JWT_SECRET=4r!M4n3hKuN40n
+      - RABBITMQ_URL=amqp://guest:4r!M4n3hKuN40n@rabbitmq-dev:5672
       - REDIS_URL=redis://redis-dev:6379
     networks:
       - app-network-dev
@@ -160,7 +160,7 @@ services:
       - NOTIFICATION_SERVICE_PORT=3002
       - NOTIFICATION_SERVICE_TCP_PORT=4002
       - NOTIFICATION_SERVICE_MONGO_URI=mongodb://mongodb-dev:27017/notification_db
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq-dev:5672
+      - RABBITMQ_URL=amqp://guest:4r!M4n3hKuN40n@rabbitmq-dev:5672
       - GATEWAY_TCP_HOST=gateway-dev
       - GATEWAY_TCP_PORT=4000
     networks:
@@ -246,7 +246,7 @@ services:
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=4r!M4n3hKuN40n
     ports:
       - '3005:3000'
     volumes:
