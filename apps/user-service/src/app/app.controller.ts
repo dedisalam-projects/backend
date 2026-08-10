@@ -2,7 +2,7 @@ import { Controller, Logger, Inject } from '@nestjs/common';
 import { MessagePattern, Payload, Ctx, TcpContext, ClientProxy } from '@nestjs/microservices';
 import { AppService } from './app.service';
 import { PinoLogger } from 'nestjs-pino';
-import Redis from 'ioredis';
+import { RedisService } from '@dedisalam/database';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 
@@ -14,7 +14,7 @@ export class AppController {
     private readonly appService: AppService,
     private readonly pinoLogger: PinoLogger,
     @Inject('NOTIFICATION_SERVICE_RMQ') private readonly rmqClient: ClientProxy,
-    @Inject('REDIS_CLIENT') private readonly redis: Redis,
+    private readonly redisService: RedisService,
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
@@ -40,8 +40,8 @@ export class AppController {
 
     // Verify Redis connection and cache read/write (Set/Get)
     try {
-      await this.redis.set('test_key', 'hello_redis', 'EX', 60);
-      const getResult = await this.redis.get('test_key');
+      await this.redisService.set('test_key', 'hello_redis', 60);
+      const getResult = await this.redisService.get('test_key');
       this.logger.log({ correlationId }, `Redis Set/Get test successful: ${getResult}`);
     } catch (err: any) {
       this.logger.error({ correlationId }, `Redis Set/Get test failed: ${err.message}`);
