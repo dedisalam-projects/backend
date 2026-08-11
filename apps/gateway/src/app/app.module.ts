@@ -58,15 +58,10 @@ import { NotificationController } from '../notification/notification.controller'
         name: 'USER_SERVICE',
         imports: [ConfigModule],
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.RMQ,
+          transport: Transport.TCP,
           options: {
-            urls: [
-              configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672',
-            ],
-            queue: 'user-service',
-            queueOptions: {
-              durable: true,
-            },
+            host: '127.0.0.1',
+            port: configService.get<number>('USER_SERVICE_TCP_PORT') || 3001,
           },
         }),
         inject: [ConfigService],
