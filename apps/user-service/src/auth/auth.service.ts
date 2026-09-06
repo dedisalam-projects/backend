@@ -63,7 +63,7 @@ export class AuthService {
     }
 
     const accessToken = jwt.sign(
-      { sub: user._id, email: user.email, role: user.role },
+      { sub: user._id, email: user.email, role: user.role, roles: [user.role] },
       this.jwtSecret,
       { expiresIn: '15m' },
     );
@@ -72,6 +72,13 @@ export class AuthService {
     const hashedRefreshToken = createHash('sha256').update(refreshToken).digest('hex');
     // Store hashed refresh token in Redis for 7 days
     await this.redisService.set(`refresh_token:${user._id}`, hashedRefreshToken, 7 * 24 * 60 * 60);
+
+    this.notificationClient.emit('user.logged_in', {
+      userId: user._id,
+      email: user.email,
+      name: user.name,
+      timestamp: new Date().toISOString(),
+    });
 
     return {
       accessToken,
@@ -109,7 +116,7 @@ export class AuthService {
     await this.redisService.set(`refresh_token:${userId}`, newHashedRefreshToken, 7 * 24 * 60 * 60);
 
     const accessToken = jwt.sign(
-      { sub: user._id, email: user.email, role: user.role },
+      { sub: user._id, email: user.email, role: user.role, roles: [user.role] },
       this.jwtSecret,
       { expiresIn: '15m' },
     );

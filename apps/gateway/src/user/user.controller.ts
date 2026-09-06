@@ -3,7 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Roles, RolesGuard } from '@dedisalam/common';
 import { firstValueFrom, timeout } from 'rxjs';
 
-@Controller('api/v1/users')
+@Controller('users')
 @UseGuards(RolesGuard)
 export class UserController {
   private readonly logger = new Logger(UserController.name);

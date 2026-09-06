@@ -12,7 +12,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Public, LoginDto, RegisterDto, RefreshTokenDto } from '@dedisalam/common';
 import { firstValueFrom, timeout } from 'rxjs';
 
-@Controller('api/v1/auth')
+@Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 

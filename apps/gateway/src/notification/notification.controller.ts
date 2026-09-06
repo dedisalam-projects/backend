@@ -1,12 +1,23 @@
 import { Controller, Get, Req, Inject, Logger, Patch, Param } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, EventPattern, Payload } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
+import { NotificationGateway } from './notification.gateway';
 
-@Controller('api/v1/notifications')
+@Controller('notifications')
 export class NotificationController {
   private readonly logger = new Logger(NotificationController.name);
 
-  constructor(@Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy) {}
+  constructor(
+    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
+    private readonly notificationGateway: NotificationGateway,
+  ) {}
+
+  @EventPattern('user.logged_in')
+  handleUserLoggedIn(@Payload() data: any) {
+    this.logger.log(`Received user.logged_in event for user: ${data.email}`);
+    // Emit to socket clients
+    this.notificationGateway.server.emit('login_event', data);
+  }
 
   @Get()
   async getNotifications(@Req() req: any) {
