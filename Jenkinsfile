@@ -48,6 +48,15 @@ pipeline {
                 sh 'npm audit --audit-level=high || true'
             }
         }
+
+        stage('Build Staging Docker Images') {
+            steps {
+                echo 'Building local staging Docker images from current commit...'
+                sh 'docker build -t dedisalam/backend-gateway:staging -f docker/gateway/Dockerfile .'
+                sh 'docker build -t dedisalam/backend-user-service:staging -f docker/user-service/Dockerfile .'
+                sh 'docker build -t dedisalam/backend-notification-service:staging -f docker/notification-service/Dockerfile .'
+            }
+        }
         
         // =========================================================================
         // 🛡️ 7-LAYER REALTIME & MICROSERVICES TESTING MATRIX QUALITY GATE
@@ -120,14 +129,7 @@ pipeline {
         // 🚀 BUILD & DEPLOYMENT STAGES
         // =========================================================================
 
-        stage('Build Microservices & Gateway') {
-            steps {
-                echo 'Building all backend applications...'
-                sh 'npx nx run-many --target=build --all'
-            }
-        }
-        
-        stage('Docker Build & Push') {
+        stage('Docker Push to Registry') {
             when {
                 anyOf {
                     branch 'main'
@@ -135,12 +137,11 @@ pipeline {
                 }
             }
             steps {
-                echo 'Building production Docker images...'
-                sh 'docker build -t dedisalam/backend-gateway:latest -f docker/gateway/Dockerfile .'
-                sh 'docker build -t dedisalam/backend-user-service:latest -f docker/user-service/Dockerfile .'
-                sh 'docker build -t dedisalam/backend-notification-service:latest -f docker/notification-service/Dockerfile .'
+                echo 'Tagging and pushing production Docker images to Docker Hub registry...'
+                sh 'docker tag dedisalam/backend-gateway:staging dedisalam/backend-gateway:latest'
+                sh 'docker tag dedisalam/backend-user-service:staging dedisalam/backend-user-service:latest'
+                sh 'docker tag dedisalam/backend-notification-service:staging dedisalam/backend-notification-service:latest'
                 
-                echo 'Pushing Docker images to Docker Hub registry...'
                 sh 'docker push dedisalam/backend-gateway:latest'
                 sh 'docker push dedisalam/backend-user-service:latest'
                 sh 'docker push dedisalam/backend-notification-service:latest'
