@@ -9,7 +9,7 @@ pipeline {
         NX_BASE = 'HEAD~1'
         NX_DAEMON = 'false'
         NPM_CONFIG_UPDATE_NOTIFIER = 'false'
-        GATEWAY_URL = 'http://localhost:3000'
+        GATEWAY_URL = 'http://localhost:3005'
     }
     
     options {
@@ -52,6 +52,13 @@ pipeline {
         // =========================================================================
         // 🛡️ 7-LAYER REALTIME & MICROSERVICES TESTING MATRIX QUALITY GATE
         // =========================================================================
+
+        stage('Ensure Staging Environment') {
+            steps {
+                echo 'Ensuring dedicated staging stack is healthy on port 3005...'
+                build job: 'fullstack-infra-stagging', parameters: [string(name: 'ACTION', value: 'deploy'), string(name: 'SERVICES', value: 'all')], wait: true
+            }
+        }
 
         stage('Layer 1 & 2: Unit & Property-Based Testing (100% Gate)') {
             steps {
@@ -122,7 +129,10 @@ pipeline {
         
         stage('Docker Build & Push') {
             when {
-                branch 'main'
+                anyOf {
+                    branch 'main'
+                    branch 'master'
+                }
             }
             steps {
                 echo 'Building production Docker images...'
@@ -137,14 +147,16 @@ pipeline {
             }
         }
         
-        stage('Deploy') {
+        stage('Trigger Infrastructure Deploy') {
             when {
-                branch 'main'
+                anyOf {
+                    branch 'main'
+                    branch 'master'
+                }
             }
             steps {
-                echo 'Deploying to infrastructure...'
-                sh 'docker compose -f ../infrastructure/docker-compose.prod.yml pull gateway user-service notification-service || true'
-                sh 'docker compose -f ../infrastructure/docker-compose.prod.yml up -d gateway user-service notification-service || true'
+                echo 'Triggering downstream deployment on fullstack-infrastructure...'
+                build job: 'fullstack-infrastructure', wait: false
             }
         }
     }
