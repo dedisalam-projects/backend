@@ -61,7 +61,7 @@ Every completed task must conclude with this formatted section:
 ```markdown
 ### 📋 Post-Task Auditor Evaluation Report
 
-#### 1. Steps Taken (Langkah yang Diambil)
+#### 1. Steps Taken
 - [Step 1...]
 - [Step 2...]
 
