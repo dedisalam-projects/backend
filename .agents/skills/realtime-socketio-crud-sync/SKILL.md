@@ -74,6 +74,36 @@ const socket = io('https://ws.domain.com/users', {
 });
 ```
 
+### 2.1 Transport-Level Handshake Middleware Guard (DDoS & Memory Leak Defense)
+To prevent connection flooding, socket memory runaway, and unnecessary Redis room allocations, validate tokens BEFORE connection acceptance using Socket.IO middleware in `afterInit` rather than only checking inside `handleConnection`:
+
+```typescript
+@WebSocketGateway({ namespace: '/users' })
+export class UserGateway implements OnGatewayInit {
+  constructor(private readonly configService: ConfigService) {}
+
+  afterInit(server: Server) {
+    server.use((socket: any, next: (err?: Error) => void) => {
+      const token = this.extractToken(socket);
+      if (!token) {
+        return next(new Error('UNAUTHORIZED: Authentication token is required'));
+      }
+      try {
+        const secret = this.configService.get<string>('JWT_SECRET');
+        if (!secret) throw new Error('JWT_SECRET is not configured');
+        const decoded = jwt.verify(token, secret) as any;
+        socket.data = socket.data || {};
+        socket.data.user = decoded;
+        next(); // Handshake accepted
+      } catch {
+        next(new Error('UNAUTHORIZED: Invalid or expired token')); // Rejected at transport level
+      }
+    });
+  }
+}
+```
+When rejected, the client fires `badSocket.on('connect_error')` immediately without ever establishing a spurious connection state.
+
 ### 3. Hybrid Realtime CRUD: Direct Ack RPC + Room Broadcast
 Perform the mutation via `emitWithAck` to return immediate success/validation feedback to the actor, and simultaneously broadcast a live event to a designated room so all other active sessions sync their state without reload:
 
