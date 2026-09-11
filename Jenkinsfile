@@ -17,10 +17,6 @@ pipeline {
         disableConcurrentBuilds()
     }
     
-    triggers {
-        githubPush()
-    }
-    
     stages {
         stage('Checkout') {
             steps {
