@@ -130,12 +130,6 @@ pipeline {
         // =========================================================================
 
         stage('Docker Push to Registry') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'master'
-                }
-            }
             steps {
                 echo 'Tagging and pushing production Docker images to Docker Hub registry...'
                 sh 'docker tag dedisalam/backend-gateway:staging dedisalam/backend-gateway:latest'
@@ -149,12 +143,6 @@ pipeline {
         }
         
         stage('Trigger Infrastructure Deploy') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'master'
-                }
-            }
             steps {
                 echo 'Triggering downstream deployment on fullstack-infrastructure...'
                 build job: 'fullstack-infrastructure', wait: false
