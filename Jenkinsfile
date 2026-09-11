@@ -152,6 +152,8 @@ pipeline {
     
     post {
         always {
+            echo 'Tearing down ephemeral staging environment...'
+            build job: 'fullstack-infra-stagging', parameters: [string(name: 'ACTION', value: 'down')], wait: true
             echo 'Archiving test reports and coverage results...'
             archiveArtifacts artifacts: 'coverage/**, reports/**', allowEmptyArchive: true
             sh 'rm -rf .stryker-tmp || true'
