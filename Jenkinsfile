@@ -32,7 +32,7 @@ pipeline {
             steps {
                 echo 'Cleaning up existing locks and preparing clean workspace...'
                 sh 'pkill -f "nx daemon" || true'
-                sh 'rm -f .eslintignore || true'
+                sh 'find . -name ".eslintignore" -delete || true'
                 sh 'npm ci --legacy-peer-deps'
                 sh 'npx nx reset'
             }
@@ -41,7 +41,7 @@ pipeline {
         stage('Lint & Static Analysis') {
             steps {
                 echo 'Running linting across workspace...'
-                sh 'npx nx run-many --target=lint --all'
+                sh 'npx nx run-many --target=lint --all --verbose'
             }
         }
         
