@@ -32,6 +32,7 @@ pipeline {
             steps {
                 echo 'Cleaning up existing locks and preparing clean workspace...'
                 sh 'pkill -f "nx daemon" || true'
+                sh 'rm -f .eslintignore || true'
                 sh 'npm ci --legacy-peer-deps'
                 sh 'npx nx reset'
             }

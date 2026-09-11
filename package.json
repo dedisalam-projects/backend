@@ -95,6 +95,7 @@
     "compression": "^1.8.1",
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.7.4",
     "nestjs-pino": "^4.6.1",
     "node-vault": "^0.12.0",
