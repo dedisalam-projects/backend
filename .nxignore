@@ -2,3 +2,6 @@
 reports
 coverage
 dist
+node_modules_*
+node_modules_del*
+
