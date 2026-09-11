@@ -1,12 +1,12 @@
 import { Test } from '@nestjs/testing';
 import { AppService } from './app.service';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 describe('AppService', () => {
   let service: AppService;
   let mockUserClient: any;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     mockUserClient = {
       send: jest.fn().mockReturnValue(of({ message: 'Mock response', correlationId: '123' })),
       emit: jest.fn().mockReturnValue(of({})),
@@ -38,9 +38,35 @@ describe('AppService', () => {
         message: 'Hello from API Gateway',
         correlationId: 'gateway-hello-id',
       });
+      expect(mockUserClient.emit).toHaveBeenCalledWith('test.event', {
+        message: 'Event flow test message',
+        correlationId: 'gateway-hello-id',
+      });
     });
 
-    it('should handle errors by returning user service error status', async () => {
+    it('should return error status when user service returns falsy result', async () => {
+      mockUserClient.send.mockReturnValueOnce(of(null));
+      const response = await service.getHello();
+      expect(response).toEqual({
+        message: 'Hello World',
+        services: {
+          user: 'error',
+        },
+      });
+    });
+
+    it('should handle observable errors by returning user service error status', async () => {
+      mockUserClient.send.mockReturnValueOnce(throwError(() => new Error('TCP Connection Failed')));
+      const response = await service.getHello();
+      expect(response).toEqual({
+        message: 'Hello World',
+        services: {
+          user: 'error',
+        },
+      });
+    });
+
+    it('should handle synchronous throw by returning user service error status', async () => {
       mockUserClient.send.mockImplementationOnce(() => {
         throw new Error('TCP Connection Failed');
       });

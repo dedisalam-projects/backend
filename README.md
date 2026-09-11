@@ -26,11 +26,16 @@ cp .env.example .env
 For a full list of configuration options, see the [Configuration Guide](docs/configuration.md).
 
 ### 2. Start Infrastructure Services
-Run the necessary databases and message brokers via Docker Compose:
+Run the necessary databases and message brokers managed under `../infrastructure/`:
 ```sh
-docker-compose up -d
+npm run infra:up
 ```
-*(This starts MongoDB, Redis, and RabbitMQ)*
+*(This launches MongoDB, Redis, and RabbitMQ via `../infrastructure/docker-compose.dev.yml`)*
+
+To stop infrastructure:
+```sh
+npm run infra:down
+```
 
 ### 3. Install Dependencies
 ```sh

@@ -19,7 +19,7 @@ The backend services rely on environment variables for configuration. All requir
 
 > [!IMPORTANT]
 > **Production Configuration & Security**:
-> All credentials in production (`docker-compose.prod.yml`) are injected dynamically via environment variable substitution (e.g., `${MONGO_INITDB_ROOT_PASSWORD}`). Hardcoding secrets directly in the infrastructure YAML files is strictly prohibited under the Zero Trust principle.
+> All credentials in production (`../infrastructure/docker-compose.prod.yml`) are injected dynamically via environment variable substitution (e.g., `${MONGO_INITDB_ROOT_PASSWORD}`). Hardcoding secrets directly in the infrastructure YAML files is strictly prohibited under the Zero Trust principle.
 
 > [!WARNING]
 > Do not commit `.env` files to version control. The `JWT_SECRET` and database passwords must be kept extremely secure in production.

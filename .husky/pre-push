@@ -1,1 +1,1 @@
-npx nx affected -t test
+npm run test:contract && npm run test:unit

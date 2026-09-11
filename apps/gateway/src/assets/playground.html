@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Realtime Socket.IO Backend Playground & Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <style>
+    :root {
+      --bg-base: #0a0e17;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1f2937;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px 28px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .session-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      background-color: var(--danger);
+    }
+    .status-dot.online { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, select, textarea {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .actions-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      max-height: 440px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background: var(--bg-surface-elevated);
+      padding: 10px 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .role-admin { background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); }
+    .role-user { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .console-log {
+      background: #000;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .log-item {
+      display: flex;
+      gap: 8px;
+      word-break: break-all;
+    }
+    .log-time { color: var(--text-muted); }
+    .log-event { color: var(--accent); font-weight: 600; }
+    .log-data { color: #e5e7eb; }
+    .log-error { color: var(--danger); font-weight: 600; }
+    .log-success { color: var(--success); }
+
+    .pulse-highlight {
+      animation: pulseHighlight 1.5s ease-out;
+    }
+
+    @keyframes pulseHighlight {
+      0% { background-color: rgba(99, 102, 241, 0.4); }
+      100% { background-color: transparent; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-badge">Pure Realtime</div>
+      <h1>Socket.IO Admin & Client Playground</h1>
+    </div>
+    <div class="session-info">
+      <div><span id="authDot" class="status-dot"></span>/auth: <strong id="authStatus">Disconnected</strong></div>
+      <div><span id="usersDot" class="status-dot"></span>/users: <strong id="usersStatus">Disconnected</strong></div>
+      <div><span id="notifDot" class="status-dot"></span>/notifications: <strong id="notifStatus">Disconnected</strong></div>
+      <div id="activeUserBadge" style="display: none; padding: 4px 10px; background: rgba(99,102,241,0.2); border-radius: 6px; border: 1px solid var(--primary);">
+        👤 <span id="activeUserEmail">user@example.com</span> (<span id="activeUserRole">user</span>)
+      </div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- COLUMN 1: AUTH & PROFILE -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      <!-- AUTH CARD -->
+      <div class="card">
+        <div class="card-title">
+          <span>🔐 Authentication (/auth)</span>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="authEmail" value="admin@example.com" placeholder="name@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="authPassword" value="AdminPass123!" placeholder="Minimum 8 chars" />
+        </div>
+        <div class="form-group" id="nameGroup">
+          <label>Full Name</label>
+          <input type="text" id="authName" value="Super Admin" placeholder="Full name" />
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="authRole">
+            <option value="admin">admin</option>
+            <option value="user">user</option>
+          </select>
+        </div>
+        <div class="actions-row">
+          <button class="btn" onclick="handleLogin()">Login (emitWithAck)</button>
+          <button class="btn btn-secondary" onclick="handleRegister()">Register</button>
+          <button class="btn btn-secondary" onclick="handleLogout()">Logout</button>
+        </div>
+      </div>
+
+      <!-- MY PROFILE CARD -->
+      <div class="card">
+        <div class="card-title">
+          <span>👤 My Profile (/users)</span>
+          <button class="btn btn-secondary btn-sm" onclick="fetchProfile()">Refresh</button>
+        </div>
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="profileName" placeholder="My Name" />
+        </div>
+        <div class="actions-row">
+          <button class="btn btn-secondary" onclick="updateMyProfile()">Update Profile</button>
+        </div>
+      </div>
+
+      <!-- LIVE NOTIFICATIONS CARD -->
+      <div class="card">
+        <div class="card-title">
+          <span>🔔 Live Notifications (/notifications)</span>
+          <button class="btn btn-secondary btn-sm" onclick="fetchNotifications()">Load</button>
+        </div>
+        <div class="form-group">
+          <label>Admin Broadcast Message</label>
+          <input type="text" id="broadcastTitle" placeholder="Title" value="System Maintenance" />
+          <input type="text" id="broadcastMessage" placeholder="Message content" value="Realtime updates active" />
+        </div>
+        <div class="actions-row">
+          <button class="btn btn-secondary" onclick="sendBroadcast()">Broadcast as Admin</button>
+        </div>
+        <div id="notifList" style="max-height: 140px; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column; gap: 6px;"></div>
+      </div>
+    </div>
+
+    <!-- COLUMN 2: ADMIN REALTIME CRUD DASHBOARD -->
+    <div class="card">
+      <div class="card-title">
+        <span>⚡ Realtime Multi-Admin User CRUD</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-sm" onclick="joinAdminRoom()">Join 'admin:users' Room</button>
+          <button class="btn btn-sm" onclick="loadAdminUsers()">Fetch Users</button>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="text" id="userSearch" placeholder="Search name or email..." style="flex: 1;" oninput="debounceSearch()" />
+        <select id="userRoleFilter" onchange="loadAdminUsers()" style="width: 120px;">
+          <option value="">All Roles</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
+        <button class="btn btn-sm" onclick="showCreateModal()">+ Create User</button>
+      </div>
+
+      <!-- USER CREATE/EDIT FORM (HIDDEN BY DEFAULT) -->
+      <div id="userModal" style="display: none; background: var(--bg-surface-elevated); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); flex-direction: column; gap: 10px;">
+        <div style="font-weight: 600; font-size: 13px;" id="modalTitle">Create New User</div>
+        <input type="hidden" id="modalUserId" />
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" id="modalName" placeholder="Full name" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="modalEmail" placeholder="user@example.com" />
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="modalPassword" placeholder="Min 8 chars" />
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select id="modalRole">
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions-row">
+          <button class="btn btn-sm" onclick="submitUserForm()">Save User</button>
+          <button class="btn btn-secondary btn-sm" onclick="hideUserModal()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-container">
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No users loaded. Connect and click Fetch Users.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted);">
+        <span id="pageInfo">Showing 0 users</span>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn btn-secondary btn-sm" id="prevPageBtn" onclick="changePage(-1)">Previous</button>
+          <button class="btn btn-secondary btn-sm" id="nextPageBtn" onclick="changePage(1)">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMN 3: REALTIME EVENT MONITOR / CONSOLE -->
+    <div class="card">
+      <div class="card-title">
+        <span>📡 Realtime Event Stream</span>
+        <button class="btn btn-secondary btn-sm" onclick="clearLogs()">Clear</button>
+      </div>
+      <p style="font-size: 12px; color: var(--text-muted);">
+        Every bidirectional ack callback, room broadcast (<code>user:created</code>, <code>user:updated</code>, <code>user:deleted</code>), and exception is streamed here in real-time.
+      </p>
+      <div class="console-log" id="consoleLog">
+        <div class="log-item"><span class="log-time">[Init]</span><span class="log-data">Playground initialized. Ready to connect.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authSocket = null;
+    let usersSocket = null;
+    let notifSocket = null;
+
+    let accessToken = localStorage.getItem('accessToken') || '';
+    let currentPage = 1;
+    let totalPages = 1;
+    let searchDebounceTimer = null;
+
+    const host = window.location.origin;
+
+    function log(type, eventName, data) {
+      const consoleBox = document.getElementById('consoleLog');
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = 'log-item';
+
+      let classTag = 'log-data';
+      if (type === 'ERROR') classTag = 'log-error';
+      else if (type === 'SUCCESS') classTag = 'log-success';
+      else if (type === 'EVENT') classTag = 'log-event';
+
+      div.innerHTML = `<span class="log-time">[${time}]</span> <span class="${classTag}">[${type}] ${eventName}:</span> <span>${typeof data === 'object' ? JSON.stringify(data) : data}</span>`;
+      consoleBox.appendChild(div);
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    function clearLogs() {
+      document.getElementById('consoleLog').innerHTML = '';
+    }
+
+    // INITIALIZE SOCKETS
+    function initSockets() {
+      // 1. /auth Socket
+      authSocket = io(`${host}/auth`, { transports: ['websocket', 'polling'] });
+      authSocket.on('connect', () => {
+        document.getElementById('authStatus').innerText = 'Connected';
+        document.getElementById('authDot').className = 'status-dot online';
+        log('SUCCESS', '/auth connect', `Socket ID: ${authSocket.id}`);
+      });
+      authSocket.on('disconnect', () => {
+        document.getElementById('authStatus').innerText = 'Disconnected';
+        document.getElementById('authDot').className = 'status-dot';
+        log('EVENT', '/auth disconnect', 'Connection closed');
+      });
+
+      if (accessToken) {
+        connectAuthenticatedSockets();
+      }
+    }
+
+    function connectAuthenticatedSockets() {
+      if (usersSocket) usersSocket.disconnect();
+      if (notifSocket) notifSocket.disconnect();
+
+      // 2. /users Socket
+      usersSocket = io(`${host}/users`, {
+        auth: { token: accessToken },
+        transports: ['websocket', 'polling'],
+      });
+
+      usersSocket.on('connect', () => {
+        document.getElementById('usersStatus').innerText = 'Connected';
+        document.getElementById('usersDot').className = 'status-dot online';
+        log('SUCCESS', '/users connect', `Authenticated (ID: ${usersSocket.id})`);
+        joinAdminRoom();
+        fetchProfile();
+      });
+
+      usersSocket.on('disconnect', () => {
+        document.getElementById('usersStatus').innerText = 'Disconnected';
+        document.getElementById('usersDot').className = 'status-dot';
+      });
+
+      // REALTIME BROADCAST LISTENERS FROM ADMIN ROOM
+      usersSocket.on('user:created', (user) => {
+        log('EVENT', '⚡ [LIVE SYNC] user:created', user);
+        loadAdminUsers();
+      });
+
+      usersSocket.on('user:updated', (user) => {
+        log('EVENT', '⚡ [LIVE SYNC] user:updated', user);
+        loadAdminUsers();
+      });
+
+      usersSocket.on('user:deleted', (data) => {
+        log('EVENT', '⚡ [LIVE SYNC] user:deleted', data);
+        loadAdminUsers();
+      });
+
+      usersSocket.on('exception', (err) => {
+        log('ERROR', 'WebSocket Exception', err);
+      });
+
+      // 3. /notifications Socket
+      notifSocket = io(`${host}/notifications`, {
+        auth: { token: accessToken },
+        transports: ['websocket', 'polling'],
+      });
+
+      notifSocket.on('connect', () => {
+        document.getElementById('notifStatus').innerText = 'Connected';
+        document.getElementById('notifDot').className = 'status-dot online';
+        log('SUCCESS', '/notifications connect', `Connected (ID: ${notifSocket.id})`);
+      });
+
+      notifSocket.on('hello', (data) => {
+        log('EVENT', 'notification:hello', data);
+      });
+
+      notifSocket.on('notification:new', (data) => {
+        log('EVENT', '🔔 [NEW NOTIFICATION]', data);
+        appendNotification(data);
+      });
+
+      notifSocket.on('notification:broadcast', (data) => {
+        log('EVENT', '📢 [BROADCAST NOTIFICATION]', data);
+        appendNotification(data);
+      });
+
+      notifSocket.on('disconnect', () => {
+        document.getElementById('notifStatus').innerText = 'Disconnected';
+        document.getElementById('notifDot').className = 'status-dot';
+      });
+    }
+
+    // AUTH ACTIONS
+    async function handleLogin() {
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+
+      log('EVENT', 'auth:login request', { email });
+      try {
+        const res = await authSocket.emitWithAck('auth:login', { email, password });
+        log('SUCCESS', 'auth:login ack', res);
+
+        if (res.success && res.data?.accessToken) {
+          accessToken = res.data.accessToken;
+          localStorage.setItem('accessToken', accessToken);
+          localStorage.setItem('refreshToken', res.data.refreshToken);
+
+          document.getElementById('activeUserBadge').style.display = 'block';
+          document.getElementById('activeUserEmail').innerText = res.data.user?.email || email;
+          document.getElementById('activeUserRole').innerText = res.data.user?.role || 'user';
+
+          connectAuthenticatedSockets();
+        } else {
+          log('ERROR', 'Login failed', res.error || 'Unknown error');
+        }
+      } catch (err) {
+        log('ERROR', 'Login exception', err.message);
+      }
+    }
+
+    async function handleRegister() {
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+      const name = document.getElementById('authName').value;
+      const role = document.getElementById('authRole').value;
+
+      log('EVENT', 'auth:register request', { email, name, role });
+      try {
+        const res = await authSocket.emitWithAck('auth:register', { email, password, name, role });
+        log('SUCCESS', 'auth:register ack', res);
+        if (res.success) {
+          alert('Registered successfully! Now click Login.');
+        } else {
+          alert(`Registration failed: ${res.error?.message}`);
+        }
+      } catch (err) {
+        log('ERROR', 'Register exception', err.message);
+      }
+    }
+
+    async function handleLogout() {
+      const refreshToken = localStorage.getItem('refreshToken');
+      try {
+        const res = await authSocket.emitWithAck('auth:logout', { refreshToken, accessToken });
+        log('SUCCESS', 'auth:logout ack', res);
+      } catch (err) {
+        log('ERROR', 'Logout exception', err);
+      }
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      accessToken = '';
+      if (usersSocket) usersSocket.disconnect();
+      if (notifSocket) notifSocket.disconnect();
+      document.getElementById('activeUserBadge').style.display = 'none';
+      alert('Logged out successfully');
+    }
+
+    // PROFILE ACTIONS
+    async function fetchProfile() {
+      if (!usersSocket || !usersSocket.connected) return;
+      try {
+        const res = await usersSocket.emitWithAck('user:profile', {});
+        log('SUCCESS', 'user:profile ack', res);
+        if (res.success && res.data) {
+          document.getElementById('profileName').value = res.data.name || '';
+        }
+      } catch (err) {
+        log('ERROR', 'fetchProfile exception', err);
+      }
+    }
+
+    async function updateMyProfile() {
+      if (!usersSocket || !usersSocket.connected) return alert('Not connected to /users');
+      const name = document.getElementById('profileName').value;
+      try {
+        const res = await usersSocket.emitWithAck('user:update_profile', { name });
+        log('SUCCESS', 'user:update_profile ack', res);
+        if (res.success) alert('Profile updated!');
+      } catch (err) {
+        log('ERROR', 'updateMyProfile exception', err);
+      }
+    }
+
+    // ADMIN REALTIME CRUD
+    async function joinAdminRoom() {
+      if (!usersSocket || !usersSocket.connected) return;
+      try {
+        const res = await usersSocket.emitWithAck('admin:join', {});
+        log('SUCCESS', 'admin:join ack', res);
+        loadAdminUsers();
+      } catch (err) {
+        log('ERROR', 'joinAdminRoom exception', err);
+      }
+    }
+
+    async function loadAdminUsers() {
+      if (!usersSocket || !usersSocket.connected) return;
+      const search = document.getElementById('userSearch').value;
+      const role = document.getElementById('userRoleFilter').value;
+
+      try {
+        const res = await usersSocket.emitWithAck('admin:users:list', {
+          page: currentPage,
+          limit: 8,
+          search: search || undefined,
+          role: role || undefined,
+        });
+
+        if (res.success && res.data) {
+          renderUsersTable(res.data.items || []);
+          totalPages = res.data.meta?.totalPages || 1;
+          document.getElementById('pageInfo').innerText = `Page ${res.data.meta?.page} of ${totalPages} (${res.data.meta?.total} total users)`;
+          document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+          document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+        }
+      } catch (err) {
+        log('ERROR', 'loadAdminUsers exception', err);
+      }
+    }
+
+    function renderUsersTable(users) {
+      const tbody = document.getElementById('usersTableBody');
+      if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No users found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => `
+        <tr id="row_${u.id}" class="pulse-highlight">
+          <td><strong>${u.name}</strong></td>
+          <td>${u.email}</td>
+          <td><span class="role-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${u.role}</span></td>
+          <td>${u.isActive ? '🟢 Active' : '🔴 Inactive'}</td>
+          <td>
+            <div class="actions-row">
+              <button class="btn btn-secondary btn-sm" onclick='editUser(${JSON.stringify(u)})'>Edit</button>
+              <button class="btn btn-danger btn-sm" onclick='deleteUser("${u.id}")'>Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function debounceSearch() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        currentPage = 1;
+        loadAdminUsers();
+      }, 300);
+    }
+
+    function changePage(delta) {
+      currentPage += delta;
+      loadAdminUsers();
+    }
+
+    function showCreateModal() {
+      document.getElementById('modalTitle').innerText = 'Create New User';
+      document.getElementById('modalUserId').value = '';
+      document.getElementById('modalName').value = '';
+      document.getElementById('modalEmail').value = '';
+      document.getElementById('modalPassword').value = '';
+      document.getElementById('modalRole').value = 'user';
+      document.getElementById('userModal').style.display = 'flex';
+    }
+
+    function editUser(user) {
+      document.getElementById('modalTitle').innerText = `Edit User: ${user.name}`;
+      document.getElementById('modalUserId').value = user.id;
+      document.getElementById('modalName').value = user.name;
+      document.getElementById('modalEmail').value = user.email;
+      document.getElementById('modalPassword').value = '';
+      document.getElementById('modalRole').value = user.role;
+      document.getElementById('userModal').style.display = 'flex';
+    }
+
+    function hideUserModal() {
+      document.getElementById('userModal').style.display = 'none';
+    }
+
+    async function submitUserForm() {
+      const userId = document.getElementById('modalUserId').value;
+      const name = document.getElementById('modalName').value;
+      const email = document.getElementById('modalEmail').value;
+      const password = document.getElementById('modalPassword').value;
+      const role = document.getElementById('modalRole').value;
+
+      try {
+        if (!userId) {
+          // CREATE USER
+          const res = await usersSocket.emitWithAck('admin:users:create', { name, email, password, role });
+          log('SUCCESS', 'admin:users:create ack', res);
+          if (res.success) {
+            hideUserModal();
+            loadAdminUsers();
+          } else {
+            alert(`Error creating user: ${res.error?.message}`);
+          }
+        } else {
+          // UPDATE USER
+          const payload = { userId, name, role };
+          if (password) payload.password = password;
+          const res = await usersSocket.emitWithAck('admin:users:update', payload);
+          log('SUCCESS', 'admin:users:update ack', res);
+          if (res.success) {
+            hideUserModal();
+            loadAdminUsers();
+          } else {
+            alert(`Error updating user: ${res.error?.message}`);
+          }
+        }
+      } catch (err) {
+        log('ERROR', 'submitUserForm exception', err);
+      }
+    }
+
+    async function deleteUser(userId) {
+      if (!confirm('Are you sure you want to delete this user?')) return;
+      try {
+        const res = await usersSocket.emitWithAck('admin:users:delete', { userId });
+        log('SUCCESS', 'admin:users:delete ack', res);
+        if (res.success) {
+          loadAdminUsers();
+        } else {
+          alert(`Error deleting user: ${res.error?.message}`);
+        }
+      } catch (err) {
+        log('ERROR', 'deleteUser exception', err);
+      }
+    }
+
+    // NOTIFICATIONS
+    async function fetchNotifications() {
+      if (!notifSocket || !notifSocket.connected) return;
+      try {
+        const res = await notifSocket.emitWithAck('notification:list', {});
+        log('SUCCESS', 'notification:list ack', res);
+        if (res.success && res.data) {
+          const list = document.getElementById('notifList');
+          list.innerHTML = res.data.map(n => `<div style="padding: 6px; background: var(--bg-surface-elevated); border-radius: 4px;"><strong>${n.title}</strong>: ${n.message}</div>`).join('');
+        }
+      } catch (err) {
+        log('ERROR', 'fetchNotifications exception', err);
+      }
+    }
+
+    async function sendBroadcast() {
+      if (!notifSocket || !notifSocket.connected) return alert('Not connected to /notifications');
+      const title = document.getElementById('broadcastTitle').value;
+      const message = document.getElementById('broadcastMessage').value;
+
+      try {
+        const res = await notifSocket.emitWithAck('admin:notification:broadcast', { title, message, type: 'SYSTEM' });
+        log('SUCCESS', 'admin:notification:broadcast ack', res);
+      } catch (err) {
+        log('ERROR', 'sendBroadcast exception', err);
+      }
+    }
+
+    function appendNotification(n) {
+      const list = document.getElementById('notifList');
+      const div = document.createElement('div');
+      div.className = 'pulse-highlight';
+      div.style.cssText = 'padding: 6px; background: rgba(99,102,241,0.2); border-radius: 4px; border: 1px solid var(--primary);';
+      div.innerHTML = `<strong>${n.title || 'Notification'}</strong>: ${n.message || ''}`;
+      list.prepend(div);
+    }
+
+    // Start on window load
+    window.addEventListener('DOMContentLoaded', initSockets);
+  </script>
+</body>
+</html>

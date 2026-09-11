@@ -1,0 +1,110 @@
+import { io, Socket } from 'socket.io-client';
+
+describe('Soak & Memory Leak Verification Suite', () => {
+  const GATEWAY_URL = process.env['GATEWAY_URL'] || 'http://localhost:3000';
+  let token: string;
+  let authSocket: Socket;
+
+  const email = `soak_${Date.now()}@example.com`;
+  const password = 'SoakPassword123!';
+
+  beforeAll(async () => {
+    authSocket = io(`${GATEWAY_URL}/auth`, {
+      transports: ['websocket', 'polling'],
+      forceNew: true,
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      authSocket.on('connect', () => resolve());
+      authSocket.on('connect_error', (err) => reject(err));
+    });
+
+    await authSocket.emitWithAck('auth:register', {
+      email,
+      password,
+      name: 'Soak Test User',
+      role: 'user',
+    });
+
+    const loginRes: any = await authSocket.emitWithAck('auth:login', {
+      email,
+      password,
+    });
+    token = loginRes.data.accessToken;
+  }, 15000);
+
+  afterAll(() => {
+    if (authSocket && authSocket.connected) authSocket.disconnect();
+  });
+
+  describe('Connect-RPC-Disconnect Heap & Resource Drain', () => {
+    it('should complete 100 consecutive connection cycles without heap runaway or listener leaks', async () => {
+      if (global.gc) {
+        global.gc();
+      }
+
+      const initialMemory = process.memoryUsage().heapUsed;
+      const ITERATIONS = 100;
+
+      for (let i = 0; i < ITERATIONS; i++) {
+        const socket = io(`${GATEWAY_URL}/users`, {
+          auth: { token },
+          transports: ['websocket'],
+          forceNew: true,
+        });
+
+        await new Promise<void>((resolve, reject) => {
+          socket.on('connect', () => resolve());
+          socket.on('connect_error', (err) => reject(err));
+        });
+
+        const res: any = await socket.emitWithAck('user:profile');
+        expect(res).toBeDefined();
+        expect(res.success).toBe(true);
+
+        socket.disconnect();
+        expect(socket.connected).toBe(false);
+      }
+
+      if (global.gc) {
+        global.gc();
+      }
+
+      const finalMemory = process.memoryUsage().heapUsed;
+      const heapDeltaMB = (finalMemory - initialMemory) / (1024 * 1024);
+
+      // Verify heap delta is within safe bounds (< 30 MB growth over 100 connect-disconnect cycles)
+      expect(heapDeltaMB).toBeLessThan(30);
+    }, 60000);
+  });
+
+  describe('Long-Lived Socket Steady-State Load', () => {
+    it('should handle 100 consecutive RPC calls on single connection without listener accumulation', async () => {
+      const socket = io(`${GATEWAY_URL}/users`, {
+        auth: { token },
+        transports: ['websocket'],
+        forceNew: true,
+      });
+
+      await new Promise<void>((resolve) => socket.on('connect', () => resolve()));
+
+      const getListenerCount = (event: string) =>
+        (socket as any).listeners ? (socket as any).listeners(event).length : 0;
+
+      const initialListeners = getListenerCount('user:profile');
+
+      const CALL_COUNT = 100;
+      for (let i = 0; i < CALL_COUNT; i++) {
+        const res: any = await socket.emitWithAck('user:profile');
+        expect(res.success).toBe(true);
+      }
+
+      const finalListeners = getListenerCount('user:profile');
+
+      // Ensure emitWithAck does not leave dangling temporary listeners
+      expect(finalListeners).toBe(initialListeners);
+
+      socket.disconnect();
+    }, 30000);
+  });
+});

@@ -41,4 +41,25 @@ export class AuthController {
   async updateProfile(@Payload() data: any) {
     return this.authService.updateProfile(data);
   }
+
+  @MessagePattern('user.create')
+  async createUser(@Payload() data: any) {
+    return this.authService.createUser(data);
+  }
+
+  @MessagePattern('user.list.paginated')
+  async getUsersPaginated(@Payload() query: any) {
+    return this.authService.getUsersPaginated(query);
+  }
+
+  @MessagePattern('user.update.admin')
+  async updateUserByAdmin(@Payload() data: { userId: string; [key: string]: any }) {
+    const { userId, ...updateData } = data;
+    return this.authService.updateUserByAdmin(userId, updateData);
+  }
+
+  @MessagePattern('user.delete')
+  async deleteUser(@Payload() data: { userId: string }) {
+    return this.authService.deleteUser(data.userId);
+  }
 }

@@ -69,4 +69,20 @@ export class AppController {
   async handleMarkAsRead(@Payload() data: { id: string; userId: string }) {
     return this.appService.markAsRead(data.id, data.userId);
   }
+
+  @MessagePattern('notification.broadcast')
+  async handleNotificationBroadcast(
+    @Payload() data: { title: string; message: string; type?: string; recipientId?: string },
+  ) {
+    const saved = await this.appService.broadcastNotification(data);
+    this.gatewayClient.emit('notification.broadcast.push', {
+      id: (saved as any)._id,
+      title: saved.title,
+      message: saved.message,
+      type: saved.type,
+      recipientId: data.recipientId,
+      createdAt: (saved as any).createdAt,
+    });
+    return saved;
+  }
 }
