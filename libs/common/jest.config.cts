@@ -7,6 +7,10 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../coverage/libs/common',
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/src/test/',
+  ],
   collectCoverageFrom: [
     'src/filters/ws-exception.filter.ts',
     'src/guards/ws-jwt.guard.ts',
