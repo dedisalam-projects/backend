@@ -1,0 +1,17 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 10
+      arrivalRate: 5
+      rampTo: 20
+      name: "Ramp up load"
+  plugins:
+    ensure: {}
+  ensure:
+    maxErrorRate: 0 # 100% success rate required
+
+scenarios:
+  - name: "Health Probe & Gateway Gateway Latency"
+    flow:
+      - get:
+          url: "/"

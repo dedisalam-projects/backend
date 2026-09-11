@@ -1,0 +1,189 @@
+import { io, Socket } from 'socket.io-client';
+
+describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
+  const GATEWAY_URL = process.env['GATEWAY_URL'] || 'http://localhost:3000';
+  let authSocket: Socket;
+  let adminSocket1: Socket;
+  let adminSocket2: Socket;
+  let notificationSocket: Socket;
+  let adminToken: string;
+  const testEmail = `integration_admin_${Date.now()}@example.com`;
+  const testPassword = 'StrongPassword123!';
+  let createdUserId: string;
+
+  beforeAll((done) => {
+    authSocket = io(`${GATEWAY_URL}/auth`, {
+      transports: ['websocket', 'polling'],
+      forceNew: true,
+    });
+    authSocket.on('connect', () => done());
+    authSocket.on('connect_error', (err) => done(err));
+  }, 10000);
+
+  afterAll(() => {
+    if (authSocket && authSocket.connected) authSocket.disconnect();
+    if (adminSocket1 && adminSocket1.connected) adminSocket1.disconnect();
+    if (adminSocket2 && adminSocket2.connected) adminSocket2.disconnect();
+    if (notificationSocket && notificationSocket.connected) notificationSocket.disconnect();
+  });
+
+  it('Step 1: should reject invalid registration DTO with VALIDATION_ERROR over Socket.IO', async () => {
+    const res: any = await authSocket.emitWithAck('auth:register', {
+      email: 'invalid-email-format',
+      password: '123',
+      name: 'X',
+    });
+
+    expect(res).toBeDefined();
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('Step 2: should register and login admin user successfully over /auth', async () => {
+    const registerRes: any = await authSocket.emitWithAck('auth:register', {
+      email: testEmail,
+      password: testPassword,
+      name: 'Integration Admin',
+      role: 'admin',
+    });
+
+    expect(registerRes).toBeDefined();
+    expect(registerRes.success).toBe(true);
+
+    const loginRes: any = await authSocket.emitWithAck('auth:login', {
+      email: testEmail,
+      password: testPassword,
+    });
+
+    expect(loginRes).toBeDefined();
+    expect(loginRes.success).toBe(true);
+    expect(loginRes.data?.accessToken).toBeDefined();
+    adminToken = loginRes.data.accessToken;
+  });
+
+  it('Step 3: should authenticate handshake to /users namespace with Bearer token', (done) => {
+    adminSocket1 = io(`${GATEWAY_URL}/users`, {
+      auth: { token: adminToken },
+      transports: ['websocket', 'polling'],
+      forceNew: true,
+    });
+
+    adminSocket1.on('connect', () => {
+      expect(adminSocket1.connected).toBe(true);
+      done();
+    });
+
+    adminSocket1.on('connect_error', (err) => done(err));
+  });
+
+  it('Step 4: should fetch user profile via user:profile ack RPC', async () => {
+    const profileRes: any = await adminSocket1.emitWithAck('user:profile', {});
+    expect(profileRes).toBeDefined();
+    expect(profileRes.success).toBe(true);
+    expect(profileRes.data?.email).toBe(testEmail);
+  });
+
+  it('Step 5: should establish multi-admin live collaboration and broadcast user:created', async () => {
+    await new Promise<void>((resolve, reject) => {
+      adminSocket2 = io(`${GATEWAY_URL}/users`, {
+        auth: { token: adminToken },
+        transports: ['websocket', 'polling'],
+        forceNew: true,
+      });
+      adminSocket2.on('connect', () => resolve());
+      adminSocket2.on('connect_error', (err) => reject(err));
+    });
+
+    // Both join admin room
+    const join1: any = await adminSocket1.emitWithAck('admin:join', {});
+    const join2: any = await adminSocket2.emitWithAck('admin:join', {});
+    expect(join1.success).toBe(true);
+    expect(join2.success).toBe(true);
+
+    const targetEmail = `created_user_${Date.now()}@example.com`;
+
+    // Listen for realtime broadcast on adminSocket2
+    let liveCreatedData: any = null;
+    adminSocket2.once('user:created', (payload) => {
+      liveCreatedData = payload;
+    });
+
+    const createRes: any = await adminSocket1.emitWithAck('admin:users:create', {
+      email: targetEmail,
+      password: 'UserPassword123!',
+      name: 'Created Realtime User',
+      role: 'user',
+    });
+
+    expect(createRes.success).toBe(true);
+    createdUserId = createRes.data?.id || createRes.data?._id;
+    expect(createdUserId).toBeDefined();
+
+    // Wait 300ms for broadcast
+    await new Promise((r) => setTimeout(r, 300));
+    expect(liveCreatedData).toBeDefined();
+    expect(liveCreatedData.email).toBe(targetEmail);
+  });
+
+  it('Step 6: should broadcast user:updated event when user is modified', async () => {
+    let liveUpdatedData: any = null;
+    adminSocket2.once('user:updated', (payload) => {
+      liveUpdatedData = payload;
+    });
+
+    const updateRes: any = await adminSocket1.emitWithAck('admin:users:update', {
+      userId: createdUserId,
+      name: 'Renamed Realtime User',
+    });
+
+    expect(updateRes.success).toBe(true);
+    await new Promise((r) => setTimeout(r, 300));
+    expect(liveUpdatedData).toBeDefined();
+    expect(liveUpdatedData.name).toBe('Renamed Realtime User');
+  });
+
+  it('Step 7: should broadcast user:deleted event when user is removed', async () => {
+    let liveDeletedData: any = null;
+    adminSocket2.once('user:deleted', (payload) => {
+      liveDeletedData = payload;
+    });
+
+    const deleteRes: any = await adminSocket1.emitWithAck('admin:users:delete', {
+      userId: createdUserId,
+    });
+
+    expect(deleteRes.success).toBe(true);
+    await new Promise((r) => setTimeout(r, 300));
+    expect(liveDeletedData).toBeDefined();
+    expect(liveDeletedData.userId).toBe(createdUserId);
+  });
+
+  it('Step 8: should connect to /notifications namespace, list, and broadcast notifications', async () => {
+    await new Promise<void>((resolve, reject) => {
+      notificationSocket = io(`${GATEWAY_URL}/notifications`, {
+        auth: { token: adminToken },
+        transports: ['websocket', 'polling'],
+        forceNew: true,
+      });
+      notificationSocket.on('connect', () => resolve());
+      notificationSocket.on('connect_error', (err) => reject(err));
+    });
+
+    let liveBroadcastReceived = false;
+    notificationSocket.once('notification:broadcast', () => {
+      liveBroadcastReceived = true;
+    });
+
+    const broadcastRes: any = await notificationSocket.emitWithAck('admin:notification:broadcast', {
+      title: 'Integration Test Alert',
+      message: 'Testing realtime notification distribution',
+      type: 'SUCCESS',
+    });
+
+    expect(broadcastRes).toBeDefined();
+    expect(broadcastRes.success).toBe(true);
+
+    await new Promise((r) => setTimeout(r, 300));
+    expect(liveBroadcastReceived).toBe(true);
+  });
+});

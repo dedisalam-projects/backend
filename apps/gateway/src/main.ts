@@ -3,17 +3,12 @@ import { ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 import compression from 'compression';
-import { json } from 'express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Transport } from '@nestjs/microservices';
+import * as path from 'path';
+import * as fs from 'fs';
 
 import { AppModule } from './app/app.module';
-import {
-  HttpExceptionFilter,
-  CorrelationIdInterceptor,
-  TransformInterceptor,
-} from '@dedisalam/common';
 import { RedisIoAdapter } from './config/redis-io.adapter';
 
 async function bootstrap() {
@@ -23,47 +18,64 @@ async function bootstrap() {
   const logger = app.get(PinoLogger);
   app.useLogger(logger);
 
-  // Security & Optimization Middlewares
-  app.use(helmet());
+  // Security & Compression Middlewares
+  app.use(
+    helmet({
+      contentSecurityPolicy: false, // Permissive for local playground scripts and CDN
+    }),
+  );
   app.use(compression());
-  app.use(json({ limit: '10mb' }));
+
+  // Dynamic CORS for cross-subdomain frontend support
   app.enableCors({
-    origin: true,
+    origin: (origin: any, callback: any) => {
+      // Allow all origins (subdomains, localhost, etc.)
+      callback(null, true);
+    },
     credentials: true,
   });
 
-  // Global Prefix
-  const globalPrefix = 'api/v1';
-  app.setGlobalPrefix(globalPrefix);
-
-  // Global Pipes, Filters, and Interceptors
+  // Global Validation Pipe for WebSocket and internal payloads
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
     }),
   );
-  app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new CorrelationIdInterceptor());
-  app.useGlobalInterceptors(new TransformInterceptor());
 
-  // Swagger Documentation Setup (served at /api/docs)
-  const config = new DocumentBuilder()
-    .setTitle('API Gateway')
-    .setDescription('The API Gateway entry point description')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  // Serve Web-based Socket.IO Playground UI on root '/'
+  const httpAdapter = app.getHttpAdapter();
+  httpAdapter.get('/', (req: any, res: any) => {
+    const playgroundPath = path.join(__dirname, 'assets', 'playground.html');
+    if (fs.existsSync(playgroundPath)) {
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(fs.readFileSync(playgroundPath, 'utf8'));
+    }
+    // Fallback if built in dist
+    const altPath = path.join(process.cwd(), 'apps', 'gateway', 'src', 'assets', 'playground.html');
+    if (fs.existsSync(altPath)) {
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(fs.readFileSync(altPath, 'utf8'));
+    }
+    return res.json({
+      name: 'API Gateway Realtime Engine',
+      status: 'online',
+      protocol: 'Socket.IO',
+      namespaces: ['/auth', '/users', '/notifications'],
+    });
+  });
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  // Health endpoint for basic load balancers (returns simple socket status)
+  httpAdapter.get('/health', (req: any, res: any) => {
+    res.json({ status: 'ok', realtime: true, timestamp: new Date().toISOString() });
+  });
 
   // Get port from config
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 3000;
   const tcpPort = configService.get<number>('GATEWAY_TCP_PORT') || 4000;
 
-  // Setup Redis IO Adapter for Websocket synchronization
+  // Setup Redis IO Adapter for Websocket synchronization across instances
   const redisUrl = configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
   const redisIoAdapter = new RedisIoAdapter(app, redisUrl);
   await redisIoAdapter.connectToRedis();
@@ -72,7 +84,7 @@ async function bootstrap() {
   const rabbitmqUrl =
     configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672';
 
-  // Connect RabbitMQ Microservice (Hybrid App)
+  // Connect RabbitMQ Microservice Listener (Consume RMQ events and bridge to WebSockets)
   app.connectMicroservice({
     transport: Transport.RMQ,
     options: {
@@ -84,12 +96,23 @@ async function bootstrap() {
     },
   });
 
+  // Connect TCP Microservice listener for internal/Docker TCP health checks
+  app.connectMicroservice({
+    transport: Transport.TCP,
+    options: {
+      host: '0.0.0.0',
+      port: tcpPort,
+    },
+  });
+
   app.enableShutdownHooks();
   await app.startAllMicroservices();
   await app.listen(port, '0.0.0.0');
-  logger.log(`🚀 API Gateway is running on: http://localhost:${port}/${globalPrefix}`);
-  logger.log(`🔌 API Gateway TCP listener is running on port: ${tcpPort}`);
-  logger.log(`📚 Swagger documentation available at: http://localhost:${port}/api/docs`);
+
+  logger.log(`🚀 Realtime API Gateway is active on: http://localhost:${port}`);
+  logger.log(`⚡ Socket.IO Namespaces: /auth, /users, /notifications`);
+  logger.log(`🔌 API Gateway TCP health probe is listening on port: ${tcpPort}`);
+  logger.log(`🎮 Web Socket.IO Playground available at: http://localhost:${port}/`);
 }
 
 bootstrap();

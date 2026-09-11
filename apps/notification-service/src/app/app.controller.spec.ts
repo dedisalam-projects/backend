@@ -2,13 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PinoLogger } from 'nestjs-pino';
-import { RmqContext } from '@nestjs/microservices';
 import { getModelToken } from '@nestjs/mongoose';
-import { Notification, NotificationDocument } from '@dedisalam/database';
+import { Notification } from '@dedisalam/database';
 
 describe('AppController', () => {
   let app: TestingModule;
+  let appController: AppController;
   let mockPinoLogger: Partial<PinoLogger>;
+  let mockGatewayClient: { emit: jest.Mock };
   let appService: AppService;
 
   beforeAll(async () => {
@@ -16,7 +17,7 @@ describe('AppController', () => {
       assign: jest.fn(),
     };
 
-    const mockGatewayClient = {
+    mockGatewayClient = {
       emit: jest.fn(),
     };
 
@@ -42,14 +43,73 @@ describe('AppController', () => {
       ],
     }).compile();
 
+    appController = app.get<AppController>(AppController);
     appService = app.get<AppService>(AppService);
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('handleNotificationSend', () => {
+    it('should assign correlationId, process notification, and emit notification.push to Gateway', async () => {
+      const spyProcess = jest.spyOn(appService, 'processNotification').mockResolvedValueOnce({
+        title: 'Alert',
+        message: 'Order Created',
+        userId: 'u1',
+        type: 'ORDER',
+        isRead: false,
+      } as any);
+
+      await appController.handleNotificationSend({
+        message: 'Order Created',
+        userId: 'u1',
+        type: 'ORDER',
+        correlationId: 'cid-123',
+      });
+
+      expect(mockPinoLogger.assign).toHaveBeenCalledWith({ correlationId: 'cid-123' });
+      expect(spyProcess).toHaveBeenCalledWith('Order Created', 'u1', 'ORDER');
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith('notification.push', {
+        message: 'Notification processed: Order Created',
+        correlationId: 'cid-123',
+      });
+    });
+
+    it('should gracefully handle omitted payload and pinoLogger.assign failure', async () => {
+      const spyProcess = jest
+        .spyOn(appService, 'processNotification')
+        .mockResolvedValueOnce({} as any);
+      (mockPinoLogger.assign as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('Logger context not found');
+      });
+
+      await appController.handleNotificationSend({});
+
+      expect(spyProcess).toHaveBeenCalledWith(undefined, undefined, undefined);
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith('notification.push', {
+        message: 'Notification processed: Hello World',
+        correlationId: 'unknown',
+      });
+    });
+  });
+
+  describe('handleNotificationList', () => {
+    it('should delegate to appService.getNotifications and return results', async () => {
+      const mockList = [{ id: '1', title: 'Test' }] as any;
+      jest.spyOn(appService, 'getNotifications').mockResolvedValueOnce(mockList);
+
+      const result = await appController.handleNotificationList({ userId: 'u123' });
+      expect(appService.getNotifications).toHaveBeenCalledWith('u123');
+      expect(result).toEqual(mockList);
+    });
   });
 
   describe('handleUserCreated', () => {
     it('should process notification, log user creation, and emit gateway.notify.user to Gateway', async () => {
-      const appController = app.get<AppController>(AppController);
-      const mockGatewayClient = app.get('GATEWAY_SERVICE');
-      const spyProcess = jest.spyOn(appService, 'processNotification');
+      const spyProcess = jest
+        .spyOn(appService, 'processNotification')
+        .mockResolvedValueOnce({} as any);
 
       await appController.handleUserCreated({ userId: 'u1', name: 'John Doe' });
 
@@ -65,13 +125,12 @@ describe('AppController', () => {
     });
 
     it('should handle missing payload data gracefully (Negative Test)', async () => {
-      const appController = app.get<AppController>(AppController);
-      const spyProcess = jest.spyOn(appService, 'processNotification');
+      const spyProcess = jest
+        .spyOn(appService, 'processNotification')
+        .mockResolvedValueOnce({} as any);
 
-      // Emit with empty/invalid payload
       await appController.handleUserCreated({} as any);
 
-      // It should process with undefined name
       expect(spyProcess).toHaveBeenCalledWith(
         'Welcome to our platform, undefined!',
         undefined,
@@ -79,15 +138,56 @@ describe('AppController', () => {
       );
     });
 
-    it('should catch error when processNotification throws (Negative Test)', async () => {
-      const appController = app.get<AppController>(AppController);
+    it('should throw error when processNotification throws (Negative Test)', async () => {
       jest.spyOn(appService, 'processNotification').mockRejectedValueOnce(new Error('DB Error'));
 
-      try {
-        await appController.handleUserCreated({ userId: 'u2', name: 'Error User' });
-      } catch (err: any) {
-        expect(err.message).toBe('DB Error');
-      }
+      await expect(
+        appController.handleUserCreated({ userId: 'u2', name: 'Error User' }),
+      ).rejects.toThrow('DB Error');
+    });
+  });
+
+  describe('handleMarkAsRead', () => {
+    it('should delegate to appService.markAsRead and return result', async () => {
+      const mockUpdated = { id: 'notif-1', isRead: true } as any;
+      jest.spyOn(appService, 'markAsRead').mockResolvedValueOnce(mockUpdated);
+
+      const result = await appController.handleMarkAsRead({ id: 'notif-1', userId: 'u123' });
+      expect(appService.markAsRead).toHaveBeenCalledWith('notif-1', 'u123');
+      expect(result).toEqual(mockUpdated);
+    });
+  });
+
+  describe('handleNotificationBroadcast', () => {
+    it('should call appService.broadcastNotification and emit notification.broadcast.push to Gateway', async () => {
+      const savedDoc = {
+        _id: 'broadcast-id-1',
+        title: 'Maintenance',
+        message: 'Down in 10m',
+        type: 'ALERT',
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      };
+      jest.spyOn(appService, 'broadcastNotification').mockResolvedValueOnce(savedDoc as any);
+
+      const payload = {
+        title: 'Maintenance',
+        message: 'Down in 10m',
+        type: 'ALERT',
+        recipientId: 'u99',
+      };
+
+      const result = await appController.handleNotificationBroadcast(payload);
+
+      expect(appService.broadcastNotification).toHaveBeenCalledWith(payload);
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith('notification.broadcast.push', {
+        id: 'broadcast-id-1',
+        title: 'Maintenance',
+        message: 'Down in 10m',
+        type: 'ALERT',
+        recipientId: 'u99',
+        createdAt: savedDoc.createdAt,
+      });
+      expect(result).toEqual(savedDoc);
     });
   });
 });

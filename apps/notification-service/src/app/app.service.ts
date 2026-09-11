@@ -39,4 +39,20 @@ export class AppService {
     );
     return notification;
   }
+
+  async broadcastNotification(data: {
+    title: string;
+    message: string;
+    type?: string;
+    recipientId?: string;
+  }): Promise<Notification> {
+    const notification = new this.notificationModel({
+      title: data.title,
+      message: data.message,
+      userId: data.recipientId || 'broadcast',
+      type: data.type || 'INFO',
+      isRead: false,
+    });
+    return notification.save();
+  }
 }

@@ -41,6 +41,7 @@ export class AuthService {
       email,
       name,
       password: hashedPassword,
+      role: data.role || 'user',
     });
 
     this.notificationClient.emit('user.created', { userId: newUser._id, name: newUser.name });
@@ -191,6 +192,121 @@ export class AuthService {
       name: updatedUser.name,
       role: updatedUser.role,
       isActive: updatedUser.isActive,
+    };
+  }
+
+  async createUser(data: any) {
+    const { email, password, name, role } = data;
+    if (!email || !password || !name) {
+      throw new BadRequestException('Email, password, and name are required');
+    }
+
+    const existingUser = await this.userModel.findOne({ email });
+    if (existingUser) {
+      throw new BadRequestException('User already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await this.userModel.create({
+      email,
+      name,
+      password: hashedPassword,
+      role: role || 'user',
+      isActive: true,
+    });
+
+    this.notificationClient.emit('user.created', {
+      userId: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+    });
+
+    return {
+      id: newUser._id,
+      email: newUser.email,
+      name: newUser.name,
+      role: newUser.role,
+      isActive: newUser.isActive,
+      createdAt: (newUser as any).createdAt,
+    };
+  }
+
+  async getUsersPaginated(query: any) {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
+    const filter: any = {};
+
+    if (query.search && typeof query.search === 'string' && query.search.trim()) {
+      const searchRegex = { $regex: query.search.trim(), $options: 'i' };
+      filter.$or = [{ name: searchRegex }, { email: searchRegex }];
+    }
+
+    if (query.role && typeof query.role === 'string') {
+      filter.role = query.role;
+    }
+
+    const total = await this.userModel.countDocuments(filter);
+    const users = await this.userModel
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    return {
+      items: users.map((u) => ({
+        id: u._id,
+        email: u.email,
+        name: u.name,
+        role: u.role,
+        isActive: u.isActive,
+        createdAt: (u as any).createdAt,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    };
+  }
+
+  async updateUserByAdmin(userId: string, data: any) {
+    if (!userId) throw new BadRequestException('userId is required');
+
+    const updateData: any = {};
+    if (data.name) updateData.name = data.name;
+    if (data.role) updateData.role = data.role;
+    if (typeof data.isActive === 'boolean') updateData.isActive = data.isActive;
+    if (data.password) {
+      updateData.password = await bcrypt.hash(data.password, 10);
+    }
+
+    const updatedUser = await this.userModel.findByIdAndUpdate(userId, updateData, { new: true });
+    if (!updatedUser) throw new BadRequestException('User not found');
+
+    return {
+      id: updatedUser._id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      role: updatedUser.role,
+      isActive: updatedUser.isActive,
+      updatedAt: (updatedUser as any).updatedAt,
+    };
+  }
+
+  async deleteUser(userId: string) {
+    if (!userId) throw new BadRequestException('userId is required');
+
+    const deleted = await this.userModel.findByIdAndDelete(userId);
+    if (!deleted) throw new BadRequestException('User not found');
+
+    // Invalidate refresh tokens in Redis
+    await this.redisService.set(`refresh_token:${userId}`, '', 1);
+
+    return {
+      message: 'User deleted successfully',
+      userId,
     };
   }
 }
