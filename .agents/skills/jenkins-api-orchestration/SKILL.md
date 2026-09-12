@@ -38,7 +38,19 @@ if (-not $env:JENKINS_API_TOKEN) {
     $env:JENKINS_USER = [Environment]::GetEnvironmentVariable("JENKINS_USER", "User")
     $env:JENKINS_API_TOKEN = [Environment]::GetEnvironmentVariable("JENKINS_API_TOKEN", "User")
     $env:JENKINS_URL = [Environment]::GetEnvironmentVariable("JENKINS_URL", "User")
+    # Direct LAN endpoint on production host (bypasses Cloudflare when on local network):
+    $env:JENKINS_LOCAL_URL = [Environment]::GetEnvironmentVariable("JENKINS_LOCAL_URL", "User")
 }
+```
+
+#### Quick PowerShell Diagnostic One-Liners
+Quickly test connectivity and list existing jobs with color statuses without manual browser navigation:
+```powershell
+# 1. Verify identity and credentials
+curl.exe -s -u "$([Environment]::GetEnvironmentVariable('JENKINS_USER','User')):$([Environment]::GetEnvironmentVariable('JENKINS_API_TOKEN','User'))" "$([Environment]::GetEnvironmentVariable('JENKINS_URL','User'))/whoAmI/api/json"
+
+# 2. List all jobs and status color (blue=success, red=failed)
+curl.exe -s -u "$([Environment]::GetEnvironmentVariable('JENKINS_USER','User')):$([Environment]::GetEnvironmentVariable('JENKINS_API_TOKEN','User'))" "$([Environment]::GetEnvironmentVariable('JENKINS_URL','User'))/api/json" | ConvertFrom-Json | Select-Object -ExpandProperty jobs | Select-Object name, color
 ```
 
 #### Authentication & PowerShell Safety

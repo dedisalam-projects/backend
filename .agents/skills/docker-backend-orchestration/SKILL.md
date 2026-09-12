@@ -63,9 +63,16 @@ Fast probe command:
 If any required infrastructure service is unreachable or not running:
 - **HALT DEVELOPMENT**: Do not attempt to run NestJS services against offline or missing databases.
 - **DO NOT MODIFY DEVOPS CONFIGS**: Do not unilaterally alter files inside `../infrastructure/`.
-- **IMMEDIATELY NOTIFY USER**: State explicitly which service(s) are offline and request the user to ask the **DevOps team** to prepare and start the infrastructure.
+- **MANDATORY GITHUB ISSUE ESCALATION**:
+  Always create a tracked GitHub Issue in `dedisalam-projects/infrastructure` using `gh issue create`:
+  ```bash
+  gh issue create --repo dedisalam-projects/infrastructure \
+    --title "fix(infra): <brief summary of failure>" \
+    --body "## Problem Summary`n<symptoms>`n`n## Root Cause`n<diagnostics>`n`n## Recommended Fix`n<steps>"
+  ```
+- **NOTIFY USER WITH DIRECT LINK**: Provide the direct URL to the created GitHub issue so the user and DevOps team can track resolution.
 - **User Notification Standard**:
-  > "⚠️ **Infrastructure Not Ready**: The backing infrastructure services [list services, e.g., MongoDB on :27017, RabbitMQ on :5672] are currently unreachable. Because infrastructure is maintained by DevOps in `../infrastructure/`, please ask the DevOps team to prepare/start the required services (or run `npm run infra:up` if local container execution is approved) before we proceed with development."
+  > "⚠️ **Infrastructure Not Ready**: Backing infrastructure issue detected. GitHub issue has been logged at https://github.com/dedisalam-projects/infrastructure/issues/<id>. Please allow the DevOps team to remediate the infrastructure before we proceed."
 
 ---
 
@@ -135,17 +142,36 @@ docker compose up -d
 docker compose ps
 ```
 
-### Profile 3: Development Server (`172.16.254.2`)
-Deploy to the dedicated private dev server with strict production isolation:
+### Profile 3: Production Host Direct Access (`172.16.254.2` - ThinkCentre)
+The bare-metal production server (`thinkcentre`) at `172.16.254.2` hosts both native Jenkins CI/CD (port `8080`) and the production Docker containers. When connected to the local network (LAN/WiFi), access Docker and services directly:
 ```bash
 ssh dedisalam@172.16.254.2
 cd /path/to/infrastructure
-docker compose -p fullstack-dev -f docker-compose.dev.server.yml up -d --build
-
-# View real-time dev server logs
-docker compose -p fullstack-dev -f docker-compose.dev.server.yml logs -f
+docker compose -f docker-compose.prod.yml ps
 ```
-*Isolation attributes:* Uses `-p fullstack-dev`, network `app-network-dev`, `<name>-dev` containers, and `dev_<name>` volumes. Cloudflare is excluded to keep public production traffic untouched.
+
+#### Remote Docker CLI & Context Access (Direct from Host)
+Access the production Docker daemon directly from Windows via SSH tunnel using key-based authentication (`C:\Users\dedis\.ssh\id_rsa`) and `PROD_SERVER_IP` (`172.16.254.2`):
+
+1. **Ad-hoc Remote Execution (`-H` flag)**:
+   ```powershell
+   docker.exe -H "ssh://dedisalam@$([Environment]::GetEnvironmentVariable('PROD_SERVER_IP','User'))" ps
+   docker.exe -H "ssh://dedisalam@$([Environment]::GetEnvironmentVariable('PROD_SERVER_IP','User'))" logs -f --tail 100 gateway
+   docker.exe -H "ssh://dedisalam@$([Environment]::GetEnvironmentVariable('PROD_SERVER_IP','User'))" restart user-service
+   ```
+
+2. **Docker Context Switching (Persistent Profile)**:
+   ```powershell
+   # Context: prod-server (registered to ssh://dedisalam@172.16.254.2)
+   # Run command using context (Recommended):
+   docker.exe --context prod-server ps
+   docker.exe --context prod-server logs -f gateway
+
+   # Or switch globally:
+   docker.exe context use prod-server
+   # Revert to local desktop:
+   docker.exe context use desktop-linux
+   ```
 
 ### Profile 4: Production Deployment
 Hardened configuration with bound internal IPs, log rotation, and locked privileges:
@@ -155,6 +181,14 @@ docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
 ```
 *Security constraints:* Explicit internal IP binding, logging capped at 10MB x 3 files, `no-new-privileges:true`.
+
+#### Port Exposure & Network Isolation Security Policy
+1. **Production Environment (Jenkins / Production Server `172.16.254.2`)**:
+   - **Strict Minimal Ingress**: Only the **Backend Gateway** (`:3000`, `:4000`) and **Frontend** (`:80`, `:443`) are permitted to expose `ports:` to the host network.
+   - **Zero Host Exposure for Internal Services**: Datastores (`mongodb`, `redis`, `rabbitmq`) and internal microservices (`user-service`, `notification-service`) **MUST NOT** define host `ports:` bindings in `docker-compose.prod.yml`.
+   - **Pure Internal Mesh**: All internal services must communicate strictly through Docker's internal bridge network (`fullstack-infrastructure_default`) using service DNS names (`mongodb:27017`, `redis:6379`, `rabbitmq:5672`, `user-service:3001`, `notification-service:3002`).
+2. **Local Developer PC Environment (`docker-compose.dev.yml`)**:
+   - Full port exposure (`27017`, `6379`, `5672`, `15672`, `3011`, `3012`) is strictly restricted to local development PCs (`npm run infra:up`) to enable native debugging, hot-reloading on host, test runners, and database GUI clients (Compass, RedisInsight).
 
 ---
 

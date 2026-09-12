@@ -26,6 +26,7 @@ pipeline {
     }
 
     triggers {
+        githubPush()
         cron('H 2 * * *')
     }
     
