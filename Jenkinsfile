@@ -17,6 +17,18 @@ pipeline {
         disableConcurrentBuilds()
     }
     
+    parameters {
+        booleanParam(
+            name: 'RUN_EXTENDED_TESTS',
+            defaultValue: false,
+            description: 'Jalankan pengujian lambat (Memory Leak Soak Test & Stryker Mutation Score)'
+        )
+    }
+
+    triggers {
+        cron('H 2 * * *')
+    }
+    
     stages {
         stage('Checkout') {
             steps {
@@ -112,6 +124,13 @@ pipeline {
         }
 
         stage('Memory Leak & Long-Running Soak Testing') {
+            when {
+                anyOf {
+                    expression { return params.RUN_EXTENDED_TESTS == true }
+                    expression { return currentBuild.getBuildCauses().toString().contains('TimerTrigger') }
+                    changeRequest()
+                }
+            }
             steps {
                 echo 'Testing long-running connection cycles, heap delta bounds, and listener leak absence...'
                 sh 'npm run test:soak'
@@ -119,6 +138,13 @@ pipeline {
         }
 
         stage('Layer 3: Mutation Score Hardening') {
+            when {
+                anyOf {
+                    expression { return params.RUN_EXTENDED_TESTS == true }
+                    expression { return currentBuild.getBuildCauses().toString().contains('TimerTrigger') }
+                    changeRequest()
+                }
+            }
             steps {
                 echo 'Verifying mutation score via StrykerJS...'
                 sh 'npm run test:mutation'
@@ -131,14 +157,31 @@ pipeline {
 
         stage('Docker Push to Registry') {
             steps {
-                echo 'Tagging and pushing production Docker images to Docker Hub registry...'
-                sh 'docker tag dedisalam/backend-gateway:staging dedisalam/backend-gateway:latest'
-                sh 'docker tag dedisalam/backend-user-service:staging dedisalam/backend-user-service:latest'
-                sh 'docker tag dedisalam/backend-notification-service:staging dedisalam/backend-notification-service:latest'
-                
-                sh 'docker push dedisalam/backend-gateway:latest'
-                sh 'docker push dedisalam/backend-user-service:latest'
-                sh 'docker push dedisalam/backend-notification-service:latest'
+                script {
+                    def semver = sh(script: 'git describe --tags --exact-match 2>/dev/null || echo "v1.0.${BUILD_NUMBER}"', returnStdout: true).trim()
+                    env.RELEASE_TAG = semver
+                    echo "Target SemVer release tag: ${env.RELEASE_TAG}"
+                }
+                echo 'Tagging and pushing production Docker images to Docker Hub registry (Dual-Tagging SemVer + Latest)...'
+                sh '''
+                    docker tag dedisalam/backend-gateway:staging dedisalam/backend-gateway:${RELEASE_TAG}
+                    docker tag dedisalam/backend-gateway:staging dedisalam/backend-gateway:latest
+
+                    docker tag dedisalam/backend-user-service:staging dedisalam/backend-user-service:${RELEASE_TAG}
+                    docker tag dedisalam/backend-user-service:staging dedisalam/backend-user-service:latest
+
+                    docker tag dedisalam/backend-notification-service:staging dedisalam/backend-notification-service:${RELEASE_TAG}
+                    docker tag dedisalam/backend-notification-service:staging dedisalam/backend-notification-service:latest
+                    
+                    docker push dedisalam/backend-gateway:${RELEASE_TAG}
+                    docker push dedisalam/backend-gateway:latest
+
+                    docker push dedisalam/backend-user-service:${RELEASE_TAG}
+                    docker push dedisalam/backend-user-service:latest
+
+                    docker push dedisalam/backend-notification-service:${RELEASE_TAG}
+                    docker push dedisalam/backend-notification-service:latest
+                '''
             }
         }
         
