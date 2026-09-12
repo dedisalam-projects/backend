@@ -65,7 +65,7 @@ pipeline {
         stage('Ensure Staging Environment') {
             steps {
                 echo 'Ensuring dedicated staging stack is healthy on port 3005...'
-                build job: 'fullstack-infra-stagging', parameters: [string(name: 'ACTION', value: 'deploy'), string(name: 'SERVICES', value: 'all')], wait: true
+                build job: 'fullstack-infra-staging', parameters: [string(name: 'ACTION', value: 'deploy'), string(name: 'SERVICES', value: 'all')], wait: true
             }
         }
 
@@ -153,7 +153,7 @@ pipeline {
     post {
         always {
             echo 'Tearing down ephemeral staging environment...'
-            build job: 'fullstack-infra-stagging', parameters: [string(name: 'ACTION', value: 'down')], wait: true
+            build job: 'fullstack-infra-staging', parameters: [string(name: 'ACTION', value: 'down')], wait: true
             echo 'Archiving test reports and coverage results...'
             archiveArtifacts artifacts: 'coverage/**, reports/**', allowEmptyArchive: true
             sh 'rm -rf .stryker-tmp || true'
