@@ -131,6 +131,31 @@ describe('AppController', () => {
       );
     });
 
+    it('should forward rich user payload and timestamp when provided', async () => {
+      const spyProcess = jest
+        .spyOn(appService, 'processNotification')
+        .mockResolvedValueOnce({} as any);
+
+      const payload = {
+        userId: 'u-rich',
+        name: '',
+        user: { id: 'u-rich', name: 'Rich User', email: 'r@b.com' },
+        timestamp: '2026-09-13T01:00:00.000Z',
+      };
+
+      await appController.handleUserCreated(payload as any);
+
+      expect(spyProcess).toHaveBeenCalledWith(
+        'Welcome to our platform, Rich User!',
+        'u-rich',
+        'WELCOME',
+      );
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith('gateway.user.created', {
+        user: payload.user,
+        timestamp: '2026-09-13T01:00:00.000Z',
+      });
+    });
+
     it('should handle missing payload data gracefully (Negative Test)', async () => {
       const spyProcess = jest
         .spyOn(appService, 'processNotification')
@@ -168,6 +193,34 @@ describe('AppController', () => {
         timestamp: '2026-09-13T00:00:00.000Z',
       });
     });
+
+    it('should supply default timestamp and empty changes if omitted', async () => {
+      await appController.handleUserUpdated({
+        userId: 'u2',
+      } as any);
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith(
+        'gateway.user.updated',
+        expect.objectContaining({
+          userId: 'u2',
+          changes: {},
+          timestamp: expect.any(String),
+        }),
+      );
+    });
+
+    it('should handle undefined payload gracefully', async () => {
+      await appController.handleUserUpdated({} as any);
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith(
+        'gateway.user.updated',
+        expect.objectContaining({
+          userId: undefined,
+          changes: {},
+          timestamp: expect.any(String),
+        }),
+      );
+    });
   });
 
   describe('handleUserDeleted', () => {
@@ -181,6 +234,32 @@ describe('AppController', () => {
         userId: 'u1',
         timestamp: '2026-09-13T00:00:00.000Z',
       });
+    });
+
+    it('should supply default timestamp if omitted', async () => {
+      await appController.handleUserDeleted({
+        userId: 'u2',
+      } as any);
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith(
+        'gateway.user.deleted',
+        expect.objectContaining({
+          userId: 'u2',
+          timestamp: expect.any(String),
+        }),
+      );
+    });
+
+    it('should handle undefined payload gracefully', async () => {
+      await appController.handleUserDeleted({} as any);
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith(
+        'gateway.user.deleted',
+        expect.objectContaining({
+          userId: undefined,
+          timestamp: expect.any(String),
+        }),
+      );
     });
   });
 

@@ -91,6 +91,18 @@ describe('NotificationConsumer', () => {
       expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_created', payload);
     });
 
+    it('should handle payload with userId instead of user', () => {
+      consumer.handleUserCreated({ userId: 'u2' });
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_created', {
+        userId: 'u2',
+      });
+    });
+
+    it('should handle empty or null data', () => {
+      consumer.handleUserCreated({});
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_created', {});
+    });
+
     it('should handle null server gracefully', () => {
       mockNotificationGateway.server = null;
       expect(() => consumer.handleUserCreated({ user: { id: 'u1' } })).not.toThrow();
@@ -108,6 +120,11 @@ describe('NotificationConsumer', () => {
       expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_updated', payload);
     });
 
+    it('should handle empty or null data', () => {
+      consumer.handleUserUpdated({});
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_updated', {});
+    });
+
     it('should handle null server gracefully', () => {
       mockNotificationGateway.server = null;
       expect(() => consumer.handleUserUpdated({ userId: 'u1' })).not.toThrow();
@@ -122,6 +139,11 @@ describe('NotificationConsumer', () => {
       };
       consumer.handleUserDeleted(payload);
       expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_deleted', payload);
+    });
+
+    it('should handle empty or null data', () => {
+      consumer.handleUserDeleted({});
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_deleted', {});
     });
 
     it('should handle null server gracefully', () => {
