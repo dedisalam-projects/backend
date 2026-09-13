@@ -18,6 +18,7 @@ Backend architecture patterns and best practices for scalable server-side applic
 - Setting up background jobs or async processing
 - Structuring error handling and validation for APIs
 - Building middleware (auth, logging, rate limiting)
+- Bootstrapping initial administrative users (Idempotent Seeding on Application Startup)
 
 ## API Design Patterns
 
@@ -558,5 +559,53 @@ export async function GET(request: Request) {
   }
 }
 ```
+
+## Idempotent Bootstrap Seeding Pattern (NestJS)
+
+Ensures fresh containerized or microservice environments automatically provision a root administrative account on startup without manual script execution or duplicate entries.
+
+```typescript
+import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
+
+@Injectable()
+export class AuthService implements OnApplicationBootstrap {
+  private readonly logger = new Logger(AuthService.name);
+
+  constructor(
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    private readonly configService: ConfigService,
+  ) {}
+
+  async onApplicationBootstrap() {
+    const defaultEmail = this.configService.get<string>('SUPERADMIN_EMAIL') || 'superadmin@example.com';
+    const defaultPassword = this.configService.get<string>('SUPERADMIN_PASSWORD') || 'Admin123!';
+
+    const existingSuperAdmin = await this.userModel.findOne({ role: UserRole.SUPER_ADMIN });
+    if (!existingSuperAdmin) {
+      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+      await this.userModel.create({
+        name: 'Super Administrator',
+        email: defaultEmail,
+        password: hashedPassword,
+        role: UserRole.SUPER_ADMIN,
+        isActive: true,
+      });
+      this.logger.log(`Initialized default super admin: ${defaultEmail}`);
+    }
+  }
+}
+```
+
+### Standalone Migration/Seed Scripts Parity Checklist
+
+When writing standalone initialization scripts (e.g. `scripts/seed.js`):
+1. **Dynamic Connection Resolution**: Always fall back across configured URIs (`USER_SERVICE_MONGO_URI`, `MONGODB_URI`, local authenticated docker URI).
+2. **Database Alignment**: Ensure the target database name matches what the consuming microservice reads from (e.g. `user_db` instead of an arbitrary default).
+3. **Role Alignment**: Use strict enum values (e.g. `UserRole.SUPER_ADMIN = 'super_admin'`) instead of lower-privilege placeholders.
+4. **NPM Script Registration**: Always bind standalone seeders to `"seed"` in `package.json`.
 
 **Remember**: Backend patterns enable scalable, maintainable server-side applications. Choose patterns that fit your complexity level.

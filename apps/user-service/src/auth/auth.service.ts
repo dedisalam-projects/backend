@@ -1,4 +1,11 @@
-import { Injectable, UnauthorizedException, BadRequestException, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  Inject,
+  OnApplicationBootstrap,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -7,9 +14,11 @@ import { randomBytes, createHash } from 'crypto';
 import { User, UserDocument, RedisService } from '@dedisalam/database';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
+import { UserRole } from '@dedisalam/common';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnApplicationBootstrap {
+  private readonly logger = new Logger(AuthService.name);
   private readonly jwtSecret: string;
 
   constructor(
@@ -23,6 +32,36 @@ export class AuthService {
       throw new Error('FATAL: JWT_SECRET environment variable is not defined');
     }
     this.jwtSecret = secret;
+  }
+
+  async onApplicationBootstrap() {
+    try {
+      const superAdminCount = await this.userModel.countDocuments({
+        role: UserRole.SUPER_ADMIN,
+      });
+
+      if (superAdminCount === 0) {
+        const defaultEmail =
+          this.configService.get<string>('DEFAULT_SUPERADMIN_EMAIL') || 'superadmin@example.com';
+        const defaultPassword =
+          this.configService.get<string>('DEFAULT_SUPERADMIN_PASSWORD') || 'Admin123!';
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+        await this.userModel.create({
+          name: 'Super Administrator',
+          email: defaultEmail,
+          password: hashedPassword,
+          role: UserRole.SUPER_ADMIN,
+          isActive: true,
+        });
+
+        this.logger.log(
+          `🚀 Bootstrap: Default superadmin initialized successfully (${defaultEmail})`,
+        );
+      }
+    } catch (err: any) {
+      this.logger.error(`Bootstrap superadmin check failed: ${err.message}`, err.stack);
+    }
   }
 
   async register(data: any) {
@@ -44,7 +83,21 @@ export class AuthService {
       role: data.role || 'user',
     });
 
-    this.notificationClient.emit('user.created', { userId: newUser._id, name: newUser.name });
+    const userPayload = {
+      id: newUser._id.toString(),
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      isActive: (newUser as any).isActive ?? true,
+    };
+    const timestamp = new Date().toISOString();
+
+    this.notificationClient.emit('user.created', {
+      userId: newUser._id.toString(),
+      name: newUser.name,
+      user: userPayload,
+      timestamp,
+    });
 
     return {
       message: 'User registered successfully',
@@ -186,6 +239,15 @@ export class AuthService {
     const updatedUser = await this.userModel.findByIdAndUpdate(userId, updateData, { new: true });
     if (!updatedUser) throw new BadRequestException('User not found');
 
+    const changes: any = {};
+    if (name) changes.name = name;
+
+    this.notificationClient.emit('user.updated', {
+      userId,
+      changes,
+      timestamp: new Date().toISOString(),
+    });
+
     return {
       id: updatedUser._id,
       email: updatedUser.email,
@@ -215,11 +277,22 @@ export class AuthService {
       isActive: true,
     });
 
-    this.notificationClient.emit('user.created', {
-      userId: newUser._id,
+    const userPayload = {
+      id: newUser._id.toString(),
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
+      isActive: newUser.isActive,
+    };
+    const timestamp = new Date().toISOString();
+
+    this.notificationClient.emit('user.created', {
+      userId: newUser._id.toString(),
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      user: userPayload,
+      timestamp,
     });
 
     return {
@@ -285,6 +358,17 @@ export class AuthService {
     const updatedUser = await this.userModel.findByIdAndUpdate(userId, updateData, { new: true });
     if (!updatedUser) throw new BadRequestException('User not found');
 
+    const changes: any = {};
+    if (data.name !== undefined) changes.name = data.name;
+    if (data.role !== undefined) changes.role = data.role;
+    if (typeof data.isActive === 'boolean') changes.isActive = data.isActive;
+
+    this.notificationClient.emit('user.updated', {
+      userId,
+      changes,
+      timestamp: new Date().toISOString(),
+    });
+
     return {
       id: updatedUser._id,
       email: updatedUser.email,
@@ -303,6 +387,11 @@ export class AuthService {
 
     // Invalidate refresh tokens in Redis
     await this.redisService.set(`refresh_token:${userId}`, '', 1);
+
+    this.notificationClient.emit('user.deleted', {
+      userId,
+      timestamp: new Date().toISOString(),
+    });
 
     return {
       message: 'User deleted successfully',

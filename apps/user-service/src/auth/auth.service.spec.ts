@@ -32,7 +32,10 @@ describe('AuthService', () => {
     };
 
     mockConfigService = {
-      get: jest.fn().mockReturnValue('super-secret-jwt-key'),
+      get: jest.fn().mockImplementation((key: string) => {
+        if (key === 'JWT_SECRET') return 'super-secret-jwt-key';
+        return null;
+      }),
     };
 
     mockNotificationClient = {
@@ -63,6 +66,60 @@ describe('AuthService', () => {
           mockNotificationClient as any,
         );
       }).toThrow('FATAL: JWT_SECRET environment variable is not defined');
+    });
+  });
+
+  describe('onApplicationBootstrap', () => {
+    it('should initialize default superadmin when count is 0 with default config', async () => {
+      mockUserModel.countDocuments.mockResolvedValueOnce(0);
+      mockUserModel.create.mockResolvedValueOnce({
+        _id: 'sa-1',
+        email: 'superadmin@example.com',
+      });
+
+      await service.onApplicationBootstrap();
+
+      expect(mockUserModel.countDocuments).toHaveBeenCalled();
+      expect(mockUserModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'superadmin@example.com',
+          name: 'Super Administrator',
+          role: 'super_admin',
+          isActive: true,
+        }),
+      );
+    });
+
+    it('should initialize superadmin using configured email and password when provided', async () => {
+      mockUserModel.countDocuments.mockResolvedValueOnce(0);
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'DEFAULT_SUPERADMIN_EMAIL') return 'custom-admin@example.com';
+        if (key === 'DEFAULT_SUPERADMIN_PASSWORD') return 'CustomPass123!';
+        return 'super-secret-jwt-key';
+      });
+
+      await service.onApplicationBootstrap();
+
+      expect(mockUserModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'custom-admin@example.com',
+          role: 'super_admin',
+        }),
+      );
+    });
+
+    it('should skip creation when superadmin already exists', async () => {
+      mockUserModel.countDocuments.mockResolvedValueOnce(1);
+
+      await service.onApplicationBootstrap();
+
+      expect(mockUserModel.create).not.toHaveBeenCalled();
+    });
+
+    it('should catch error and log when error occurs during bootstrap', async () => {
+      mockUserModel.countDocuments.mockRejectedValueOnce(new Error('DB Connection Failed'));
+
+      await expect(service.onApplicationBootstrap()).resolves.not.toThrow();
     });
   });
 
@@ -108,10 +165,13 @@ describe('AuthService', () => {
           role: 'user',
         }),
       );
-      expect(mockNotificationClient.emit).toHaveBeenCalledWith('user.created', {
-        userId: 'new-u1',
-        name: 'New User',
-      });
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.created',
+        expect.objectContaining({
+          userId: 'new-u1',
+          name: 'New User',
+        }),
+      );
       expect(result.message).toBe('User registered successfully');
       expect(result.user.id).toBe('new-u1');
     });
@@ -439,12 +499,21 @@ describe('AuthService', () => {
           isActive: true,
         }),
       );
-      expect(mockNotificationClient.emit).toHaveBeenCalledWith('user.created', {
-        userId: 'u-new',
-        name: 'New Person',
-        email: 'new@b.com',
-        role: 'moderator',
-      });
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.created',
+        expect.objectContaining({
+          userId: 'u-new',
+          name: 'New Person',
+          email: 'new@b.com',
+          role: 'moderator',
+          user: expect.objectContaining({
+            id: 'u-new',
+            name: 'New Person',
+            email: 'new@b.com',
+            role: 'moderator',
+          }),
+        }),
+      );
       expect(result.id).toBe('u-new');
       expect(result.role).toBe('moderator');
     });
@@ -569,6 +638,18 @@ describe('AuthService', () => {
       );
       expect(result.id).toBe('u-target');
       expect(result.isActive).toBe(false);
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.updated',
+        expect.objectContaining({
+          userId: 'u-target',
+          changes: expect.objectContaining({
+            name: 'Updated Name',
+            role: 'admin',
+            isActive: false,
+          }),
+          timestamp: expect.any(String),
+        }),
+      );
     });
 
     it('should throw BadRequestException if user not found', async () => {
@@ -597,6 +678,43 @@ describe('AuthService', () => {
         { new: true },
       );
       expect(result.role).toBe('super_admin');
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.updated',
+        expect.objectContaining({
+          userId: 'u-target',
+          changes: { role: 'super_admin' },
+          timestamp: expect.any(String),
+        }),
+      );
+    });
+
+    it('should update only name and isActive when role is omitted', async () => {
+      mockUserModel.findByIdAndUpdate.mockResolvedValueOnce({
+        _id: 'u-target',
+        email: 'target@b.com',
+        name: 'Target Name',
+        role: 'user',
+        isActive: false,
+      });
+
+      const result = await service.updateUserByAdmin('u-target', {
+        name: 'New Name',
+        isActive: false,
+      });
+
+      expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        'u-target',
+        expect.objectContaining({ name: 'New Name', isActive: false }),
+        { new: true },
+      );
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.updated',
+        expect.objectContaining({
+          userId: 'u-target',
+          changes: { name: 'New Name', isActive: false },
+          timestamp: expect.any(String),
+        }),
+      );
     });
   });
 
@@ -617,6 +735,13 @@ describe('AuthService', () => {
 
       expect(mockUserModel.findByIdAndDelete).toHaveBeenCalledWith('u-del');
       expect(mockRedisService.set).toHaveBeenCalledWith('refresh_token:u-del', '', 1);
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.deleted',
+        expect.objectContaining({
+          userId: 'u-del',
+          timestamp: expect.any(String),
+        }),
+      );
       expect(result).toEqual({
         message: 'User deleted successfully',
         userId: 'u-del',

@@ -54,15 +54,77 @@ export class AppController {
   }
 
   @EventPattern('user.created')
-  async handleUserCreated(@Payload() data: { userId: string; name: string }) {
-    this.logger.log(`Received user.created event for ${data.userId}`);
-    const message = `Welcome to our platform, ${data.name}!`;
-    await this.appService.processNotification(message, data.userId, 'WELCOME');
+  async handleUserCreated(
+    @Payload()
+    data: {
+      userId: string;
+      name: string;
+      user?: any;
+      timestamp?: string;
+    },
+  ) {
+    this.logger.log(`Received user.created event for ${data?.userId}`);
+    const name = data?.name || data?.user?.name || 'User';
+    const message = `Welcome to our platform, ${name}!`;
+    await this.appService.processNotification(message, data?.userId, 'WELCOME');
 
     this.gatewayClient.emit('gateway.notify.user', {
       message: `Notification processed: ${message}`,
       correlationId: 'system',
     });
+
+    const userPayload = data?.user || {
+      id: data?.userId,
+      name,
+    };
+    const timestamp = data?.timestamp || new Date().toISOString();
+
+    this.gatewayClient.emit('gateway.user.created', {
+      user: userPayload,
+      timestamp,
+    });
+  }
+
+  @EventPattern('user.updated')
+  async handleUserUpdated(
+    @Payload()
+    data: {
+      userId: string;
+      changes: Record<string, any>;
+      timestamp?: string;
+    },
+  ) {
+    this.logger.log(`Received user.updated event for ${data?.userId}`);
+    const timestamp = data?.timestamp || new Date().toISOString();
+
+    this.gatewayClient.emit('gateway.user.updated', {
+      userId: data?.userId,
+      changes: data?.changes || {},
+      timestamp,
+    });
+  }
+
+  @EventPattern('user.deleted')
+  async handleUserDeleted(
+    @Payload()
+    data: {
+      userId: string;
+      timestamp?: string;
+    },
+  ) {
+    this.logger.log(`Received user.deleted event for ${data?.userId}`);
+    const timestamp = data?.timestamp || new Date().toISOString();
+
+    this.gatewayClient.emit('gateway.user.deleted', {
+      userId: data?.userId,
+      timestamp,
+    });
+  }
+
+  @EventPattern('user.logged_in')
+  async handleUserLoggedIn(@Payload() data: any) {
+    this.logger.log(`Received user.logged_in event for ${data?.email}`);
+    this.gatewayClient.emit('user.logged_in', data);
   }
 
   @MessagePattern('notification.markAsRead')

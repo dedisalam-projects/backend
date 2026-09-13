@@ -16,6 +16,33 @@ export class NotificationConsumer {
     }
   }
 
+  @EventPattern('gateway.user.created')
+  @EventPattern('user.created')
+  handleUserCreated(@Payload() data: any) {
+    this.logger.log(`Received user.created RMQ event for: ${data?.user?.id || data?.userId}`);
+    if (this.notificationGateway.server) {
+      this.notificationGateway.server.emit('user_created', data);
+    }
+  }
+
+  @EventPattern('gateway.user.updated')
+  @EventPattern('user.updated')
+  handleUserUpdated(@Payload() data: any) {
+    this.logger.log(`Received user.updated RMQ event for: ${data?.userId}`);
+    if (this.notificationGateway.server) {
+      this.notificationGateway.server.emit('user_updated', data);
+    }
+  }
+
+  @EventPattern('gateway.user.deleted')
+  @EventPattern('user.deleted')
+  handleUserDeleted(@Payload() data: any) {
+    this.logger.log(`Received user.deleted RMQ event for: ${data?.userId}`);
+    if (this.notificationGateway.server) {
+      this.notificationGateway.server.emit('user_deleted', data);
+    }
+  }
+
   @EventPattern('gateway.notify.user')
   handleNotifyUser(@Payload() data: any) {
     this.logger.log(`Received gateway.notify.user RMQ event for: ${data?.userId}`);

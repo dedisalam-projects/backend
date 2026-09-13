@@ -122,6 +122,38 @@ describe('AppController', () => {
         message: 'Notification processed: Welcome to our platform, John Doe!',
         correlationId: 'system',
       });
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith(
+        'gateway.user.created',
+        expect.objectContaining({
+          user: expect.objectContaining({ id: 'u1', name: 'John Doe' }),
+          timestamp: expect.any(String),
+        }),
+      );
+    });
+
+    it('should forward rich user payload and timestamp when provided', async () => {
+      const spyProcess = jest
+        .spyOn(appService, 'processNotification')
+        .mockResolvedValueOnce({} as any);
+
+      const payload = {
+        userId: 'u-rich',
+        name: '',
+        user: { id: 'u-rich', name: 'Rich User', email: 'r@b.com' },
+        timestamp: '2026-09-13T01:00:00.000Z',
+      };
+
+      await appController.handleUserCreated(payload as any);
+
+      expect(spyProcess).toHaveBeenCalledWith(
+        'Welcome to our platform, Rich User!',
+        'u-rich',
+        'WELCOME',
+      );
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith('gateway.user.created', {
+        user: payload.user,
+        timestamp: '2026-09-13T01:00:00.000Z',
+      });
     });
 
     it('should handle missing payload data gracefully (Negative Test)', async () => {
@@ -132,7 +164,7 @@ describe('AppController', () => {
       await appController.handleUserCreated({} as any);
 
       expect(spyProcess).toHaveBeenCalledWith(
-        'Welcome to our platform, undefined!',
+        'Welcome to our platform, User!',
         undefined,
         'WELCOME',
       );
@@ -144,6 +176,106 @@ describe('AppController', () => {
       await expect(
         appController.handleUserCreated({ userId: 'u2', name: 'Error User' }),
       ).rejects.toThrow('DB Error');
+    });
+  });
+
+  describe('handleUserUpdated', () => {
+    it('should forward user.updated payload to gatewayClient', async () => {
+      await appController.handleUserUpdated({
+        userId: 'u1',
+        changes: { name: 'Jane Updated' },
+        timestamp: '2026-09-13T00:00:00.000Z',
+      });
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith('gateway.user.updated', {
+        userId: 'u1',
+        changes: { name: 'Jane Updated' },
+        timestamp: '2026-09-13T00:00:00.000Z',
+      });
+    });
+
+    it('should supply default timestamp and empty changes if omitted', async () => {
+      await appController.handleUserUpdated({
+        userId: 'u2',
+      } as any);
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith(
+        'gateway.user.updated',
+        expect.objectContaining({
+          userId: 'u2',
+          changes: {},
+          timestamp: expect.any(String),
+        }),
+      );
+    });
+
+    it('should handle undefined payload gracefully', async () => {
+      await appController.handleUserUpdated({} as any);
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith(
+        'gateway.user.updated',
+        expect.objectContaining({
+          userId: undefined,
+          changes: {},
+          timestamp: expect.any(String),
+        }),
+      );
+    });
+  });
+
+  describe('handleUserDeleted', () => {
+    it('should forward user.deleted payload to gatewayClient', async () => {
+      await appController.handleUserDeleted({
+        userId: 'u1',
+        timestamp: '2026-09-13T00:00:00.000Z',
+      });
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith('gateway.user.deleted', {
+        userId: 'u1',
+        timestamp: '2026-09-13T00:00:00.000Z',
+      });
+    });
+
+    it('should supply default timestamp if omitted', async () => {
+      await appController.handleUserDeleted({
+        userId: 'u2',
+      } as any);
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith(
+        'gateway.user.deleted',
+        expect.objectContaining({
+          userId: 'u2',
+          timestamp: expect.any(String),
+        }),
+      );
+    });
+
+    it('should handle undefined payload gracefully', async () => {
+      await appController.handleUserDeleted({} as any);
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith(
+        'gateway.user.deleted',
+        expect.objectContaining({
+          userId: undefined,
+          timestamp: expect.any(String),
+        }),
+      );
+    });
+  });
+
+  describe('handleUserLoggedIn', () => {
+    it('should forward user.logged_in payload to gatewayClient', async () => {
+      await appController.handleUserLoggedIn({
+        userId: 'u1',
+        email: 'u1@example.com',
+        name: 'User 1',
+      });
+
+      expect(mockGatewayClient.emit).toHaveBeenCalledWith('user.logged_in', {
+        userId: 'u1',
+        email: 'u1@example.com',
+        name: 'User 1',
+      });
     });
   });
 

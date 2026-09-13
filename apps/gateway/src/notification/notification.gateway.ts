@@ -92,10 +92,13 @@ export class NotificationGateway
       }
     }
 
-    // Join personal room for targeted push notifications
+    // Join personal room for targeted push notifications and notifications broadcast channel
     const userRoom = `user_${decoded.sub}`;
     client.join(userRoom);
-    this.logger.log(`Client ${client.id} joined personal notification room: ${userRoom}`);
+    client.join('notifications');
+    this.logger.log(
+      `Client ${client.id} joined personal notification room: ${userRoom} and notifications broadcast channel`,
+    );
 
     client.emit('hello', {
       message: 'Connected to realtime notification stream',

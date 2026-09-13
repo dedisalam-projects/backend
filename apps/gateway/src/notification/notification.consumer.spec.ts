@@ -75,6 +75,83 @@ describe('NotificationConsumer', () => {
     });
   });
 
+  describe('handleUserCreated', () => {
+    it('should emit user_created to clients', () => {
+      const payload = {
+        user: {
+          id: 'u1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          role: 'user',
+          isActive: true,
+        },
+        timestamp: '2026-09-13T00:00:00.000Z',
+      };
+      consumer.handleUserCreated(payload);
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_created', payload);
+    });
+
+    it('should handle payload with userId instead of user', () => {
+      consumer.handleUserCreated({ userId: 'u2' });
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_created', {
+        userId: 'u2',
+      });
+    });
+
+    it('should handle empty or null data', () => {
+      consumer.handleUserCreated({});
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_created', {});
+    });
+
+    it('should handle null server gracefully', () => {
+      mockNotificationGateway.server = null;
+      expect(() => consumer.handleUserCreated({ user: { id: 'u1' } })).not.toThrow();
+    });
+  });
+
+  describe('handleUserUpdated', () => {
+    it('should emit user_updated to clients', () => {
+      const payload = {
+        userId: 'u1',
+        changes: { name: 'Jane Updated', role: 'admin' },
+        timestamp: '2026-09-13T00:00:00.000Z',
+      };
+      consumer.handleUserUpdated(payload);
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_updated', payload);
+    });
+
+    it('should handle empty or null data', () => {
+      consumer.handleUserUpdated({});
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_updated', {});
+    });
+
+    it('should handle null server gracefully', () => {
+      mockNotificationGateway.server = null;
+      expect(() => consumer.handleUserUpdated({ userId: 'u1' })).not.toThrow();
+    });
+  });
+
+  describe('handleUserDeleted', () => {
+    it('should emit user_deleted to clients', () => {
+      const payload = {
+        userId: 'u1',
+        timestamp: '2026-09-13T00:00:00.000Z',
+      };
+      consumer.handleUserDeleted(payload);
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_deleted', payload);
+    });
+
+    it('should handle empty or null data', () => {
+      consumer.handleUserDeleted({});
+      expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_deleted', {});
+    });
+
+    it('should handle null server gracefully', () => {
+      mockNotificationGateway.server = null;
+      expect(() => consumer.handleUserDeleted({ userId: 'u1' })).not.toThrow();
+    });
+  });
+
   describe('handleNotifyUser', () => {
     it('should emit to personal user room when userId is provided', () => {
       consumer.handleNotifyUser({ userId: 'u123', message: 'Hello user' });

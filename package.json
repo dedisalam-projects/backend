@@ -7,6 +7,7 @@
     "infra:up": "docker compose -f ../infrastructure/docker-compose.dev.yml up -d",
     "infra:down": "docker compose -f ../infrastructure/docker-compose.dev.yml down",
     "infra:logs": "docker compose -f ../infrastructure/docker-compose.dev.yml logs -f",
+    "seed": "node scripts/seed.js",
     "test": "nx run-many --target=test --all",
     "test:coverage": "nx run-many --target=test --all --coverage",
     "test:unit": "nx run-many --target=test --all --coverage",
