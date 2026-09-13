@@ -1,5 +1,3 @@
-import { firstValueFrom, timeout } from 'rxjs';
-import * as express from 'express';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
@@ -27,8 +25,6 @@ async function bootstrap() {
     }),
   );
   app.use(compression());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
 
   // Dynamic CORS for cross-subdomain frontend support
   app.enableCors({
@@ -72,148 +68,6 @@ async function bootstrap() {
   // Health endpoint for basic load balancers (returns simple socket status)
   httpAdapter.get('/health', (req: any, res: any) => {
     res.json({ status: 'ok', realtime: true, timestamp: new Date().toISOString() });
-  });
-
-  // REST API Compatibility Bridge
-  httpAdapter.post('/api/v1/auth/login', async (req: any, res: any) => {
-    try {
-      const userService = app.get('USER_SERVICE');
-      const response = await firstValueFrom(
-        userService.send('auth.login', req.body || {}).pipe(timeout(5000)),
-      );
-      return res.status(200).json({
-        statusCode: 200,
-        message: 'Login successful',
-        data: response,
-        meta: { timestamp: new Date().toISOString() },
-      });
-    } catch (err: any) {
-      return res.status(401).json({
-        statusCode: 401,
-        message: err?.message || 'Invalid credentials',
-        error: 'Unauthorized',
-      });
-    }
-  });
-
-  httpAdapter.post('/api/v1/auth/register', async (req: any, res: any) => {
-    try {
-      const userService = app.get('USER_SERVICE');
-      const response = await firstValueFrom(
-        userService.send('auth.register', req.body || {}).pipe(timeout(5000)),
-      );
-      return res.status(201).json({
-        statusCode: 201,
-        message: 'User registered successfully',
-        data: response,
-        meta: { timestamp: new Date().toISOString() },
-      });
-    } catch (err: any) {
-      return res.status(400).json({
-        statusCode: 400,
-        message: err?.message || 'Registration failed',
-      });
-    }
-  });
-
-  httpAdapter.post('/api/v1/auth/refresh', async (req: any, res: any) => {
-    try {
-      const userService = app.get('USER_SERVICE');
-      const response = await firstValueFrom(
-        userService.send('auth.refresh', req.body || {}).pipe(timeout(5000)),
-      );
-      return res.status(200).json({
-        statusCode: 200,
-        message: 'Token refreshed successfully',
-        data: response,
-        meta: { timestamp: new Date().toISOString() },
-      });
-    } catch (err: any) {
-      return res.status(401).json({
-        statusCode: 401,
-        message: err?.message || 'Refresh failed',
-      });
-    }
-  });
-
-  httpAdapter.post('/api/v1/auth/logout', async (req: any, res: any) => {
-    try {
-      const userService = app.get('USER_SERVICE');
-      const response = await firstValueFrom(
-        userService.send('auth.logout', req.body || {}).pipe(timeout(5000)),
-      );
-      return res.status(200).json({
-        statusCode: 200,
-        message: 'Logout successful',
-        data: response,
-        meta: { timestamp: new Date().toISOString() },
-      });
-    } catch (err: any) {
-      return res.status(200).json({
-        statusCode: 200,
-        message: 'Logged out',
-      });
-    }
-  });
-
-  httpAdapter.get('/api/v1/users', async (req: any, res: any) => {
-    try {
-      const userService = app.get('USER_SERVICE');
-      const response = await firstValueFrom(userService.send('user.list', {}).pipe(timeout(5000)));
-      return res.status(200).json({
-        statusCode: 200,
-        message: 'Users retrieved successfully',
-        data: response,
-        meta: { timestamp: new Date().toISOString() },
-      });
-    } catch (err: any) {
-      return res.status(500).json({
-        statusCode: 500,
-        message: err?.message || 'Failed to retrieve users',
-      });
-    }
-  });
-
-  httpAdapter.patch('/api/v1/users/:id', async (req: any, res: any) => {
-    try {
-      const userService = app.get('USER_SERVICE');
-      const response = await firstValueFrom(
-        userService
-          .send('user.update.admin', { userId: req.params.id, ...(req.body || {}) })
-          .pipe(timeout(5000)),
-      );
-      return res.status(200).json({
-        statusCode: 200,
-        message: 'User updated successfully',
-        data: response,
-        meta: { timestamp: new Date().toISOString() },
-      });
-    } catch (err: any) {
-      return res.status(400).json({
-        statusCode: 400,
-        message: err?.message || 'Failed to update user',
-      });
-    }
-  });
-
-  httpAdapter.delete('/api/v1/users/:id', async (req: any, res: any) => {
-    try {
-      const userService = app.get('USER_SERVICE');
-      const response = await firstValueFrom(
-        userService.send('user.delete', { userId: req.params.id }).pipe(timeout(5000)),
-      );
-      return res.status(200).json({
-        statusCode: 200,
-        message: 'User deleted successfully',
-        data: response,
-        meta: { timestamp: new Date().toISOString() },
-      });
-    } catch (err: any) {
-      return res.status(400).json({
-        statusCode: 400,
-        message: err?.message || 'Failed to delete user',
-      });
-    }
   });
 
   // Get port from config
