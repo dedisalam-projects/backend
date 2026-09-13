@@ -607,5 +607,6 @@ When writing standalone initialization scripts (e.g. `scripts/seed.js`):
 2. **Database Alignment**: Ensure the target database name matches what the consuming microservice reads from (e.g. `user_db` instead of an arbitrary default).
 3. **Role Alignment**: Use strict enum values (e.g. `UserRole.SUPER_ADMIN = 'super_admin'`) instead of lower-privilege placeholders.
 4. **NPM Script Registration**: Always bind standalone seeders to `"seed"` in `package.json`.
+5. **Credential Parity & UI Alignment**: Ensure default credential conventions (`superadmin@example.com` with `Admin123!`, `admin@example.com` with `password123`) match across bootstrap hooks, standalone seeders, documentation, and development test UIs (`playground.html`).
 
 **Remember**: Backend patterns enable scalable, maintainable server-side applications. Choose patterns that fit your complexity level.
