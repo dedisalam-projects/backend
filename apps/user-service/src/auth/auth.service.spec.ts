@@ -108,10 +108,13 @@ describe('AuthService', () => {
           role: 'user',
         }),
       );
-      expect(mockNotificationClient.emit).toHaveBeenCalledWith('user.created', {
-        userId: 'new-u1',
-        name: 'New User',
-      });
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.created',
+        expect.objectContaining({
+          userId: 'new-u1',
+          name: 'New User',
+        }),
+      );
       expect(result.message).toBe('User registered successfully');
       expect(result.user.id).toBe('new-u1');
     });
@@ -439,12 +442,21 @@ describe('AuthService', () => {
           isActive: true,
         }),
       );
-      expect(mockNotificationClient.emit).toHaveBeenCalledWith('user.created', {
-        userId: 'u-new',
-        name: 'New Person',
-        email: 'new@b.com',
-        role: 'moderator',
-      });
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.created',
+        expect.objectContaining({
+          userId: 'u-new',
+          name: 'New Person',
+          email: 'new@b.com',
+          role: 'moderator',
+          user: expect.objectContaining({
+            id: 'u-new',
+            name: 'New Person',
+            email: 'new@b.com',
+            role: 'moderator',
+          }),
+        }),
+      );
       expect(result.id).toBe('u-new');
       expect(result.role).toBe('moderator');
     });
@@ -569,6 +581,18 @@ describe('AuthService', () => {
       );
       expect(result.id).toBe('u-target');
       expect(result.isActive).toBe(false);
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.updated',
+        expect.objectContaining({
+          userId: 'u-target',
+          changes: expect.objectContaining({
+            name: 'Updated Name',
+            role: 'admin',
+            isActive: false,
+          }),
+          timestamp: expect.any(String),
+        }),
+      );
     });
 
     it('should throw BadRequestException if user not found', async () => {
@@ -597,6 +621,14 @@ describe('AuthService', () => {
         { new: true },
       );
       expect(result.role).toBe('super_admin');
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.updated',
+        expect.objectContaining({
+          userId: 'u-target',
+          changes: { role: 'super_admin' },
+          timestamp: expect.any(String),
+        }),
+      );
     });
   });
 
@@ -617,6 +649,13 @@ describe('AuthService', () => {
 
       expect(mockUserModel.findByIdAndDelete).toHaveBeenCalledWith('u-del');
       expect(mockRedisService.set).toHaveBeenCalledWith('refresh_token:u-del', '', 1);
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'user.deleted',
+        expect.objectContaining({
+          userId: 'u-del',
+          timestamp: expect.any(String),
+        }),
+      );
       expect(result).toEqual({
         message: 'User deleted successfully',
         userId: 'u-del',
