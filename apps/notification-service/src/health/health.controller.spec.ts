@@ -45,7 +45,7 @@ describe('HealthController', () => {
     controller = module.get<HealthController>(HealthController);
   });
 
-  it('should execute health check indicators for mongodb and rabbitmq', async () => {
+  it('should execute health check indicators for mongodb and rabbitmq with ephemeral queueOptions', async () => {
     const result = await controller.check();
 
     expect(configService.get).toHaveBeenCalledWith('RABBITMQ_URL');
@@ -54,8 +54,22 @@ describe('HealthController', () => {
       transport: Transport.RMQ,
       options: {
         urls: ['amqp://guest:guest@localhost:5672'],
+        queueOptions: {
+          durable: false,
+          autoDelete: true,
+        },
       },
     });
     expect(result.status).toBe('ok');
+  });
+
+  it('should enforce durable: false and autoDelete: true to prevent RabbitMQ ghost queue leak', async () => {
+    await controller.check();
+
+    const rmqCall = rmqIndicator.pingCheck.mock.calls[0];
+    const rmqOptions = rmqCall[1].options;
+    expect(rmqOptions.queueOptions).toBeDefined();
+    expect(rmqOptions.queueOptions.durable).toBe(false);
+    expect(rmqOptions.queueOptions.autoDelete).toBe(true);
   });
 });

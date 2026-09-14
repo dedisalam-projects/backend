@@ -28,6 +28,10 @@ export class HealthController {
           transport: Transport.RMQ,
           options: {
             urls: [rabbitmqUrl],
+            queueOptions: {
+              durable: false,
+              autoDelete: true,
+            },
           },
         }),
     ]);
