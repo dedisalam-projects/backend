@@ -1,6 +1,6 @@
 ---
 name: realtime-socketio-crud-sync
-description: "Use when replacing REST APIs with Socket.IO WebSockets, building realtime admin dashboards, or synchronizing multi-client CRUD state via ack RPC and room broadcasts in NestJS."
+description: "Use when replacing REST APIs with Socket.IO WebSockets, building realtime admin dashboards, synchronizing multi-client CRUD state via ack RPC, or enforcing zero-REST pure realtime gateway architecture in NestJS."
 tier: local
 target-stacks: ["nestjs", "socket.io", "typescript", "redis"]
 metadata:
@@ -147,8 +147,37 @@ useEffect(() => {
 }, [queryClient]);
 ```
 
+### 5. Zero-REST Gateway Invariant & Anti-Pattern Guard
+To maintain an uncompromising pure realtime architecture, the API Gateway strictly disallows ad-hoc REST/HTTP fallback endpoints:
+- **Anti-Pattern:** When legacy frontend components fail with HTTP 404 on endpoints like `/api/v1/auth/login` or `/api/v1/users`, **NEVER** write REST compatibility routes (`httpAdapter.post()`) or mount HTTP body parsers (`express.json()`) in `main.ts` or controllers.
+- **Strict Invariant:** The API Gateway is purely a Socket.IO Realtime Engine. The only permitted HTTP routes are `GET /` (serving the static Playground UI) and `GET /health` (container liveness probe).
+- **Enforcement Rule:** If an HTTP client needs access, create a migration issue on the frontend repository and migrate the client component to the respective Socket.IO namespace via Ack RPC (`socket.emitWithAck(...)`). Never pollute the backend with REST bridges.
+
+### 6. Microservices Inter-Service Communication: RabbitMQ RPC vs Asynchronous Events
+Avoid confusing internal network transports when orchestrating NestJS microservices:
+1. **Synchronous Request-Response (RPC via RabbitMQ):**
+   Use `ClientProxy.send('pattern', payload).pipe(timeout(...))` for operations requiring immediate responses (e.g. `auth.login`, `user.list`). RabbitMQ implements synchronous request-reply using dynamic `replyTo` callback queues and `correlationId` tracking. No direct TCP or HTTP connections between microservices are required.
+2. **Asynchronous Event-Driven Pub/Sub (RabbitMQ Events):**
+   Use `ClientProxy.emit('event.name', payload)` for non-blocking notifications (`user.created`, `user.logged_in`, `user.deleted`). Pair with Dead Letter Exchanges (`x-dead-letter-exchange`) and DLQs to prevent poison message drops.
+3. **Passive TCP Listeners:**
+   In internal microservices, TCP listeners (e.g., ports 4000/3002) must be treated solely as passive socket probes for Docker/Kubernetes container health checks, never as data transport channels.
+
+### 7. Horizontal Cluster Scaling with Redis Adapter (`@socket.io/redis-adapter`)
+Because WebSocket connections are stateful and bound to a specific process memory, scaling the Gateway across multiple container instances requires a centralized event bus:
+```typescript
+const pubClient = new Redis(redisUrl);
+const subClient = pubClient.duplicate();
+const adapterConstructor = createAdapter(pubClient, subClient);
+server.adapter(adapterConstructor);
+```
+- **Cluster-Wide Broadcasts:** Messages emitted via `server.emit()` reach all connected users across all Gateway nodes.
+- **Distributed Rooms:** Calls to `server.to('user_<id>').emit(...)` find the target user regardless of which container node they are connected to.
+
 ## When to Use
 - When migrating an existing REST API Gateway to a pure Realtime Socket.IO backend.
+- When enforcing zero-REST pure realtime gateway architecture and rejecting HTTP fallback routes.
+- When orchestrating internal microservices between synchronous RabbitMQ RPC (`send`) and asynchronous events (`emit`).
+- When scaling Socket.IO gateways horizontally across multi-container clusters using Redis Pub/Sub adapters.
 - When building collaborative Admin Dashboards where multiple operators need instant live updates without polling.
 - When validating DTOs with `class-validator` over WebSockets while requiring structured `{ success, error }` Ack responses.
 - When serving multiple frontend subdomains with WebSocket authentication.
