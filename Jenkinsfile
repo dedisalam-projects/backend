@@ -204,9 +204,60 @@ pipeline {
         }
         success {
             echo '✅ Jenkins Pipeline Succeeded! All 7 Testing Matrix Layers passed 100%.'
+            script {
+                sendDiscordNotification('SUCCESS', '3066993', '✅ All 7 Testing Matrix Layers passed 100%!')
+            }
         }
         failure {
             echo '❌ Jenkins Pipeline Failed! Please check the stage logs for quality gate violations.'
+            script {
+                sendDiscordNotification('FAILURE', '15158332', '❌ Pipeline failed! Please check stage logs for quality gate violations.')
+            }
+        }
+        unstable {
+            echo '⚠️ Jenkins Pipeline Unstable! Quality gate warnings encountered.'
+            script {
+                sendDiscordNotification('UNSTABLE', '15105570', '⚠️ Pipeline unstable! Quality gate warnings encountered.')
+            }
         }
     }
 }
+
+def sendDiscordNotification(String status, String color, String summary) {
+    try {
+        withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK')]) {
+            def commitHash = sh(script: "git rev-parse --short HEAD 2>/dev/null || echo 'N/A'", returnStdout: true).trim()
+            def commitAuthor = sh(script: "git log -1 --pretty=format:'%an' 2>/dev/null || echo 'Jenkins'", returnStdout: true).trim()
+            def rawMsg = sh(script: "git log -1 --pretty=format:'%s' 2>/dev/null || echo 'No message'", returnStdout: true).trim()
+            def commitMsg = rawMsg.replace('\\', '\\\\').replace('"', '\\"').replace('\r', '').replace('\n', ' ')
+            def branch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: 'master'
+            def buildDuration = currentBuild.durationString.replace(' and counting', '')
+            def timestamp = java.time.Instant.now().toString()
+
+            def payload = """{
+  "embeds": [{
+    "title": "Jenkins Pipeline: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+    "url": "${env.BUILD_URL}",
+    "color": ${color},
+    "description": "${summary}",
+    "fields": [
+      { "name": "Status", "value": "${status}", "inline": true },
+      { "name": "Branch", "value": "`${branch}`", "inline": true },
+      { "name": "Duration", "value": "${buildDuration}", "inline": true },
+      { "name": "Author", "value": "${commitAuthor}", "inline": true },
+      { "name": "Commit", "value": "`${commitHash}`: ${commitMsg}", "inline": false }
+    ],
+    "footer": { "text": "Jenkins CI/CD Automation • Pure Realtime Backend" },
+    "timestamp": "${timestamp}"
+  }]
+}"""
+
+            sh(script: """
+                curl -s -f -X POST -H "Content-Type: application/json" -d '${payload}' "\$DISCORD_WEBHOOK" >/dev/null || true
+            """, returnStatus: true)
+        }
+    } catch (Exception e) {
+        echo "⚠️ Discord notification skipped or failed: ${e.message}"
+    }
+}
+
