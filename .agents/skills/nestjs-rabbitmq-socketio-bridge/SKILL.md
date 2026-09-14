@@ -24,10 +24,10 @@ export class NotificationGateway {
 }
 ```
 
-2. Bridge it in the Microservice Consumer:
+2. Bridge it in the Controller:
 ```typescript
-@Controller()
-export class NotificationConsumer {
+@Controller('api/v1/notifications')
+export class NotificationController {
   constructor(private readonly notificationGateway: NotificationGateway) {}
 
   @EventPattern('user.logged_in') // Listen to RabbitMQ

@@ -13,11 +13,14 @@ Because of this, if a user successfully logs in on `localhost:4002`, saving the 
 ## The Solution
 To successfully pass the token from the Auth app to the Dashboard app:
 
-1. **URL Token Passing:** Append the token as a query parameter when redirecting via `window.location.href`.
+1. **URL Token Passing via Environment Configuration:**
+   Append the token as a query parameter when redirecting via `window.location.href`, resolving the target dashboard origin dynamically from `environment.appUrls.dashboard`:
    ```typescript
-   // In Auth App (localhost:4002)
+   import { environment } from '../../../environments/environment';
+
+   // In Auth App (Dynamic dev vs prod)
    if (token) {
-       window.location.href = `http://localhost:4000/?token=${token}`;
+       window.location.href = `${environment.appUrls.dashboard}/?token=${encodeURIComponent(token)}`;
    }
    ```
 
@@ -32,9 +35,10 @@ const token = urlParams.get('token');
 ```
 **Why it fails:** Angular's router starts processing the URL early. Depending on the timing and redirects, `window.location.search` might be empty or stripped by the time the guard runs.
 
-**The Fix:** Always use the `ActivatedRouteSnapshot` provided by the guard parameters:
+**The Fix:** Always use the `ActivatedRouteSnapshot` provided by the guard parameters and resolve fallback redirects from `environment`:
 ```typescript
 import { CanActivateFn } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 export const authGuard: CanActivateFn = (route, state) => {
     if (typeof window !== 'undefined') {
@@ -52,8 +56,8 @@ export const authGuard: CanActivateFn = (route, state) => {
             return true;
         }
         
-        // Redirect back to auth app if no token
-        window.location.href = 'http://localhost:4002/';
+        // Redirect back to auth app dynamically via environment config
+        window.location.href = `${environment.appUrls.auth}/`;
         return false;
     }
     return false; // SSR fallback

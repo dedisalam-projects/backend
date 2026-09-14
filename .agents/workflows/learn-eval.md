@@ -103,19 +103,18 @@ The generated `description:` must start with `"Use when..."` and be enclosed in 
 - **Drop**: Show checklist results + reasoning only (no confirmation needed).
 
 7. Save / Absorb / Adopt to the determined location:
-   - **Save**: write `<location>/<pattern-name>/SKILL.md` (and sync to parent `../.agents/skills/` if applicable).
-   - **Absorb**: update the existing skill's `SKILL.md` (and sync to parent).
+   - **Save**: write `<location>/<pattern-name>/SKILL.md` AND immediately mirror to parent master catalog `../.agents/skills/<pattern-name>/SKILL.md` (mandatory upstream sync in monorepos).
+   - **Absorb**: update the existing skill's `SKILL.md` AND immediately sync back to parent `../.agents/skills/<name>/SKILL.md`.
    - **Adopt from Parent**: copy `../.agents/skills/<name>` to `.agents/skills/<name>`.
    - **Adopt to Global**: copy/promote verified stack-agnostic skill to `~/.gemini/config/skills/<name>`.
    - **Split & Promote Core**: write stack-agnostic core to `~/.gemini/config/skills/<name>-core/` and update local adapter in `.agents/skills/<name>/`.
 
-   ### 7b. Sibling Fan-Out Synchronization (Anti-Drift Guard)
+   ### 7b. Mandatory Multi-Tier Synchronization (Anti-Drift Guard)
    In a multi-project workspace (where sibling projects exist under the parent root, e.g. `../<sibling>/.agents/`):
-   - Whenever an existing shared workflow (e.g. `learn-eval.md`, `code-review.md`), shared rule (e.g. `typescript-coding-style.md`, `web-coding-style.md`), or shared skill (e.g. `workspace-repo-structure`) is updated or absorbed:
-     1. Enumerate all sibling projects under parent root (`../*/.agents/`).
-     2. Identify any sibling project that **already possesses** a customization file with the same relative path.
-     3. Automatically propagate the updated file to those sibling projects.
-     4. This guarantees zero customization drift across sibling repositories without polluting projects with unneeded stack rules.
+   - Whenever ANY new skill is saved, or an existing shared workflow (e.g. `learn-eval.md`, `code-review.md`), rule, or skill (e.g. `cross-port-auth`, `workspace-repo-structure`) is created, updated, or absorbed:
+     1. **Parent Catalog Mirror**: Always ensure the Parent Master Catalog (`../.agents/skills/` or `../.agents/rules/` or `../.agents/workflows/`) has the latest canonical copy.
+     2. **Sibling Fan-Out**: Enumerate all sibling projects under the parent root (`../*/.agents/`). Identify any sibling project that **already possesses** a customization file with the same relative path, and automatically propagate the updated file.
+     3. **Zero Customization Drift**: This guarantees that no sibling repository or upstream master catalog is left behind with divergent, un-synchronized, or deprecated instructions.
 
 8. **Verify discoverability after writing**:
    - Path format is `<name>/SKILL.md`

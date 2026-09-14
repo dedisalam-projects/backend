@@ -26,11 +26,28 @@ async function bootstrap() {
   );
   app.use(compression());
 
-  // Dynamic CORS for cross-subdomain frontend support
+  // Hardened Dynamic CORS with strict whitelist & cross-subdomain support
+  const allowedOriginPatterns = [
+    /^http:\/\/localhost:(3000|4000|4001|4002|4200)$/,
+    /^http:\/\/127\.0\.0\.1:(3000|4000|4001|4002|4200)$/,
+    /^https:\/\/([a-zA-Z0-9-]+\.)*dedisalam\.my\.id$/,
+  ];
+
   app.enableCors({
-    origin: (origin: any, callback: any) => {
-      // Allow all origins (subdomains, localhost, etc.)
-      callback(null, true);
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // Allow requests with no origin (e.g. mobile native apps, curl, server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+      const isAllowed = allowedOriginPatterns.some((pattern) => pattern.test(origin));
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      logger.warn(`[CORS Blocked] Unauthorized origin attempted cross-origin request: ${origin}`);
+      return callback(new Error(`Origin ${origin} is not allowed by CORS security policy`), false);
     },
     credentials: true,
   });
