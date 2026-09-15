@@ -134,7 +134,11 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
     // Wait 300ms for broadcast
     await new Promise((r) => setTimeout(r, 300));
     expect(liveCreatedData).toBeDefined();
-    expect(liveCreatedData.email).toBe(targetEmail);
+    if (liveCreatedData?.event) {
+      expect(liveCreatedData.event).toBe('USER_CREATED');
+    }
+    const createdPayload = liveCreatedData?.data || liveCreatedData;
+    expect(createdPayload.email).toBe(targetEmail);
   });
 
   it('Step 6: should broadcast user:updated event when user is modified', async () => {
@@ -151,7 +155,11 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
     expect(updateRes.success).toBe(true);
     await new Promise((r) => setTimeout(r, 300));
     expect(liveUpdatedData).toBeDefined();
-    expect(liveUpdatedData.name).toBe('Renamed Realtime User');
+    if (liveUpdatedData?.event) {
+      expect(liveUpdatedData.event).toBe('USER_UPDATED');
+    }
+    const updatedPayload = liveUpdatedData?.data || liveUpdatedData;
+    expect(updatedPayload.name).toBe('Renamed Realtime User');
   });
 
   it('Step 7: should broadcast user:deleted event when user is removed', async () => {
@@ -167,7 +175,11 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
     expect(deleteRes.success).toBe(true);
     await new Promise((r) => setTimeout(r, 300));
     expect(liveDeletedData).toBeDefined();
-    expect(liveDeletedData.userId).toBe(createdUserId);
+    if (liveDeletedData?.event) {
+      expect(liveDeletedData.event).toBe('USER_DELETED');
+    }
+    const deletedPayload = liveDeletedData?.data || liveDeletedData;
+    expect(deletedPayload.userId).toBe(createdUserId);
   });
 
   it('Step 8: should connect to /notifications namespace, list, and broadcast notifications', async () => {
