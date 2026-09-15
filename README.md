@@ -5,9 +5,14 @@ Welcome to the backend monorepo for the Dedisalam project. This repository is bu
 ## 🏗️ Architecture
 
 The backend utilizes a **Hybrid Microservices Architecture**:
-- **API Gateway**: Exposes RESTful APIs (documented via Swagger) and proxies requests to microservices using RabbitMQ.
-- **User Service**: Handles authentication, user management, and JWT generation. Uses Redis for stateful refresh token rotation.
-- **Notification Service**: Handles user notifications using MongoDB for persistence.
+- **API Gateway**: Exposes pure realtime Socket.IO gateways (`/auth`, `/users`, `/notifications`) alongside RESTful Auth endpoints under `/api/v1/auth` with wildcard `HttpOnly` cookie session management for multi-subdomain microfrontends.
+- **User Service**: Handles authentication, user management, and JWT generation. Uses Redis for stateful refresh token rotation and token revocation blacklisting.
+- **Notification Service**: Handles user notifications using MongoDB for persistence and real-time RabbitMQ event bridging.
+
+### 🔐 Authentication & Multi-Subdomain Session Management
+- **HttpOnly Cookies**: `accessToken` (15m, `Path=/`) and `refreshToken` (7d, `Path=/api/v1/auth`), with wildcard domain `.dedisalam.my.id` in production and host-only in local development.
+- **WebSocket Handshake Auth**: Automatically parses `accessToken` from `handshake.headers.cookie` or accepts `handshake.auth.token` / `Authorization: Bearer <token>`.
+- **Dual-Support Mode**: Allows seamless interoperability for browser micro-frontends, mobile (`frontend-android`), and desktop (`frontend-windows`).
 
 For a detailed view of the system architecture, please see the [Architecture Overview](docs/architecture/overview.md).
 

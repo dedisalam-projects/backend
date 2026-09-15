@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import { ConfigService } from '@nestjs/config';
 import { Transport } from '@nestjs/microservices';
 import * as path from 'path';
@@ -25,6 +26,7 @@ async function bootstrap() {
     }),
   );
   app.use(compression());
+  app.use(cookieParser());
 
   // Hardened Dynamic CORS with strict whitelist & cross-subdomain support
   const allowedOriginPatterns = [

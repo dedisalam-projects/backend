@@ -83,6 +83,13 @@ describe('UserGateway', () => {
       middleware({ handshake: { auth: { token: validToken } } }, next4);
       expect(next4).toHaveBeenCalledWith(expect.any(Error));
       expect(next4.mock.calls[0][0].message).toContain('Invalid or expired token');
+
+      // 5. Valid token via cookie
+      const next5 = jest.fn();
+      const client5: any = { handshake: { headers: { cookie: `accessToken=${validToken}` } } };
+      middleware(client5, next5);
+      expect(next5).toHaveBeenCalledWith();
+      expect(client5.data.user.email).toBe('u@test.com');
     });
   });
 
@@ -185,6 +192,45 @@ describe('UserGateway', () => {
       gateway.handleConnection(mockClient);
 
       expect(mockClient.data.user.email).toBe('query@test.com');
+    });
+
+    it('should accept connection when token is in handshake.headers.cookie', () => {
+      const token = jwt.sign(
+        { sub: 'user-cookie', email: 'cookie@test.com', role: 'user' },
+        jwtSecret,
+      );
+      const mockClient: any = {
+        id: 'client-cookie',
+        handshake: {
+          headers: { cookie: `accessToken=${token}; other=abc` },
+        },
+        data: {},
+        emit: jest.fn(),
+        disconnect: jest.fn(),
+      };
+
+      gateway.handleConnection(mockClient);
+
+      expect(mockClient.data.user.email).toBe('cookie@test.com');
+    });
+
+    it('should reject connection when cookie header lacks accessToken', () => {
+      const mockClient: any = {
+        id: 'client-no-token-cookie',
+        handshake: {
+          headers: { cookie: 'other=abc; session=123' },
+        },
+        emit: jest.fn(),
+        disconnect: jest.fn(),
+      };
+
+      gateway.handleConnection(mockClient);
+
+      expect(mockClient.emit).toHaveBeenCalledWith('exception', {
+        success: false,
+        error: { code: 'UNAUTHORIZED', message: 'Authentication token is required' },
+      });
+      expect(mockClient.disconnect).toHaveBeenCalledWith(true);
     });
 
     it('should reject connection when token is invalid', () => {

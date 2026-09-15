@@ -17,7 +17,8 @@
     "node-vault": "^0.12.0",
     "ioredis": "*",
     "jsonwebtoken": "^9.0.2",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "cookie": "^0.7.2"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.1.28",

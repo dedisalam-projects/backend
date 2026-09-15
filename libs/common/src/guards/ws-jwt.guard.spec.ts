@@ -140,6 +140,38 @@ describe('WsJwtGuard', () => {
     expect(() => guard.canActivate(context)).toThrow(WsException);
   });
 
+  it('should extract token from handshake.headers.cookie when accessToken cookie is present', () => {
+    reflector.getAllAndOverride.mockReturnValueOnce(false);
+    const token = jwt.sign({ sub: 'user-cookie-1' }, jwtSecret);
+    const client = {
+      handshake: { headers: { cookie: `other=123; accessToken=${token}; theme=dark` } },
+    };
+    const context = createMockContext(client);
+
+    expect(guard.canActivate(context)).toBe(true);
+    expect((client as any).data.user.sub).toBe('user-cookie-1');
+  });
+
+  it('should return null from extractToken if cookie header is present but lacks accessToken', () => {
+    reflector.getAllAndOverride.mockReturnValueOnce(false);
+    const client = {
+      handshake: { headers: { cookie: 'other=123; theme=dark' } },
+    };
+    const context = createMockContext(client);
+
+    expect(() => guard.canActivate(context)).toThrow(WsException);
+  });
+
+  it('should return null from extractToken if cookie header is not a string', () => {
+    reflector.getAllAndOverride.mockReturnValueOnce(false);
+    const client = {
+      handshake: { headers: { cookie: 12345 } },
+    };
+    const context = createMockContext(client);
+
+    expect(() => guard.canActivate(context)).toThrow(WsException);
+  });
+
   it('should throw WsException when token verification fails', () => {
     reflector.getAllAndOverride.mockReturnValueOnce(false);
     const client = {

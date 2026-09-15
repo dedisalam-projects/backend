@@ -84,6 +84,13 @@ describe('NotificationGateway', () => {
       middleware({ handshake: { auth: { token: validToken } } }, next4);
       expect(next4).toHaveBeenCalledWith(expect.any(Error));
       expect(next4.mock.calls[0][0].message).toContain('Invalid or expired token');
+
+      // 5. Valid token via cookie
+      const next5 = jest.fn();
+      const client5: any = { handshake: { headers: { cookie: `accessToken=${validToken}` } } };
+      middleware(client5, next5);
+      expect(next5).toHaveBeenCalledWith();
+      expect(client5.data.user.email).toBe('u@test.com');
     });
   });
 
@@ -182,6 +189,39 @@ describe('NotificationGateway', () => {
       gateway.handleConnection(mockClient);
 
       expect(mockClient.join).toHaveBeenCalledWith('user_u789');
+    });
+
+    it('should connect when token is in handshake headers cookie', () => {
+      const token = jwt.sign({ sub: 'u-cookie-notify', email: 'cookienotify@test.com' }, jwtSecret);
+      const mockClient: any = {
+        id: 'c-cookie',
+        handshake: { headers: { cookie: `accessToken=${token}; something=else` } },
+        join: jest.fn(),
+        emit: jest.fn(),
+        disconnect: jest.fn(),
+      };
+
+      gateway.handleConnection(mockClient);
+
+      expect(mockClient.join).toHaveBeenCalledWith('user_u-cookie-notify');
+    });
+
+    it('should reject connection when cookie header lacks accessToken', () => {
+      const mockClient: any = {
+        id: 'c-no-token-cookie',
+        handshake: { headers: { cookie: 'other=abc; session=123' } },
+        join: jest.fn(),
+        emit: jest.fn(),
+        disconnect: jest.fn(),
+      };
+
+      gateway.handleConnection(mockClient);
+
+      expect(mockClient.emit).toHaveBeenCalledWith('exception', {
+        success: false,
+        error: { code: 'UNAUTHORIZED', message: 'Authentication token is required' },
+      });
+      expect(mockClient.disconnect).toHaveBeenCalledWith(true);
     });
 
     it('should reject connection when token verification fails', () => {
