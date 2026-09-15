@@ -2,7 +2,6 @@ import { io, Socket } from 'socket.io-client';
 
 describe('Layer 7: Network Resilience & Chaos Recovery Suite', () => {
   const GATEWAY_URL = process.env['GATEWAY_URL'] || 'http://localhost:3000';
-  let authSocket: Socket;
   let accessToken: string;
   let refreshToken: string;
   let userId: string;
@@ -10,38 +9,41 @@ describe('Layer 7: Network Resilience & Chaos Recovery Suite', () => {
   const testPassword = 'Password123!';
 
   beforeAll(async () => {
-    authSocket = io(`${GATEWAY_URL}/auth`, {
-      transports: ['websocket', 'polling'],
-      forceNew: true,
-    });
-
-    await new Promise<void>((resolve, reject) => {
-      authSocket.on('connect', () => resolve());
-      authSocket.on('connect_error', (err) => reject(err));
-    });
-
     // Register test user
-    await authSocket.emitWithAck('auth:register', {
-      email: testEmail,
-      password: testPassword,
-      name: 'Resilience Tester',
-      role: 'admin',
+    await fetch(`${GATEWAY_URL}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: testEmail,
+        password: testPassword,
+        name: 'Resilience Tester',
+        role: 'admin',
+      }),
     });
 
     // Login
-    const loginRes: any = await authSocket.emitWithAck('auth:login', {
-      email: testEmail,
-      password: testPassword,
+    const loginRes = await fetch(`${GATEWAY_URL}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: testEmail,
+        password: testPassword,
+      }),
     });
 
-    accessToken = loginRes.data.accessToken;
-    refreshToken = loginRes.data.refreshToken;
-    userId = loginRes.data.user.id;
-  }, 10000);
+    const loginData: any = await loginRes.json();
+    userId = loginData.data?.user?.id || loginData.data?.id;
 
-  afterAll(() => {
-    if (authSocket && authSocket.connected) authSocket.disconnect();
-  });
+    const cookies = (loginRes.headers as any).getSetCookie
+      ? (loginRes.headers as any).getSetCookie()
+      : [loginRes.headers.get('set-cookie') || ''];
+    for (const c of cookies) {
+      const accessMatch = c.match(/accessToken=([^;]+)/);
+      if (accessMatch) accessToken = accessMatch[1];
+      const refreshMatch = c.match(/refreshToken=([^;]+)/);
+      if (refreshMatch) refreshToken = refreshMatch[1];
+    }
+  }, 10000);
 
   it('Resilience 1: should gracefully recover and execute RPCs after abrupt client disconnect and reconnect', async () => {
     const userSocket = io(`${GATEWAY_URL}/users`, {
@@ -77,19 +79,37 @@ describe('Layer 7: Network Resilience & Chaos Recovery Suite', () => {
     userSocket.disconnect();
   });
 
-  it('Resilience 2: should seamlessly refresh expired/invalid tokens via auth:refresh and reconnect', async () => {
+  it('Resilience 2: should seamlessly refresh expired/invalid tokens via POST /api/v1/auth/refresh and reconnect', async () => {
     // Wait 1s so JWT issued-at (iat in seconds) advances
     await new Promise((r) => setTimeout(r, 1100));
 
-    // 1. Send auth:refresh request
-    const refreshRes: any = await authSocket.emitWithAck('auth:refresh', {
-      userId,
-      refreshToken,
+    // 1. Send REST refresh request with Cookie header
+    const refreshRes = await fetch(`${GATEWAY_URL}/api/v1/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `refreshToken=${refreshToken}; accessToken=${accessToken}`,
+      },
+      body: JSON.stringify({
+        userId,
+        refreshToken,
+      }),
     });
 
-    expect(refreshRes.success).toBe(true);
-    expect(refreshRes.data.accessToken).toBeDefined();
-    const newAccessToken = refreshRes.data.accessToken;
+    expect(refreshRes.status).toBe(201);
+    const refreshJson: any = await refreshRes.json();
+    expect(refreshJson.success).toBe(true);
+
+    const refreshCookies = (refreshRes.headers as any).getSetCookie
+      ? (refreshRes.headers as any).getSetCookie()
+      : [refreshRes.headers.get('set-cookie') || ''];
+    let newAccessToken = '';
+    for (const c of refreshCookies) {
+      const match = c.match(/accessToken=([^;]+)/);
+      if (match) newAccessToken = match[1];
+    }
+
+    expect(newAccessToken).toBeTruthy();
     expect(newAccessToken).not.toBe(accessToken);
 
     // 2. Connect to /users with fresh token

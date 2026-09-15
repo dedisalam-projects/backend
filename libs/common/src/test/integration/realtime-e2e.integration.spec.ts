@@ -2,7 +2,6 @@ import { io, Socket } from 'socket.io-client';
 
 describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
   const GATEWAY_URL = process.env['GATEWAY_URL'] || 'http://localhost:3000';
-  let authSocket: Socket;
   let adminSocket1: Socket;
   let adminSocket2: Socket;
   let notificationSocket: Socket;
@@ -11,54 +10,67 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
   const testPassword = 'StrongPassword123!';
   let createdUserId: string;
 
-  beforeAll((done) => {
-    authSocket = io(`${GATEWAY_URL}/auth`, {
-      transports: ['websocket', 'polling'],
-      forceNew: true,
-    });
-    authSocket.on('connect', () => done());
-    authSocket.on('connect_error', (err) => done(err));
-  }, 10000);
-
   afterAll(() => {
-    if (authSocket && authSocket.connected) authSocket.disconnect();
     if (adminSocket1 && adminSocket1.connected) adminSocket1.disconnect();
     if (adminSocket2 && adminSocket2.connected) adminSocket2.disconnect();
     if (notificationSocket && notificationSocket.connected) notificationSocket.disconnect();
   });
 
-  it('Step 1: should reject invalid registration DTO with VALIDATION_ERROR over Socket.IO', async () => {
-    const res: any = await authSocket.emitWithAck('auth:register', {
-      email: 'invalid-email-format',
-      password: '123',
-      name: 'X',
+  it('Step 1: should reject invalid registration DTO with Bad Request over REST', async () => {
+    const res = await fetch(`${GATEWAY_URL}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'invalid-email-format',
+        password: '123',
+        name: 'X',
+      }),
     });
 
-    expect(res).toBeDefined();
-    expect(res.success).toBe(false);
-    expect(res.error?.code).toBe('VALIDATION_ERROR');
+    expect(res.status).toBe(400);
+    const json: any = await res.json();
+    expect(json.message).toBeDefined();
   });
 
-  it('Step 2: should register and login admin user successfully over /auth', async () => {
-    const registerRes: any = await authSocket.emitWithAck('auth:register', {
-      email: testEmail,
-      password: testPassword,
-      name: 'Integration Admin',
-      role: 'admin',
+  it('Step 2: should register and login admin user successfully over REST and set HttpOnly cookies', async () => {
+    const registerRes = await fetch(`${GATEWAY_URL}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: testEmail,
+        password: testPassword,
+        name: 'Integration Admin',
+        role: 'admin',
+      }),
     });
 
-    expect(registerRes).toBeDefined();
-    expect(registerRes.success).toBe(true);
+    expect(registerRes.status).toBe(201);
+    const regJson: any = await registerRes.json();
+    expect(regJson.success).toBe(true);
 
-    const loginRes: any = await authSocket.emitWithAck('auth:login', {
-      email: testEmail,
-      password: testPassword,
+    const loginRes = await fetch(`${GATEWAY_URL}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: testEmail,
+        password: testPassword,
+      }),
     });
 
-    expect(loginRes).toBeDefined();
-    expect(loginRes.success).toBe(true);
-    expect(loginRes.data?.accessToken).toBeDefined();
-    adminToken = loginRes.data.accessToken;
+    expect(loginRes.status).toBe(201);
+    const loginJson: any = await loginRes.json();
+    expect(loginJson.success).toBe(true);
+
+    const cookies = (loginRes.headers as any).getSetCookie
+      ? (loginRes.headers as any).getSetCookie()
+      : [loginRes.headers.get('set-cookie') || ''];
+    let extractedToken = '';
+    for (const c of cookies) {
+      const match = c.match(/accessToken=([^;]+)/);
+      if (match) extractedToken = match[1];
+    }
+    expect(extractedToken).toBeTruthy();
+    adminToken = extractedToken;
   });
 
   it('Step 3: should authenticate handshake to /users namespace with Bearer token', (done) => {

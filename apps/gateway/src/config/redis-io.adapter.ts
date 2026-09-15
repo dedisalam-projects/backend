@@ -25,14 +25,24 @@ export class RedisIoAdapter extends IoAdapter {
     port: number,
     options?: ServerOptions,
   ): ReturnType<IoAdapter['createIOServer']> {
+    const allowedOriginPatterns = [
+      /^https?:\/\/([a-zA-Z0-9-]+\.)*localhost:(3000|4000|4001|4002|4200)$/,
+      /^https?:\/\/127\.0\.0\.1:(3000|4000|4001|4002|4200)$/,
+      /^https:\/\/([a-zA-Z0-9-]+\.)*dedisalam\.my\.id$/,
+    ];
+
     const serverOptions = {
       ...options,
       cors: {
         origin: (origin: any, callback: any) => {
           // Allow requests with no origin (like mobile apps, server-to-server)
           if (!origin) return callback(null, true);
-          // Allow all subdomains of any domain and localhost
-          return callback(null, true);
+          const isAllowed = allowedOriginPatterns.some((pattern) => pattern.test(origin));
+          if (isAllowed) return callback(null, true);
+          return callback(
+            new Error(`Origin ${origin} is not allowed by CORS security policy`),
+            false,
+          );
         },
         credentials: true,
         methods: ['GET', 'POST'],

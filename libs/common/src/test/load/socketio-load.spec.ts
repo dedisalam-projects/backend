@@ -5,22 +5,33 @@ describe('Layer 6: Realtime WebSocket & Socket.IO Concurrency Load Suite', () =>
   let adminToken: string;
 
   beforeAll(async () => {
-    const authSocket = io(`${GATEWAY_URL}/auth`, { transports: ['websocket', 'polling'] });
-    await new Promise<void>((resolve) => authSocket.on('connect', () => resolve()));
-
     const email = `load_admin_${Date.now()}@example.com`;
     const password = 'Password123!';
 
-    await authSocket.emitWithAck('auth:register', {
-      email,
-      password,
-      name: 'Load Test Admin',
-      role: 'admin',
+    await fetch(`${GATEWAY_URL}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        name: 'Load Test Admin',
+        role: 'admin',
+      }),
     });
 
-    const loginRes: any = await authSocket.emitWithAck('auth:login', { email, password });
-    adminToken = loginRes.data.accessToken;
-    authSocket.disconnect();
+    const loginRes = await fetch(`${GATEWAY_URL}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const cookies = (loginRes.headers as any).getSetCookie
+      ? (loginRes.headers as any).getSetCookie()
+      : [loginRes.headers.get('set-cookie') || ''];
+    for (const c of cookies) {
+      const match = c.match(/accessToken=([^;]+)/);
+      if (match) adminToken = match[1];
+    }
   }, 10000);
 
   it('Load 1: should sustain 30 concurrent socket handshakes with 100% success rate', async () => {

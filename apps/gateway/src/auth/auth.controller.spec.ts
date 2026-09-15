@@ -56,7 +56,9 @@ describe('AuthController', () => {
       const result = await controller.login(loginDto, mockResponse);
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(authResult);
+      expect(result.data).toEqual({ user: { id: 'u1', email: 'test@example.com' } });
+      expect(result.data.accessToken).toBeUndefined();
+      expect(result.data.refreshToken).toBeUndefined();
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         'accessToken',
         'access-token-123',
@@ -135,6 +137,14 @@ describe('AuthController', () => {
       mockUserService.send.mockReturnValue(of({ user: { id: 'u1' } }));
       const result = await controller.login({ email: 't@t.com', password: 'p' }, mockResponse);
       expect(result.success).toBe(true);
+      expect(mockResponse.cookie).not.toHaveBeenCalled();
+    });
+
+    it('should handle nullish response gracefully in login', async () => {
+      mockUserService.send.mockReturnValue(of(null));
+      const result = await controller.login({ email: 't@t.com', password: 'p' }, mockResponse);
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({});
       expect(mockResponse.cookie).not.toHaveBeenCalled();
     });
 
@@ -231,7 +241,9 @@ describe('AuthController', () => {
       const result = await controller.refresh(req, body, mockResponse);
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(refreshResult);
+      expect(result.data).toEqual({});
+      expect(result.data.accessToken).toBeUndefined();
+      expect(result.data.refreshToken).toBeUndefined();
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         'accessToken',
         'new-access-token',
@@ -316,6 +328,23 @@ describe('AuthController', () => {
       await expect(controller.refresh(req, { userId: 'u1' }, mockResponse)).rejects.toThrow(
         HttpException,
       );
+    });
+
+    it('should handle nullish response gracefully in refresh', async () => {
+      const req: any = {
+        cookies: {
+          refreshToken: 'cookie-refresh-token',
+        },
+        headers: {},
+      };
+      const body = { userId: 'u123' };
+      mockUserService.send.mockReturnValue(of(null));
+
+      const result = await controller.refresh(req, body, mockResponse);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({});
+      expect(mockResponse.cookie).not.toHaveBeenCalled();
     });
   });
 
