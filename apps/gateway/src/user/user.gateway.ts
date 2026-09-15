@@ -17,12 +17,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
 import * as cookie from 'cookie';
-import {
-  AdminCreateUserDto,
-  AdminUpdateUserDto,
-  UserPaginationQueryDto,
-  WsExceptionFilter,
-} from '@dedisalam/common';
+import { AdminCreateUserDto, AdminUpdateUserDto, WsExceptionFilter } from '@dedisalam/common';
 
 @WebSocketGateway({
   namespace: '/users',
@@ -188,22 +183,6 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     };
   }
 
-  @SubscribeMessage('admin:users:list')
-  async handleAdminListUsers(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() query: UserPaginationQueryDto,
-  ) {
-    this.checkAdmin(client);
-    const response = await firstValueFrom(
-      this.userService.send('user.list.paginated', query || {}).pipe(timeout(5000)),
-    );
-    return {
-      success: true,
-      data: response,
-      meta: { timestamp: new Date().toISOString() },
-    };
-  }
-
   @SubscribeMessage('admin:users:create')
   async handleAdminCreateUser(
     @ConnectedSocket() client: Socket,
@@ -215,7 +194,10 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     );
 
     // Live broadcast to all connected admin dashboards in the 'admin:users' room
-    this.server.to('admin:users').emit('user:created', response);
+    this.server.to('admin:users').emit('user:created', {
+      event: 'USER_CREATED',
+      data: response,
+    });
     this.logger.log(`Broadcasted user:created event for user ${response.email} to admin:users`);
 
     return {
@@ -236,7 +218,10 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     );
 
     // Live broadcast update to all connected admins
-    this.server.to('admin:users').emit('user:updated', response);
+    this.server.to('admin:users').emit('user:updated', {
+      event: 'USER_UPDATED',
+      data: response,
+    });
     this.logger.log(`Broadcasted user:updated event for user ${response.id} to admin:users`);
 
     return {
@@ -260,7 +245,10 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     );
 
     // Live broadcast deletion to all connected admins
-    this.server.to('admin:users').emit('user:deleted', { userId: body.userId });
+    this.server.to('admin:users').emit('user:deleted', {
+      event: 'USER_DELETED',
+      data: { userId: body.userId },
+    });
     this.logger.log(`Broadcasted user:deleted event for user ${body.userId} to admin:users`);
 
     return {

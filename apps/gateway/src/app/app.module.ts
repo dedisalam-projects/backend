@@ -8,11 +8,13 @@ import Redis from 'ioredis';
 
 import { AppService } from './app.service';
 import { validate } from '../config/gateway.config';
-import { vaultLoader } from '@dedisalam/common';
+import { vaultLoader, JwtStrategy } from '@dedisalam/common';
 import { AuthController } from '../auth/auth.controller';
+import { UserController } from '../user/user.controller';
 import { UserGateway } from '../user/user.gateway';
 import { NotificationGateway } from '../notification/notification.gateway';
 import { NotificationConsumer } from '../notification/notification.consumer';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
@@ -90,12 +92,14 @@ import { NotificationConsumer } from '../notification/notification.consumer';
       }),
       inject: [ConfigService],
     }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
-  controllers: [NotificationConsumer, AuthController],
+  controllers: [NotificationConsumer, AuthController, UserController],
   providers: [
     AppService,
     UserGateway,
     NotificationGateway,
+    JwtStrategy,
     {
       provide: 'REDIS_CLIENT',
       useFactory: (configService: ConfigService) => {

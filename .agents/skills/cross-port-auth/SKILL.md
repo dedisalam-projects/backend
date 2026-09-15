@@ -57,6 +57,26 @@ window.location.href = `${environment.appUrls.dashboard}/`;
 
 ---
 
+## Anti-Pattern Warning: WebSocket Authentication Events (`auth:login`) Cannot Issue HttpOnly Cookies
+
+Emitting login, token refresh, or logout events over WebSocket / Socket.IO (e.g., `socket.emit('auth:login')`) cannot set `HttpOnly` cookies due to protocol constraints:
+1. **HTTP-Level Exclusivity**: The `Set-Cookie: ...; HttpOnly` header is exclusively an HTTP response header. WebSocket frames (TCP frames post-upgrade) have no HTTP header mechanism.
+2. **Forced Client Token Storage**: Because WebSocket event callbacks only return JSON payloads (`{ accessToken: "..." }`), client applications are forced to persist JWTs in `localStorage` or `document.cookie`, completely defeating XSS mitigation and violating OWASP guidelines.
+
+---
+
+## The Hybrid Architecture Standard: HTTP REST Lifecycle + Socket.IO Handshake
+
+To achieve maximum security (OWASP Gold Standard) alongside high-performance realtime communication:
+
+| Responsibility | Protocol | Endpoints / Mechanisms | Security & Role |
+| :--- | :--- | :--- | :--- |
+| **Session Lifecycle (Login, Refresh, Logout)** | **HTTP REST** | `POST /api/v1/auth/login`<br>`POST /api/v1/auth/refresh`<br>`POST /api/v1/auth/logout` | Server issues and clears `Set-Cookie: accessToken=...; HttpOnly; SameSite=Lax`. Client JavaScript never touches raw JWTs. |
+| **Data & Realtime Operations** | **Socket.IO** | Namespaces (`/users`, `/notifications`) with Ack RPC (`admin:users:*`) | Client connects with `{ withCredentials: true }`. The browser automatically transmits the HttpOnly `accessToken` cookie during the HTTP upgrade handshake (`handshake.headers.cookie`). |
+| **UI State Display** | **Non-Sensitive Cookie** | `user_session` cookie (`name`, `email`, `role`) | Allows micro-frontends across ports/subdomains to display user greeting and avatar without exposing sensitive secrets to XSS. |
+
+---
+
 ## Anti-Pattern Warning: URL Token Passing (`?token=...`)
 
 Passing tokens via URL query parameters (`window.location.href = `${dashboard}/?token=${token}`) is an anti-pattern. While often used as a quick localhost development hack, it introduces critical bugs:

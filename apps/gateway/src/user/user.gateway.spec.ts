@@ -359,33 +359,13 @@ describe('UserGateway', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should allow handleAdminListUsers with query', async () => {
+    it('should allow admin when user.roles is a single string', async () => {
       const mockClient: any = {
-        data: { user: { sub: 'a1', roles: 'admin' } },
+        data: { user: { sub: 'a3', email: 'admin2@test.com', roles: 'admin' } },
+        join: jest.fn(),
       };
-      const listData = { items: [], meta: { total: 0 } };
-      mockUserService.send.mockReturnValueOnce(of(listData));
 
-      const result = await gateway.handleAdminListUsers(mockClient, { page: 1, limit: 10 } as any);
-
-      expect(mockUserService.send).toHaveBeenCalledWith('user.list.paginated', {
-        page: 1,
-        limit: 10,
-      });
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual(listData);
-    });
-
-    it('should handleAdminListUsers without query passing empty object', async () => {
-      const mockClient: any = {
-        data: { user: { sub: 'a1', roles: 'admin' } },
-      };
-      const listData = { items: [], meta: { total: 0 } };
-      mockUserService.send.mockReturnValueOnce(of(listData));
-
-      const result = await gateway.handleAdminListUsers(mockClient, undefined as any);
-
-      expect(mockUserService.send).toHaveBeenCalledWith('user.list.paginated', {});
+      const result = await gateway.handleAdminJoin(mockClient);
       expect(result.success).toBe(true);
     });
 
@@ -401,7 +381,10 @@ describe('UserGateway', () => {
 
       expect(mockUserService.send).toHaveBeenCalledWith('user.create', createDto);
       expect(mockServer.to).toHaveBeenCalledWith('admin:users');
-      expect(mockToEmit).toHaveBeenCalledWith('user:created', newUser);
+      expect(mockToEmit).toHaveBeenCalledWith('user:created', {
+        event: 'USER_CREATED',
+        data: newUser,
+      });
       expect(result.success).toBe(true);
       expect(result.data).toEqual(newUser);
     });
@@ -418,7 +401,10 @@ describe('UserGateway', () => {
 
       expect(mockUserService.send).toHaveBeenCalledWith('user.update.admin', updateDto);
       expect(mockServer.to).toHaveBeenCalledWith('admin:users');
-      expect(mockToEmit).toHaveBeenCalledWith('user:updated', updatedUser);
+      expect(mockToEmit).toHaveBeenCalledWith('user:updated', {
+        event: 'USER_UPDATED',
+        data: updatedUser,
+      });
       expect(result.success).toBe(true);
       expect(result.data).toEqual(updatedUser);
     });
@@ -442,7 +428,10 @@ describe('UserGateway', () => {
 
       expect(mockUserService.send).toHaveBeenCalledWith('user.delete', { userId: 'del-u' });
       expect(mockServer.to).toHaveBeenCalledWith('admin:users');
-      expect(mockToEmit).toHaveBeenCalledWith('user:deleted', { userId: 'del-u' });
+      expect(mockToEmit).toHaveBeenCalledWith('user:deleted', {
+        event: 'USER_DELETED',
+        data: { userId: 'del-u' },
+      });
       expect(result.success).toBe(true);
     });
   });

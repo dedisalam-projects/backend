@@ -158,30 +158,10 @@ Semua pemanggilan fungsi menggunakan pola `emitWithAck` mengembalikan envelope s
 - **Akses**: Khusus role `admin` atau `super_admin`.
 - **Fungsi**: Mendaftarkan socket admin ke room `admin:users` untuk menerima live update sinkronisasi data user.
 
-#### 4. `admin:users:list`
-- **Tipe**: Request-Response (Ack RPC)
-- **Akses**: Khusus role `admin` atau `super_admin`.
-- **Payload**:
-  ```json
-  {
-    "page": 1,
-    "limit": 10,
-    "search": "john",
-    "role": "admin"
-  }
-  ```
-- **Acknowledge Data**:
-  ```json
-  {
-    "items": [ ... ],
-    "meta": {
-      "total": 45,
-      "page": 1,
-      "limit": 10,
-      "totalPages": 5
-    }
-  }
-  ```
+#### 4. `admin:users:list` *(DEPRECATED / REMOVED)*
+> **Catatan Arsitektur Hibrid**: Handler RPC `admin:users:list` telah dihapus untuk mencegah race condition pada initial load. Silakan gunakan REST API:
+> **`GET /api/v1/users?page=1&limit=10&search=keyword&role=admin`**
+> Dilindungi oleh HttpOnly Cookie JWT / Bearer Token dan RBAC (`admin`, `super_admin`).
 
 #### 5. `admin:users:create`
 - **Tipe**: Request-Response (Ack RPC) + Live Broadcast
@@ -195,7 +175,7 @@ Semua pemanggilan fungsi menggunakan pola `emitWithAck` mengembalikan envelope s
     "role": "user"
   }
   ```
-- **Efek Realtime**: Server otomatis membroadcast event `user:created` ke seluruh admin di room `admin:users`.
+- **Efek Realtime**: Server otomatis membroadcast event `user:created` ke seluruh admin di room `admin:users` dengan standardized payload `{ event: "USER_CREATED", data: { ... } }`.
 
 #### 6. `admin:users:update`
 - **Tipe**: Request-Response (Ack RPC) + Live Broadcast
@@ -208,7 +188,7 @@ Semua pemanggilan fungsi menggunakan pola `emitWithAck` mengembalikan envelope s
     "isActive": true
   }
   ```
-- **Efek Realtime**: Membroadcast event `user:updated` ke room `admin:users`.
+- **Efek Realtime**: Membroadcast event `user:updated` ke room `admin:users` dengan standardized payload `{ event: "USER_UPDATED", data: { ... } }`.
 
 #### 7. `admin:users:delete`
 - **Tipe**: Request-Response (Ack RPC) + Live Broadcast
@@ -218,7 +198,7 @@ Semua pemanggilan fungsi menggunakan pola `emitWithAck` mengembalikan envelope s
     "userId": "65b..."
   }
   ```
-- **Efek Realtime**: Membroadcast event `user:deleted` ke room `admin:users`.
+- **Efek Realtime**: Membroadcast event `user:deleted` ke room `admin:users` dengan standardized payload `{ event: "USER_DELETED", data: { userId: "65b..." } }`.
 
 ---
 
