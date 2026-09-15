@@ -3,7 +3,6 @@ import * as jwt from 'jsonwebtoken';
 
 describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () => {
   const GATEWAY_URL = process.env['GATEWAY_URL'] || 'http://localhost:3000';
-  let authSocket: Socket;
   let userToken: string;
   let adminToken: string;
   let userSocket: Socket;
@@ -13,41 +12,53 @@ describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () =
   const password = 'StrongPassword123!';
 
   beforeAll(async () => {
-    authSocket = io(`${GATEWAY_URL}/auth`, {
-      transports: ['websocket', 'polling'],
-      forceNew: true,
-    });
-
-    await new Promise<void>((resolve, reject) => {
-      authSocket.on('connect', () => resolve());
-      authSocket.on('connect_error', (err) => reject(err));
-    });
-
     // 1. Create and authenticate normal user
-    await authSocket.emitWithAck('auth:register', {
-      email: normalEmail,
-      password,
-      name: 'Regular Security User',
-      role: 'user',
+    await fetch(`${GATEWAY_URL}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: normalEmail,
+        password,
+        name: 'Regular Security User',
+        role: 'user',
+      }),
     });
-    const userLogin: any = await authSocket.emitWithAck('auth:login', {
-      email: normalEmail,
-      password,
+    const userLoginRes = await fetch(`${GATEWAY_URL}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: normalEmail, password }),
     });
-    userToken = userLogin.data.accessToken;
+    const userCookies = (userLoginRes.headers as any).getSetCookie
+      ? (userLoginRes.headers as any).getSetCookie()
+      : [userLoginRes.headers.get('set-cookie') || ''];
+    for (const c of userCookies) {
+      const match = c.match(/accessToken=([^;]+)/);
+      if (match) userToken = match[1];
+    }
 
     // 2. Create and authenticate admin user
-    await authSocket.emitWithAck('auth:register', {
-      email: adminEmail,
-      password,
-      name: 'Admin Security User',
-      role: 'admin',
+    await fetch(`${GATEWAY_URL}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: adminEmail,
+        password,
+        name: 'Admin Security User',
+        role: 'admin',
+      }),
     });
-    const adminLogin: any = await authSocket.emitWithAck('auth:login', {
-      email: adminEmail,
-      password,
+    const adminLoginRes = await fetch(`${GATEWAY_URL}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: adminEmail, password }),
     });
-    adminToken = adminLogin.data.accessToken;
+    const adminCookies = (adminLoginRes.headers as any).getSetCookie
+      ? (adminLoginRes.headers as any).getSetCookie()
+      : [adminLoginRes.headers.get('set-cookie') || ''];
+    for (const c of adminCookies) {
+      const match = c.match(/accessToken=([^;]+)/);
+      if (match) adminToken = match[1];
+    }
 
     // Connect user socket to /users
     userSocket = io(`${GATEWAY_URL}/users`, {
@@ -63,7 +74,6 @@ describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () =
   }, 10000);
 
   afterAll(() => {
-    if (authSocket && authSocket.connected) authSocket.disconnect();
     if (userSocket && userSocket.connected) userSocket.disconnect();
   });
 

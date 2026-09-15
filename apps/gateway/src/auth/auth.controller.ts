@@ -69,8 +69,7 @@ export class AuthController {
         this.userService.send('auth.login', body).pipe(timeout(5000)),
       );
 
-      const accessToken = response?.accessToken;
-      const refreshToken = response?.refreshToken;
+      const { accessToken, refreshToken, ...sanitizedData } = response || {};
       const refreshPath = this.getRefreshCookiePath();
 
       if (accessToken) {
@@ -86,7 +85,7 @@ export class AuthController {
 
       return {
         success: true,
-        data: response,
+        data: sanitizedData,
         message: 'Login successful',
         meta: { timestamp: new Date().toISOString() },
       };
@@ -144,8 +143,11 @@ export class AuthController {
         this.userService.send('auth.refresh', { userId, refreshToken }).pipe(timeout(5000)),
       );
 
-      const newAccessToken = response?.accessToken;
-      const newRefreshToken = response?.refreshToken;
+      const {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        ...sanitizedData
+      } = response || {};
       const refreshPath = this.getRefreshCookiePath();
 
       if (newAccessToken) {
@@ -161,7 +163,7 @@ export class AuthController {
 
       return {
         success: true,
-        data: response,
+        data: sanitizedData,
         message: 'Token refreshed successfully',
         meta: { timestamp: new Date().toISOString() },
       };

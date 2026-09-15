@@ -77,6 +77,11 @@ describe('RedisIoAdapter', () => {
       const callbackWithOrigin = jest.fn();
       passedOptions.cors.origin('https://admin.localhost:3000', callbackWithOrigin);
       expect(callbackWithOrigin).toHaveBeenCalledWith(null, true);
+
+      // Test with disallowed origin
+      const callbackDisallowed = jest.fn();
+      passedOptions.cors.origin('https://disallowed.com', callbackDisallowed);
+      expect(callbackDisallowed).toHaveBeenCalledWith(expect.any(Error), false);
     });
   });
 });

@@ -3,39 +3,39 @@ import { io, Socket } from 'socket.io-client';
 describe('Soak & Memory Leak Verification Suite', () => {
   const GATEWAY_URL = process.env['GATEWAY_URL'] || 'http://localhost:3000';
   let token: string;
-  let authSocket: Socket;
 
   const email = `soak_${Date.now()}@example.com`;
   const password = 'SoakPassword123!';
 
   beforeAll(async () => {
-    authSocket = io(`${GATEWAY_URL}/auth`, {
-      transports: ['websocket', 'polling'],
-      forceNew: true,
+    await fetch(`${GATEWAY_URL}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        name: 'Soak Test User',
+        role: 'user',
+      }),
     });
 
-    await new Promise<void>((resolve, reject) => {
-      authSocket.on('connect', () => resolve());
-      authSocket.on('connect_error', (err) => reject(err));
+    const loginRes = await fetch(`${GATEWAY_URL}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     });
 
-    await authSocket.emitWithAck('auth:register', {
-      email,
-      password,
-      name: 'Soak Test User',
-      role: 'user',
-    });
-
-    const loginRes: any = await authSocket.emitWithAck('auth:login', {
-      email,
-      password,
-    });
-    token = loginRes.data.accessToken;
+    const cookies = (loginRes.headers as any).getSetCookie
+      ? (loginRes.headers as any).getSetCookie()
+      : [loginRes.headers.get('set-cookie') || ''];
+    for (const c of cookies) {
+      const match = c.match(/accessToken=([^;]+)/);
+      if (match) token = match[1];
+    }
   }, 15000);
-
-  afterAll(() => {
-    if (authSocket && authSocket.connected) authSocket.disconnect();
-  });
 
   describe('Connect-RPC-Disconnect Heap & Resource Drain', () => {
     it('should complete 100 consecutive connection cycles without heap runaway or listener leaks', async () => {

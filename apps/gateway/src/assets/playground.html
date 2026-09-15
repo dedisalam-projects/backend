@@ -290,7 +290,7 @@
       <h1>Socket.IO Admin & Client Playground</h1>
     </div>
     <div class="session-info">
-      <div><span id="authDot" class="status-dot"></span>/auth: <strong id="authStatus">Disconnected</strong></div>
+      <div><span id="authDot" class="status-dot online"></span>REST Auth: <strong id="authStatus">HttpOnly Cookies</strong></div>
       <div><span id="usersDot" class="status-dot"></span>/users: <strong id="usersStatus">Disconnected</strong></div>
       <div><span id="notifDot" class="status-dot"></span>/notifications: <strong id="notifStatus">Disconnected</strong></div>
       <div id="activeUserBadge" style="display: none; padding: 4px 10px; background: rgba(99,102,241,0.2); border-radius: 6px; border: 1px solid var(--primary);">
@@ -305,7 +305,7 @@
       <!-- AUTH CARD -->
       <div class="card">
         <div class="card-title">
-          <span>🔐 Authentication (/auth)</span>
+          <span>🔐 Authentication (REST /api/v1/auth)</span>
         </div>
         <div class="form-group">
           <label>Email</label>
@@ -328,9 +328,9 @@
           </select>
         </div>
         <div class="actions-row">
-          <button class="btn" onclick="handleLogin()">Login (emitWithAck)</button>
-          <button class="btn btn-secondary" onclick="handleRegister()">Register</button>
-          <button class="btn btn-secondary" onclick="handleLogout()">Logout</button>
+          <button class="btn" onclick="handleLogin()">Login (REST)</button>
+          <button class="btn btn-secondary" onclick="handleRegister()">Register (REST)</button>
+          <button class="btn btn-secondary" onclick="handleLogout()">Logout (REST)</button>
         </div>
       </div>
 
@@ -464,11 +464,8 @@
   </div>
 
   <script>
-    let authSocket = null;
     let usersSocket = null;
     let notifSocket = null;
-
-    let accessToken = localStorage.getItem('accessToken') || '';
     let currentPage = 1;
     let totalPages = 1;
     let searchDebounceTimer = null;
@@ -497,20 +494,14 @@
 
     // INITIALIZE SOCKETS
     function initSockets() {
-      // 1. /auth Socket
-      authSocket = io(`${host}/auth`, { transports: ['websocket', 'polling'] });
-      authSocket.on('connect', () => {
-        document.getElementById('authStatus').innerText = 'Connected';
-        document.getElementById('authDot').className = 'status-dot online';
-        log('SUCCESS', '/auth connect', `Socket ID: ${authSocket.id}`);
-      });
-      authSocket.on('disconnect', () => {
-        document.getElementById('authStatus').innerText = 'Disconnected';
-        document.getElementById('authDot').className = 'status-dot';
-        log('EVENT', '/auth disconnect', 'Connection closed');
-      });
-
-      if (accessToken) {
+      const savedUser = sessionStorage.getItem('authUser');
+      if (savedUser) {
+        try {
+          const user = JSON.parse(savedUser);
+          document.getElementById('activeUserBadge').style.display = 'block';
+          document.getElementById('activeUserEmail').innerText = user.email || 'user';
+          document.getElementById('activeUserRole').innerText = user.role || 'user';
+        } catch (e) {}
         connectAuthenticatedSockets();
       }
     }
@@ -519,9 +510,9 @@
       if (usersSocket) usersSocket.disconnect();
       if (notifSocket) notifSocket.disconnect();
 
-      // 2. /users Socket
+      // 2. /users Socket (withCredentials sends HttpOnly accessToken cookie)
       usersSocket = io(`${host}/users`, {
-        auth: { token: accessToken },
+        withCredentials: true,
         transports: ['websocket', 'polling'],
       });
 
@@ -558,9 +549,9 @@
         log('ERROR', 'WebSocket Exception', err);
       });
 
-      // 3. /notifications Socket
+      // 3. /notifications Socket (withCredentials sends HttpOnly accessToken cookie)
       notifSocket = io(`${host}/notifications`, {
-        auth: { token: accessToken },
+        withCredentials: true,
         transports: ['websocket', 'polling'],
       });
 
@@ -590,28 +581,33 @@
       });
     }
 
-    // AUTH ACTIONS
+    // AUTH ACTIONS (REST /api/v1/auth)
     async function handleLogin() {
       const email = document.getElementById('authEmail').value;
       const password = document.getElementById('authPassword').value;
 
-      log('EVENT', 'auth:login request', { email });
+      log('EVENT', 'POST /api/v1/auth/login request', { email });
       try {
-        const res = await authSocket.emitWithAck('auth:login', { email, password });
-        log('SUCCESS', 'auth:login ack', res);
+        const response = await fetch(`${host}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password }),
+        });
+        const res = await response.json();
+        log(response.ok ? 'SUCCESS' : 'ERROR', 'POST /api/v1/auth/login response', res);
 
-        if (res.success && res.data?.accessToken) {
-          accessToken = res.data.accessToken;
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', res.data.refreshToken);
+        if (response.ok && res.success) {
+          const user = res.data?.user || { email, role: 'user' };
+          sessionStorage.setItem('authUser', JSON.stringify(user));
 
           document.getElementById('activeUserBadge').style.display = 'block';
-          document.getElementById('activeUserEmail').innerText = res.data.user?.email || email;
-          document.getElementById('activeUserRole').innerText = res.data.user?.role || 'user';
+          document.getElementById('activeUserEmail').innerText = user.email || email;
+          document.getElementById('activeUserRole').innerText = user.role || 'user';
 
           connectAuthenticatedSockets();
         } else {
-          log('ERROR', 'Login failed', res.error || 'Unknown error');
+          log('ERROR', 'Login failed', res.message || res.error || 'Unknown error');
         }
       } catch (err) {
         log('ERROR', 'Login exception', err.message);
@@ -624,14 +620,20 @@
       const name = document.getElementById('authName').value;
       const role = document.getElementById('authRole').value;
 
-      log('EVENT', 'auth:register request', { email, name, role });
+      log('EVENT', 'POST /api/v1/auth/register request', { email, name, role });
       try {
-        const res = await authSocket.emitWithAck('auth:register', { email, password, name, role });
-        log('SUCCESS', 'auth:register ack', res);
-        if (res.success) {
+        const response = await fetch(`${host}/api/v1/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password, name, role }),
+        });
+        const res = await response.json();
+        log(response.ok ? 'SUCCESS' : 'ERROR', 'POST /api/v1/auth/register response', res);
+        if (response.ok && res.success) {
           alert('Registered successfully! Now click Login.');
         } else {
-          alert(`Registration failed: ${res.error?.message}`);
+          alert(`Registration failed: ${res.message || res.error?.message || 'Error'}`);
         }
       } catch (err) {
         log('ERROR', 'Register exception', err.message);
@@ -639,16 +641,21 @@
     }
 
     async function handleLogout() {
-      const refreshToken = localStorage.getItem('refreshToken');
       try {
-        const res = await authSocket.emitWithAck('auth:logout', { refreshToken, accessToken });
-        log('SUCCESS', 'auth:logout ack', res);
+        const response = await fetch(`${host}/api/v1/auth/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({}),
+        });
+        const res = await response.json();
+        log(response.ok ? 'SUCCESS' : 'ERROR', 'POST /api/v1/auth/logout response', res);
       } catch (err) {
-        log('ERROR', 'Logout exception', err);
+        log('ERROR', 'Logout exception', err.message);
       }
+      sessionStorage.removeItem('authUser');
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      accessToken = '';
       if (usersSocket) usersSocket.disconnect();
       if (notifSocket) notifSocket.disconnect();
       document.getElementById('activeUserBadge').style.display = 'none';

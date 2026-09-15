@@ -42,6 +42,14 @@ export class GatewayConfigDto {
   @IsString()
   @IsOptional()
   REDIS_URL = 'redis://localhost:6379';
+
+  @IsString()
+  @IsOptional()
+  COOKIE_DOMAIN?: string;
+
+  @IsString()
+  @IsOptional()
+  REFRESH_COOKIE_PATH = '/api/v1/auth';
 }
 
 export function validate(config: Record<string, any>) {

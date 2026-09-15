@@ -30,8 +30,8 @@ async function bootstrap() {
 
   // Hardened Dynamic CORS with strict whitelist & cross-subdomain support
   const allowedOriginPatterns = [
-    /^http:\/\/localhost:(3000|4000|4001|4002|4200)$/,
-    /^http:\/\/127\.0\.0\.1:(3000|4000|4001|4002|4200)$/,
+    /^https?:\/\/([a-zA-Z0-9-]+\.)*localhost:(3000|4000|4001|4002|4200)$/,
+    /^https?:\/\/127\.0\.0\.1:(3000|4000|4001|4002|4200)$/,
     /^https:\/\/([a-zA-Z0-9-]+\.)*dedisalam\.my\.id$/,
   ];
 
@@ -80,7 +80,7 @@ async function bootstrap() {
       name: 'API Gateway Realtime Engine',
       status: 'online',
       protocol: 'Socket.IO',
-      namespaces: ['/auth', '/users', '/notifications'],
+      namespaces: ['/users', '/notifications'],
     });
   });
 
@@ -129,7 +129,7 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
 
   logger.log(`🚀 Realtime API Gateway is active on: http://localhost:${port}`);
-  logger.log(`⚡ Socket.IO Namespaces: /auth, /users, /notifications`);
+  logger.log(`⚡ Socket.IO Namespaces: /users, /notifications`);
   logger.log(`🔌 API Gateway TCP health probe is listening on port: ${tcpPort}`);
   logger.log(`🎮 Web Socket.IO Playground available at: http://localhost:${port}/`);
 }
