@@ -10,6 +10,7 @@ import { AppService } from './app.service';
 import { validate } from '../config/gateway.config';
 import { vaultLoader } from '@dedisalam/common';
 import { AuthGateway } from '../auth/auth.gateway';
+import { AuthController } from '../auth/auth.controller';
 import { UserGateway } from '../user/user.gateway';
 import { NotificationGateway } from '../notification/notification.gateway';
 import { NotificationConsumer } from '../notification/notification.consumer';
@@ -91,7 +92,7 @@ import { NotificationConsumer } from '../notification/notification.consumer';
       inject: [ConfigService],
     }),
   ],
-  controllers: [NotificationConsumer],
+  controllers: [NotificationConsumer, AuthController],
   providers: [
     AppService,
     AuthGateway,

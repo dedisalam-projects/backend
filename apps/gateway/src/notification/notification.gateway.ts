@@ -16,6 +16,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
+import * as cookie from 'cookie';
 import { NotificationBroadcastDto, WsExceptionFilter } from '@dedisalam/common';
 
 @WebSocketGateway({
@@ -121,6 +122,12 @@ export class NotificationGateway
     }
     if (client.handshake?.query?.token && typeof client.handshake.query.token === 'string') {
       return client.handshake.query.token;
+    }
+    if (client.handshake?.headers?.cookie && typeof client.handshake.headers.cookie === 'string') {
+      const parsedCookies = cookie.parse(client.handshake.headers.cookie);
+      if (parsedCookies['accessToken']) {
+        return parsedCookies['accessToken'];
+      }
     }
     return null;
   }

@@ -18,15 +18,24 @@ Semua namespace berjalan pada host dan port yang sama (misal `http://localhost:3
 ### Dukungan Lintas Subdomain & CORS
 Gateway dikonfigurasi dengan dynamic CORS sehingga klien dari subdomain mana pun (`https://app.domain.com`, `https://admin.domain.com`, `http://localhost:3000`, `http://localhost:5173`, dll.) dapat terhubung secara transparan.
 
-### Autentikasi Handshake Token
-Token JWT **wajib** dikirimkan melalui payload `auth: { token }` pada saat inisialisasi Socket.IO klien (bukan melalui cookies, agar bebas dari pembatasan partisi browser modern/Safari ITP):
+### Autentikasi Handshake Token & HttpOnly Cookie (Dual-Support)
+Gateway mendukung mode autentikasi ganda untuk fleksibilitas maksimal:
+1. **Web Browser (Micro-frontends)**: Browser mengirimkan HttpOnly cookie `accessToken` secara otomatis menggunakan `withCredentials: true` lintas subdomain (`.dedisalam.my.id`), memberikan proteksi total terhadap serangan XSS dan eliminasi URL token leaks.
+2. **Mobile & Desktop (`frontend-android`, `frontend-windows`, CLI)**: Token JWT dikirimkan melalui payload `auth: { token }` atau header `authorization: Bearer <token>`.
 
 ```typescript
 import { io } from 'socket.io-client';
 
-const usersSocket = io('https://ws.domain.com/users', {
+// Opsi 1: Browser Micro-frontends (Otomatis via HttpOnly Cookie)
+const usersSocket = io('https://api.dedisalam.my.id/users', {
+  withCredentials: true,
+  transports: ['websocket', 'polling'],
+});
+
+// Opsi 2: Mobile / Native Client (Bearer Auth Token)
+const mobileSocket = io('https://api.dedisalam.my.id/users', {
   auth: {
-    token: localStorage.getItem('accessToken'), // or Bearer <token>
+    token: accessToken,
   },
   transports: ['websocket', 'polling'],
 });

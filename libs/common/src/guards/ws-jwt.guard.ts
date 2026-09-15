@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { WsException } from '@nestjs/websockets';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
+import * as cookie from 'cookie';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
@@ -65,6 +66,14 @@ export class WsJwtGuard implements CanActivate {
     if (client.handshake.query?.token) {
       const token = client.handshake.query.token;
       return typeof token === 'string' ? token : null;
+    }
+
+    // 4. Fallback to HttpOnly cookie sent automatically by browser
+    if (client.handshake.headers?.cookie && typeof client.handshake.headers.cookie === 'string') {
+      const parsedCookies = cookie.parse(client.handshake.headers.cookie);
+      if (parsedCookies['accessToken']) {
+        return parsedCookies['accessToken'];
+      }
     }
 
     return null;

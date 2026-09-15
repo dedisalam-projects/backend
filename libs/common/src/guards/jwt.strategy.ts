@@ -4,14 +4,26 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
+export const extractJwtFromAuthOrCookie = (req: any): string | null => {
+  if (!req) return null;
+  let token: string | null = null;
+  if (req.headers) {
+    token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+  }
+  if (!token && req.cookies?.accessToken) {
+    token = req.cookies.accessToken;
+  }
+  return token || null;
+};
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,
-    @Optional() @Inject('REDIS_CLIENT') private readonly redis: Redis,
+    @Optional() @Inject('REDIS_CLIENT') private readonly redis?: Redis,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: extractJwtFromAuthOrCookie,
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET') || 'supersecretjwtkey12345',
       passReqToCallback: true,
@@ -24,7 +36,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     if (this.redis) {
-      const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+      const token = extractJwtFromAuthOrCookie(req);
       if (token) {
         const isBlacklisted = await this.redis.get(`blacklist:${token}`);
         if (isBlacklisted) {
