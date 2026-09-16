@@ -29,7 +29,7 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
         let responseData = data;
         if (data && typeof data === 'object' && 'message' in data) {
           const rest = { ...(data as Record<string, unknown>) };
-          delete rest.message;
+          delete rest['message'];
           // if rest has data property (e.g., { message, data }), use rest.data
           responseData =
             rest['data'] !== undefined && Object.keys(rest).length === 1
