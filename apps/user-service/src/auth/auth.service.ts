@@ -416,6 +416,13 @@ export class AuthService implements OnApplicationBootstrap {
   async deleteUser(userId: string) {
     if (!userId) throw new BadRequestException('userId is required');
 
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new BadRequestException('User not found');
+
+    if (user.role === 'super_admin' || user.email === 'superadmin@example.com') {
+      throw new BadRequestException('Cannot delete superadmin user');
+    }
+
     const deleted = await this.userModel.findByIdAndDelete(userId);
     if (!deleted) throw new BadRequestException('User not found');
 

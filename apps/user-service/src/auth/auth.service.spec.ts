@@ -323,6 +323,25 @@ describe('AuthService', () => {
   });
 
   describe('getProfile', () => {
+    it('should throw BadRequestException if user email is superadmin@example.com', async () => {
+      mockUserModel.findById.mockResolvedValueOnce({
+        _id: 'u2',
+        role: 'admin',
+        email: 'superadmin@example.com',
+      });
+      await expect(service.deleteUser('u2')).rejects.toThrow('Cannot delete superadmin user');
+    });
+
+    it('should throw BadRequestException if deleted user is missing during delete', async () => {
+      mockUserModel.findById.mockResolvedValueOnce({
+        _id: 'u3',
+        role: 'user',
+        email: 'test@example.com',
+      });
+      mockUserModel.findByIdAndDelete.mockResolvedValueOnce(null);
+      await expect(service.deleteUser('u3')).rejects.toThrow('User not found');
+    });
+
     it('should throw BadRequestException if user not found', async () => {
       mockUserModel.findById.mockResolvedValueOnce(null);
       await expect(service.getProfile('unknown')).rejects.toThrow('User not found');
@@ -662,6 +681,25 @@ describe('AuthService', () => {
       );
     });
 
+    it('should throw BadRequestException if user email is superadmin@example.com', async () => {
+      mockUserModel.findById.mockResolvedValueOnce({
+        _id: 'u2',
+        role: 'admin',
+        email: 'superadmin@example.com',
+      });
+      await expect(service.deleteUser('u2')).rejects.toThrow('Cannot delete superadmin user');
+    });
+
+    it('should throw BadRequestException if deleted user is missing during delete', async () => {
+      mockUserModel.findById.mockResolvedValueOnce({
+        _id: 'u3',
+        role: 'user',
+        email: 'test@example.com',
+      });
+      mockUserModel.findByIdAndDelete.mockResolvedValueOnce(null);
+      await expect(service.deleteUser('u3')).rejects.toThrow('User not found');
+    });
+
     it('should throw BadRequestException if user not found', async () => {
       mockUserModel.findByIdAndUpdate.mockResolvedValueOnce(null);
       await expect(service.updateUserByAdmin('missing-u', { name: 'Something' })).rejects.toThrow(
@@ -733,12 +771,45 @@ describe('AuthService', () => {
       await expect(service.deleteUser('')).rejects.toThrow('userId is required');
     });
 
-    it('should throw BadRequestException if user not found', async () => {
+    it('should throw BadRequestException if user is a superadmin', async () => {
+      mockUserModel.findById.mockResolvedValueOnce({
+        _id: 'u1',
+        role: 'super_admin',
+        email: 'superadmin@example.com',
+      });
+      await expect(service.deleteUser('u1')).rejects.toThrow('Cannot delete superadmin user');
+    });
+
+    it('should throw BadRequestException if user email is superadmin@example.com', async () => {
+      mockUserModel.findById.mockResolvedValueOnce({
+        _id: 'u2',
+        role: 'admin',
+        email: 'superadmin@example.com',
+      });
+      await expect(service.deleteUser('u2')).rejects.toThrow('Cannot delete superadmin user');
+    });
+
+    it('should throw BadRequestException if deleted user is missing during delete', async () => {
+      mockUserModel.findById.mockResolvedValueOnce({
+        _id: 'u3',
+        role: 'user',
+        email: 'test@example.com',
+      });
       mockUserModel.findByIdAndDelete.mockResolvedValueOnce(null);
+      await expect(service.deleteUser('u3')).rejects.toThrow('User not found');
+    });
+
+    it('should throw BadRequestException if user not found', async () => {
+      mockUserModel.findById.mockResolvedValueOnce(null);
       await expect(service.deleteUser('missing-u')).rejects.toThrow('User not found');
     });
 
     it('should delete user from DB, clear refresh token in Redis, and return success message', async () => {
+      mockUserModel.findById.mockResolvedValueOnce({
+        _id: 'u-del',
+        role: 'admin',
+        email: 'admin@example.com',
+      });
       mockUserModel.findByIdAndDelete.mockResolvedValueOnce({ _id: 'u-del' });
 
       const result = await service.deleteUser('u-del');
