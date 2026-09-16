@@ -17,7 +17,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, timeout } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
-import { LoginDto, RegisterDto, RefreshTokenDto, Public } from '@dedisalam/common';
+import { LoginDto, RegisterDto, RefreshTokenDto, Public, JwtPayload } from '@dedisalam/common';
 
 @Controller('api/v1/auth')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -30,7 +30,9 @@ export class AuthController {
   ) {}
 
   private getCookieOptions(path: string, maxAge?: number) {
-    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    const isProduction =
+      process.env.NODE_ENV === 'production' ||
+      this.configService.get<string>('NODE_ENV') === 'production';
     const cookieDomain = isProduction
       ? this.configService.get<string>('COOKIE_DOMAIN') || '.dedisalam.my.id'
       : undefined;
@@ -49,24 +51,34 @@ export class AuthController {
     return this.configService.get<string>('REFRESH_COOKIE_PATH') || '/api/v1/auth';
   }
 
-  private handleError(error: any, operation: string): never {
-    this.logger.error(`Error in ${operation}: ${error?.message}`, error?.stack);
+  private handleError(error: unknown, operation: string): never {
+    const err = error as
+      | {
+          message?: string | string[];
+          stack?: string;
+          statusCode?: number;
+          status?: number;
+        }
+      | null
+      | undefined;
+    const errMessage = typeof err?.message === 'string' ? err.message : 'Unknown error';
+    this.logger.error(`Error in ${operation}: ${errMessage}`, err?.stack);
     if (error instanceof HttpException) {
       throw error;
     }
 
     const numericStatus =
-      typeof error?.statusCode === 'number'
-        ? error.statusCode
-        : typeof error?.status === 'number'
-          ? error.status
+      typeof err?.statusCode === 'number'
+        ? err.statusCode
+        : typeof err?.status === 'number'
+          ? err.status
           : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const message =
-      typeof error?.message === 'string'
-        ? error.message
-        : Array.isArray(error?.message)
-          ? error.message.join(', ')
+      typeof err?.message === 'string'
+        ? err.message
+        : Array.isArray(err?.message)
+          ? err.message.join(', ')
           : 'Internal Server Error';
 
     throw new HttpException(message, numericStatus);
@@ -101,7 +113,7 @@ export class AuthController {
         message: 'Login successful',
         meta: { timestamp: new Date().toISOString() },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.handleError(error, 'login');
     }
   }
@@ -121,7 +133,7 @@ export class AuthController {
         message: 'User registered successfully',
         meta: { timestamp: new Date().toISOString() },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.handleError(error, 'register');
     }
   }
@@ -141,8 +153,8 @@ export class AuthController {
         const accessToken =
           req.cookies?.accessToken || req.headers.authorization?.replace(/^Bearer\s+/i, '');
         if (accessToken) {
-          const decoded: any = jwt.decode(accessToken);
-          userId = decoded?.sub || decoded?.userId;
+          const decoded = jwt.decode(accessToken) as JwtPayload | null;
+          userId = decoded?.sub || (decoded?.['userId'] as string | undefined);
         }
       }
 
@@ -179,7 +191,7 @@ export class AuthController {
         message: 'Token refreshed successfully',
         meta: { timestamp: new Date().toISOString() },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.handleError(error, 'refresh');
     }
   }
@@ -200,8 +212,8 @@ export class AuthController {
       let userId = body.userId;
 
       if (!userId && accessToken) {
-        const decoded: any = jwt.decode(accessToken);
-        userId = decoded?.sub || decoded?.userId;
+        const decoded = jwt.decode(accessToken) as JwtPayload | null;
+        userId = decoded?.sub || (decoded?.['userId'] as string | undefined);
       }
 
       this.logger.log(`Handling POST logout`);
@@ -223,7 +235,7 @@ export class AuthController {
         message: 'Logged out successfully',
         meta: { timestamp: new Date().toISOString() },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.handleError(error, 'logout');
     }
   }

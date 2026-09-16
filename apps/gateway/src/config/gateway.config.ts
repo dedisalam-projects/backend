@@ -52,7 +52,7 @@ export class GatewayConfigDto {
   REFRESH_COOKIE_PATH = '/api/v1/auth';
 }
 
-export function validate(config: Record<string, any>) {
+export function validate(config: Record<string, unknown>) {
   const validatedConfig = plainToInstance(GatewayConfigDto, config, {
     enableImplicitConversion: true,
   });

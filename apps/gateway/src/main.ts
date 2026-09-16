@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { Transport } from '@nestjs/microservices';
 import * as path from 'path';
 import * as fs from 'fs';
+import type { Request, Response } from 'express';
 
 import { AppModule } from './app/app.module';
 import { RedisIoAdapter } from './config/redis-io.adapter';
@@ -64,7 +65,8 @@ async function bootstrap() {
 
   // Serve Web-based Socket.IO Playground UI on root '/'
   const httpAdapter = app.getHttpAdapter();
-  httpAdapter.get('/', (req: any, res: any) => {
+  httpAdapter.get('/', (req: Request, res: Response) => {
+    void req;
     const playgroundPath = path.join(__dirname, 'assets', 'playground.html');
     if (fs.existsSync(playgroundPath)) {
       res.setHeader('Content-Type', 'text/html');
@@ -85,7 +87,8 @@ async function bootstrap() {
   });
 
   // Health endpoint for basic load balancers (returns simple socket status)
-  httpAdapter.get('/health', (req: any, res: any) => {
+  httpAdapter.get('/health', (req: Request, res: Response) => {
+    void req;
     res.json({ status: 'ok', realtime: true, timestamp: new Date().toISOString() });
   });
 

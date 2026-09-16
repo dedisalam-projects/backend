@@ -34,7 +34,10 @@ export class RedisIoAdapter extends IoAdapter {
     const serverOptions = {
       ...options,
       cors: {
-        origin: (origin: any, callback: any) => {
+        origin: (
+          origin: string | undefined,
+          callback: (err: Error | null, allow?: boolean) => void,
+        ) => {
           // Allow requests with no origin (like mobile apps, server-to-server)
           if (!origin) return callback(null, true);
           const isAllowed = allowedOriginPatterns.some((pattern) => pattern.test(origin));
@@ -49,7 +52,7 @@ export class RedisIoAdapter extends IoAdapter {
       },
       transports: ['websocket', 'polling'],
     };
-    const server = super.createIOServer(port, serverOptions as any);
+    const server = super.createIOServer(port, serverOptions as unknown as ServerOptions);
 
     if (this.adapterConstructor) {
       server.adapter(this.adapterConstructor);

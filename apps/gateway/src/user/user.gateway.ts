@@ -17,7 +17,12 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
 import * as cookie from 'cookie';
-import { AdminCreateUserDto, AdminUpdateUserDto, WsExceptionFilter } from '@dedisalam/common';
+import {
+  AdminCreateUserDto,
+  AdminUpdateUserDto,
+  JwtPayload,
+  WsExceptionFilter,
+} from '@dedisalam/common';
 
 @WebSocketGateway({
   namespace: '/users',
@@ -40,7 +45,7 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ) {}
 
   afterInit(server: Server) {
-    server.use((client: any, next: (err?: Error) => void) => {
+    server.use((client: Socket, next: (err?: Error) => void) => {
       const token = this.extractToken(client);
       if (!token) {
         return next(new Error('UNAUTHORIZED: Authentication token is required'));
@@ -49,7 +54,7 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       try {
         const secret = this.configService.get<string>('JWT_SECRET');
         if (!secret) throw new Error('JWT_SECRET is not configured');
-        const decoded = jwt.verify(token, secret) as any;
+        const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
         client.data = client.data || {};
         client.data.user = decoded;
         next();
@@ -79,7 +84,7 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     try {
       const secret = this.configService.get<string>('JWT_SECRET');
       if (!secret) throw new Error('JWT_SECRET is not configured');
-      const decoded = jwt.verify(token, secret) as any;
+      const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
       client.data = client.data || {};
       client.data.user = decoded;
       this.logger.log(`Client authenticated on /users: ${decoded.email} (${client.id})`);
@@ -156,7 +161,10 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   }
 
   @SubscribeMessage('user:update_profile')
-  async handleUpdateProfile(@ConnectedSocket() client: Socket, @MessageBody() body: any) {
+  async handleUpdateProfile(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: Record<string, unknown>,
+  ) {
     const userId = client.data?.user?.sub;
     if (!userId) {
       throw new WsException({ code: 'UNAUTHORIZED', message: 'User session not found' });

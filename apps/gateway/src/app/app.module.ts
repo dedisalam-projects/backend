@@ -6,6 +6,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 
+import { IncomingMessage } from 'http';
+
 import { AppService } from './app.service';
 import { validate } from '../config/gateway.config';
 import { vaultLoader, JwtStrategy } from '@dedisalam/common';
@@ -15,6 +17,8 @@ import { UserGateway } from '../user/user.gateway';
 import { NotificationGateway } from '../notification/notification.gateway';
 import { NotificationConsumer } from '../notification/notification.consumer';
 import { PassportModule } from '@nestjs/passport';
+
+import type { SignOptions } from 'jsonwebtoken';
 
 @Module({
   imports: [
@@ -33,13 +37,14 @@ import { PassportModule } from '@nestjs/passport';
           process.env.NODE_ENV !== 'production'
             ? { target: 'pino-pretty', options: { colorize: true } }
             : undefined,
-        genReqId: (req: any) => {
-          const correlationId = req?.headers?.['x-correlation-id'] || randomUUID();
-          if (req?.headers) req.headers['x-correlation-id'] = correlationId;
+        genReqId: (req: IncomingMessage) => {
+          const rawId = req.headers['x-correlation-id'];
+          const correlationId = (Array.isArray(rawId) ? rawId[0] : rawId) || randomUUID();
+          req.headers['x-correlation-id'] = correlationId;
           return correlationId;
         },
-        customProps: (req: any) => ({
-          correlationId: req?.headers?.['x-correlation-id'],
+        customProps: (req: IncomingMessage) => ({
+          correlationId: req.headers['x-correlation-id'],
           service: 'gateway',
         }),
       },
@@ -88,7 +93,10 @@ import { PassportModule } from '@nestjs/passport';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: (configService.get<string>('JWT_EXPIRES_IN') || '15m') as any },
+        signOptions: {
+          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
+            '15m') as SignOptions['expiresIn'],
+        },
       }),
       inject: [ConfigService],
     }),

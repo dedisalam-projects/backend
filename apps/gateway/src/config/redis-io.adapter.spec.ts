@@ -1,6 +1,7 @@
 import { RedisIoAdapter } from './redis-io.adapter';
 import { INestApplicationContext } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { ServerOptions } from 'socket.io';
 
 // Mock ioredis and @socket.io/redis-adapter
 jest.mock('ioredis', () => {
@@ -13,10 +14,16 @@ jest.mock('@socket.io/redis-adapter', () => ({
   createAdapter: jest.fn().mockReturnValue(jest.fn()),
 }));
 
+interface MockServerOptions {
+  cors: {
+    origin: (origin: string | null, callback: (err: Error | null, allow?: boolean) => void) => void;
+  };
+}
+
 describe('RedisIoAdapter', () => {
   let adapter: RedisIoAdapter;
   let mockApp: Partial<INestApplicationContext>;
-  let mockServer: any;
+  let mockServer: { adapter: jest.Mock };
 
   beforeEach(() => {
     mockApp = {};
@@ -25,7 +32,9 @@ describe('RedisIoAdapter', () => {
     mockServer = {
       adapter: jest.fn(),
     };
-    jest.spyOn(IoAdapter.prototype, 'createIOServer').mockReturnValue(mockServer);
+    jest
+      .spyOn(IoAdapter.prototype, 'createIOServer')
+      .mockReturnValue(mockServer as unknown as ReturnType<IoAdapter['createIOServer']>);
   });
 
   afterEach(() => {
@@ -35,7 +44,9 @@ describe('RedisIoAdapter', () => {
   describe('connectToRedis', () => {
     it('should initialize Redis pub and sub clients and build adapterConstructor', async () => {
       await adapter.connectToRedis();
-      expect((adapter as any).adapterConstructor).toBeDefined();
+      expect(
+        (adapter as unknown as { adapterConstructor?: unknown }).adapterConstructor,
+      ).toBeDefined();
     });
   });
 
@@ -43,9 +54,11 @@ describe('RedisIoAdapter', () => {
     it('should create io server and attach adapter when adapterConstructor exists', async () => {
       await adapter.connectToRedis();
 
-      const server = adapter.createIOServer(3000, { cors: {} } as any);
+      const server = adapter.createIOServer(3000, { cors: {} } as unknown as ServerOptions);
 
-      expect(mockServer.adapter).toHaveBeenCalledWith((adapter as any).adapterConstructor);
+      expect(mockServer.adapter).toHaveBeenCalledWith(
+        (adapter as unknown as { adapterConstructor?: unknown }).adapterConstructor,
+      );
       expect(server).toBe(mockServer);
     });
 
@@ -57,10 +70,10 @@ describe('RedisIoAdapter', () => {
     });
 
     it('should test cors origin callback with and without origin', () => {
-      let passedOptions: any;
+      let passedOptions!: MockServerOptions;
       jest.spyOn(IoAdapter.prototype, 'createIOServer').mockImplementation((port, options) => {
-        passedOptions = options;
-        return mockServer;
+        passedOptions = options as unknown as MockServerOptions;
+        return mockServer as unknown as ReturnType<IoAdapter['createIOServer']>;
       });
 
       adapter.createIOServer(3000);
