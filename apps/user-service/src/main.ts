@@ -15,7 +15,6 @@ async function bootstrap() {
   // Get config service
   const configService = app.get(ConfigService);
   const port = configService.get<number>('USER_SERVICE_PORT') || 3011;
-  const tcpPort = configService.get<number>('USER_SERVICE_TCP_PORT') || 3001;
 
   // Connect RabbitMQ Microservice
   app.connectMicroservice({

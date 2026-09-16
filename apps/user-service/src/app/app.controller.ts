@@ -23,12 +23,13 @@ export class AppController {
     @Payload() data: { name?: string; correlationId?: string },
     @Ctx() context: TcpContext,
   ) {
+    void context;
     const correlationId = data?.correlationId || 'unknown';
 
     // Attempt to assign correlationId to the request-scoped Pino logger context
     try {
       this.pinoLogger.assign({ correlationId });
-    } catch (err) {
+    } catch {
       // Fallback: request context is not present in TCP microservice transport
     }
 
@@ -43,8 +44,9 @@ export class AppController {
       await this.redisService.set('test_key', 'hello_redis', 60);
       const getResult = await this.redisService.get('test_key');
       this.logger.log({ correlationId }, `Redis Set/Get test successful: ${getResult}`);
-    } catch (err: any) {
-      this.logger.error({ correlationId }, `Redis Set/Get test failed: ${err.message}`);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      this.logger.error({ correlationId }, `Redis Set/Get test failed: ${errMsg}`);
     }
 
     // Verify MongoDB connection by checking readyState and executing admin ping
@@ -57,8 +59,9 @@ export class AppController {
       } else {
         throw new Error(`MongoDB is not connected (readyState: ${readyState})`);
       }
-    } catch (err: any) {
-      this.logger.error({ correlationId }, `MongoDB connection check/ping failed: ${err.message}`);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      this.logger.error({ correlationId }, `MongoDB connection check/ping failed: ${errMsg}`);
     }
 
     const message = this.appService.getHello(data?.name);

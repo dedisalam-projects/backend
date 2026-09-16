@@ -1,16 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { getModelToken } from '@nestjs/mongoose';
-import { User, RedisService } from '@dedisalam/database';
+import { User, UserDocument, RedisService } from '@dedisalam/database';
 import { ConfigService } from '@nestjs/config';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
+import { Model } from 'mongoose';
+import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { createHash } from 'crypto';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let mockUserModel: any;
+  let mockUserModel: {
+    findOne: jest.Mock;
+    create: jest.Mock;
+    findById: jest.Mock;
+    find: jest.Mock;
+    findByIdAndUpdate: jest.Mock;
+    findByIdAndDelete: jest.Mock;
+    countDocuments: jest.Mock;
+  };
   let mockRedisService: { get: jest.Mock; set: jest.Mock };
   let mockConfigService: { get: jest.Mock };
   let mockNotificationClient: { emit: jest.Mock };
@@ -60,10 +70,10 @@ describe('AuthService', () => {
       mockConfigService.get.mockReturnValueOnce(null);
       expect(() => {
         new AuthService(
-          mockUserModel,
-          mockRedisService as any,
-          mockConfigService as any,
-          mockNotificationClient as any,
+          mockUserModel as unknown as Model<UserDocument>,
+          mockRedisService as unknown as RedisService,
+          mockConfigService as unknown as ConfigService,
+          mockNotificationClient as unknown as ClientProxy,
         );
       }).toThrow('FATAL: JWT_SECRET environment variable is not defined');
     });
@@ -697,7 +707,7 @@ describe('AuthService', () => {
         isActive: false,
       });
 
-      const result = await service.updateUserByAdmin('u-target', {
+      await service.updateUserByAdmin('u-target', {
         name: 'New Name',
         isActive: false,
       });

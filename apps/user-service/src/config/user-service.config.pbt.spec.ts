@@ -46,7 +46,7 @@ describe('UserServiceConfig Property-Based Testing (Fast-Check)', () => {
           ),
         }),
         (invalidConfig) => {
-          expect(() => validate(invalidConfig as any)).toThrow();
+          expect(() => validate(invalidConfig as Record<string, unknown>)).toThrow();
         },
       ),
       { numRuns: 100 },
