@@ -164,10 +164,11 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
     // Wait 300ms for broadcast
     await new Promise((r) => setTimeout(r, 300));
     expect(liveCreatedData).toBeDefined();
-    if (liveCreatedData?.event) {
-      expect(liveCreatedData.event).toBe('USER_CREATED');
+    const createdData = liveCreatedData as unknown as TestBroadcastData;
+    if (createdData?.event) {
+      expect(createdData.event).toBe('USER_CREATED');
     }
-    const createdPayload = liveCreatedData?.data || liveCreatedData;
+    const createdPayload = createdData?.data || createdData;
     expect(createdPayload?.email).toBe(targetEmail);
   });
 
@@ -185,10 +186,11 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
     expect(updateRes.success).toBe(true);
     await new Promise((r) => setTimeout(r, 300));
     expect(liveUpdatedData).toBeDefined();
-    if (liveUpdatedData?.event) {
-      expect(liveUpdatedData.event).toBe('USER_UPDATED');
+    const updatedData = liveUpdatedData as unknown as TestBroadcastData;
+    if (updatedData?.event) {
+      expect(updatedData.event).toBe('USER_UPDATED');
     }
-    const updatedPayload = liveUpdatedData?.data || liveUpdatedData;
+    const updatedPayload = updatedData?.data || updatedData;
     expect(updatedPayload?.name).toBe('Renamed Realtime User');
   });
 
@@ -205,10 +207,11 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
     expect(deleteRes.success).toBe(true);
     await new Promise((r) => setTimeout(r, 300));
     expect(liveDeletedData).toBeDefined();
-    if (liveDeletedData?.event) {
-      expect(liveDeletedData.event).toBe('USER_DELETED');
+    const deletedData = liveDeletedData as unknown as TestBroadcastData;
+    if (deletedData?.event) {
+      expect(deletedData.event).toBe('USER_DELETED');
     }
-    const deletedPayload = liveDeletedData?.data || liveDeletedData;
+    const deletedPayload = deletedData?.data || deletedData;
     expect(deletedPayload?.userId).toBe(createdUserId);
   });
 
