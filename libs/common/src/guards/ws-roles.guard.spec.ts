@@ -12,7 +12,7 @@ describe('WsRolesGuard', () => {
     guard = new WsRolesGuard(reflector as unknown as Reflector);
   });
 
-  function createMockContext(client: any): ExecutionContext {
+  function createMockContext(client: unknown): ExecutionContext {
     return {
       getHandler: jest.fn(),
       getClass: jest.fn(),

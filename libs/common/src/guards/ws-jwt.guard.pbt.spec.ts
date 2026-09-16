@@ -1,4 +1,5 @@
 import * as fc from 'fast-check';
+import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { WsException } from '@nestjs/websockets';
@@ -12,11 +13,11 @@ describe('WsJwtGuard Property-Based Testing (Fast-Check)', () => {
   beforeEach(() => {
     reflector = {
       getAllAndOverride: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<Reflector>;
 
     configService = {
       get: jest.fn().mockReturnValue('super-secret-key'),
-    } as any;
+    } as unknown as jest.Mocked<ConfigService>;
 
     guard = new WsJwtGuard(reflector, configService);
   });
@@ -32,7 +33,7 @@ describe('WsJwtGuard Property-Based Testing (Fast-Check)', () => {
           switchToWs: () => ({ getClient: () => arbitraryClient }),
         };
 
-        expect(guard.canActivate(mockContext as any)).toBe(true);
+        expect(guard.canActivate(mockContext as unknown as ExecutionContext)).toBe(true);
       }),
       { numRuns: 100 },
     );
@@ -60,7 +61,9 @@ describe('WsJwtGuard Property-Based Testing (Fast-Check)', () => {
             switchToWs: () => ({ getClient: () => client }),
           };
 
-          expect(() => guard.canActivate(mockContext as any)).toThrow(WsException);
+          expect(() => guard.canActivate(mockContext as unknown as ExecutionContext)).toThrow(
+            WsException,
+          );
         },
       ),
       { numRuns: 100 },

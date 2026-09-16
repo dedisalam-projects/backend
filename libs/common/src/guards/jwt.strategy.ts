@@ -4,7 +4,12 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
-export const extractJwtFromAuthOrCookie = (req: any): string | null => {
+import type { Request } from 'express';
+import { JwtPayload } from '../interfaces';
+
+export type RequestWithCookies = Request & { cookies?: Record<string, string> };
+
+export const extractJwtFromAuthOrCookie = (req: RequestWithCookies): string | null => {
   if (!req) return null;
   let token: string | null = null;
   if (req.headers) {
@@ -30,7 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(req: any, payload: any) {
+  async validate(req: RequestWithCookies, payload: JwtPayload): Promise<JwtPayload> {
     if (!payload) {
       throw new UnauthorizedException();
     }

@@ -1,9 +1,9 @@
-import * as Vault from 'node-vault';
+import Vault from 'node-vault';
 import { Logger } from '@nestjs/common';
 
 const logger = new Logger('VaultLoader');
 
-export const vaultLoader = async (): Promise<Record<string, any>> => {
+export const vaultLoader = async (): Promise<Record<string, unknown>> => {
   const vaultAddr = process.env['VAULT_ADDR'];
   const vaultToken = process.env['VAULT_TOKEN'];
 
@@ -13,7 +13,7 @@ export const vaultLoader = async (): Promise<Record<string, any>> => {
   }
 
   try {
-    const vault = require('node-vault')({
+    const vault = Vault({
       apiVersion: 'v1',
       endpoint: vaultAddr,
       token: vaultToken,
@@ -25,7 +25,7 @@ export const vaultLoader = async (): Promise<Record<string, any>> => {
     logger.log('Secrets successfully loaded from Vault.');
 
     // Return the secret data which will be merged into ConfigModule
-    return result.data.data || {};
+    return (result?.data?.data as Record<string, unknown>) || {};
   } catch (error) {
     logger.error(`Failed to load secrets from Vault: ${(error as Error).message}`);
     // Return empty object on failure so .env variables serve as fallback

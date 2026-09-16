@@ -25,8 +25,11 @@ describe('Layer 6: Realtime WebSocket & Socket.IO Concurrency Load Suite', () =>
       body: JSON.stringify({ email, password }),
     });
 
-    const cookies = (loginRes.headers as any).getSetCookie
-      ? (loginRes.headers as any).getSetCookie()
+    const headersWithGetSetCookie = loginRes.headers as unknown as {
+      getSetCookie?: () => string[];
+    };
+    const cookies = headersWithGetSetCookie.getSetCookie
+      ? headersWithGetSetCookie.getSetCookie()
       : [loginRes.headers.get('set-cookie') || ''];
     for (const c of cookies) {
       const match = c.match(/accessToken=([^;]+)/);
@@ -81,7 +84,7 @@ describe('Layer 6: Realtime WebSocket & Socket.IO Concurrency Load Suite', () =>
 
     const rpcPromises = Array.from({ length: totalRequests }).map(async () => {
       const start = Date.now();
-      const res: any = await client.emitWithAck('user:profile', {});
+      const res = (await client.emitWithAck('user:profile', {})) as { success?: boolean };
       const elapsed = Date.now() - start;
       latencies.push(elapsed);
       return res;

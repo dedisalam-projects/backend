@@ -1,21 +1,22 @@
 import { Catch, ArgumentsHost, HttpException, Logger } from '@nestjs/common';
 import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
+import { HttpExceptionResponseBody, WsExceptionResponseBody } from '../interfaces';
 
 @Catch()
 export class WsExceptionFilter extends BaseWsExceptionFilter {
   private readonly logger = new Logger(WsExceptionFilter.name);
 
-  override catch(exception: any, host: ArgumentsHost) {
+  override catch(exception: unknown, host: ArgumentsHost) {
     const client = host.switchToWs().getClient<Socket>();
     const args = host.getArgs();
 
     let code = 'INTERNAL_ERROR';
     let message = 'An unexpected error occurred';
-    let details: any = undefined;
+    let details: unknown = undefined;
 
     if (exception instanceof HttpException) {
-      const response = exception.getResponse() as any;
+      const response = exception.getResponse() as HttpExceptionResponseBody;
       if (typeof response === 'string') {
         message = response;
         code = `HTTP_${exception.getStatus()}`;
@@ -28,7 +29,7 @@ export class WsExceptionFilter extends BaseWsExceptionFilter {
           code = response.error
             ? String(response.error).toUpperCase().replace(/\s+/g, '_')
             : `HTTP_${exception.getStatus()}`;
-          message = response.message || exception.message;
+          message = (response.message as string) || exception.message;
           details = response.details;
         }
       }
@@ -38,7 +39,7 @@ export class WsExceptionFilter extends BaseWsExceptionFilter {
         message = error;
         code = 'WS_ERROR';
       } else if (typeof error === 'object' && error !== null) {
-        const errObj = error as any;
+        const errObj = error as WsExceptionResponseBody;
         code = errObj.code || 'WS_ERROR';
         message = errObj.message || 'WebSocket error';
         details = errObj.details;
@@ -65,7 +66,9 @@ export class WsExceptionFilter extends BaseWsExceptionFilter {
     };
 
     // If an acknowledgment callback was passed by the client (Socket.IO emitWithAck), invoke it
-    const ackCallback = args.find((arg: any) => typeof arg === 'function');
+    const ackCallback = args.find(
+      (arg: unknown): arg is (res: unknown) => void => typeof arg === 'function',
+    );
     if (typeof ackCallback === 'function') {
       ackCallback(formattedResponse);
     } else if (client && typeof client.emit === 'function') {

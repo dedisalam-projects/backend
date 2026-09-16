@@ -1,4 +1,4 @@
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 
 describe('Soak & Memory Leak Verification Suite', () => {
   const GATEWAY_URL = process.env['GATEWAY_URL'] || 'http://localhost:3000';
@@ -28,8 +28,9 @@ describe('Soak & Memory Leak Verification Suite', () => {
       }),
     });
 
-    const cookies = (loginRes.headers as any).getSetCookie
-      ? (loginRes.headers as any).getSetCookie()
+    const headers = loginRes.headers as unknown as { getSetCookie?: () => string[] };
+    const cookies = headers.getSetCookie
+      ? headers.getSetCookie()
       : [loginRes.headers.get('set-cookie') || ''];
     for (const c of cookies) {
       const match = c.match(/accessToken=([^;]+)/);
@@ -58,7 +59,7 @@ describe('Soak & Memory Leak Verification Suite', () => {
           socket.on('connect_error', (err) => reject(err));
         });
 
-        const res: any = await socket.emitWithAck('user:profile');
+        const res = (await socket.emitWithAck('user:profile')) as { success?: boolean };
         expect(res).toBeDefined();
         expect(res.success).toBe(true);
 
@@ -88,14 +89,18 @@ describe('Soak & Memory Leak Verification Suite', () => {
 
       await new Promise<void>((resolve) => socket.on('connect', () => resolve()));
 
-      const getListenerCount = (event: string) =>
-        (socket as any).listeners ? (socket as any).listeners(event).length : 0;
+      const getListenerCount = (event: string) => {
+        const socketWithListeners = socket as unknown as {
+          listeners?: (e: string) => unknown[];
+        };
+        return socketWithListeners.listeners ? socketWithListeners.listeners(event).length : 0;
+      };
 
       const initialListeners = getListenerCount('user:profile');
 
       const CALL_COUNT = 100;
       for (let i = 0; i < CALL_COUNT; i++) {
-        const res: any = await socket.emitWithAck('user:profile');
+        const res = (await socket.emitWithAck('user:profile')) as { success?: boolean };
         expect(res.success).toBe(true);
       }
 

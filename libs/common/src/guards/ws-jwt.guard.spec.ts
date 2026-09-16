@@ -1,9 +1,9 @@
-import { WsJwtGuard } from './ws-jwt.guard';
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { ExecutionContext } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import * as jwt from 'jsonwebtoken';
+import { WsJwtGuard, WsClientSocket } from './ws-jwt.guard';
 
 describe('WsJwtGuard', () => {
   let guard: WsJwtGuard;
@@ -26,7 +26,7 @@ describe('WsJwtGuard', () => {
     );
   });
 
-  function createMockContext(client: any): ExecutionContext {
+  function createMockContext(client: WsClientSocket | unknown): ExecutionContext {
     return {
       getHandler: jest.fn(),
       getClass: jest.fn(),
@@ -67,13 +67,13 @@ describe('WsJwtGuard', () => {
 
     const result = guard.canActivate(context);
     expect(result).toBe(true);
-    expect((client as any).data.user.sub).toBe('user-1');
+    expect((client as WsClientSocket).data?.user?.sub).toBe('user-1');
   });
 
   it('should extract token from handshake.auth.token without Bearer prefix', () => {
     reflector.getAllAndOverride.mockReturnValueOnce(false);
     const token = jwt.sign({ sub: 'user-2' }, jwtSecret);
-    const client: any = {
+    const client: WsClientSocket = {
       data: { existing: true },
       handshake: { auth: { token } },
     };
@@ -81,7 +81,7 @@ describe('WsJwtGuard', () => {
 
     const result = guard.canActivate(context);
     expect(result).toBe(true);
-    expect(client.data.user.sub).toBe('user-2');
+    expect(client.data?.user?.sub).toBe('user-2');
   });
 
   it('should extract token from handshake.headers.authorization with Bearer prefix', () => {
@@ -93,7 +93,7 @@ describe('WsJwtGuard', () => {
     const context = createMockContext(client);
 
     expect(guard.canActivate(context)).toBe(true);
-    expect((client as any).data.user.sub).toBe('user-3');
+    expect((client as WsClientSocket).data?.user?.sub).toBe('user-3');
   });
 
   it('should extract token from handshake.headers.authorization without Bearer prefix', () => {
@@ -149,7 +149,7 @@ describe('WsJwtGuard', () => {
     const context = createMockContext(client);
 
     expect(guard.canActivate(context)).toBe(true);
-    expect((client as any).data.user.sub).toBe('user-cookie-1');
+    expect((client as WsClientSocket).data?.user?.sub).toBe('user-cookie-1');
   });
 
   it('should return null from extractToken if cookie header is present but lacks accessToken', () => {

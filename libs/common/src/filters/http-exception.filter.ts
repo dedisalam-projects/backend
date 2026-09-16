@@ -8,11 +8,13 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 
+import { HttpExceptionResponseBody } from '../interfaces';
+
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
-  catch(exception: any, host: ArgumentsHost) {
+  catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request & { id?: string }>();
@@ -24,28 +26,32 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     let message = 'Internal server error';
     let error = 'Internal Server Error';
-    let details: any[] | undefined = undefined;
+    let details: unknown[] | undefined = undefined;
 
     if (exceptionResponse) {
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object') {
-        const resObj = exceptionResponse as any;
+        const resObj = exceptionResponse as HttpExceptionResponseBody;
 
         // Handle validation errors from ValidationPipe
         if (Array.isArray(resObj.message)) {
           message = 'Validation failed';
           error = 'Bad Request';
-          details = resObj.message.map((msg: any) => {
+          details = resObj.message.map((msg: unknown) => {
             if (typeof msg === 'string') {
               return { message: msg };
             }
             return msg;
           });
         } else {
-          message = resObj.message || message;
-          error = resObj.error || error;
-          if (resObj.details) {
+          if (typeof resObj.message === 'string') {
+            message = resObj.message;
+          }
+          if (typeof resObj.error === 'string') {
+            error = resObj.error;
+          }
+          if (Array.isArray(resObj.details)) {
             details = resObj.details;
           }
         }

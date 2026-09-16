@@ -1,5 +1,16 @@
 import { io, Socket } from 'socket.io-client';
 
+interface ChaosApiResponse {
+  success?: boolean;
+  data?: {
+    id?: string;
+    email?: string;
+    user?: { id?: string };
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 describe('Layer 7: Network Resilience & Chaos Recovery Suite', () => {
   const GATEWAY_URL = process.env['GATEWAY_URL'] || 'http://localhost:3000';
   let accessToken: string;
@@ -31,11 +42,14 @@ describe('Layer 7: Network Resilience & Chaos Recovery Suite', () => {
       }),
     });
 
-    const loginData: any = await loginRes.json();
-    userId = loginData.data?.user?.id || loginData.data?.id;
+    const loginData = (await loginRes.json()) as ChaosApiResponse;
+    userId = (loginData.data?.user?.id || loginData.data?.id) as string;
 
-    const cookies = (loginRes.headers as any).getSetCookie
-      ? (loginRes.headers as any).getSetCookie()
+    const headersWithGetSetCookie = loginRes.headers as unknown as {
+      getSetCookie?: () => string[];
+    };
+    const cookies = headersWithGetSetCookie.getSetCookie
+      ? headersWithGetSetCookie.getSetCookie()
       : [loginRes.headers.get('set-cookie') || ''];
     for (const c of cookies) {
       const accessMatch = c.match(/accessToken=([^;]+)/);
@@ -56,7 +70,7 @@ describe('Layer 7: Network Resilience & Chaos Recovery Suite', () => {
     expect(userSocket.connected).toBe(true);
 
     // Initial RPC works
-    const res1: any = await userSocket.emitWithAck('user:profile', {});
+    const res1 = (await userSocket.emitWithAck('user:profile', {})) as ChaosApiResponse;
     expect(res1.success).toBe(true);
 
     // Simulate abrupt network drop
@@ -72,9 +86,9 @@ describe('Layer 7: Network Resilience & Chaos Recovery Suite', () => {
     expect(userSocket.connected).toBe(true);
 
     // Verify socket can immediately continue performing RPCs
-    const res2: any = await userSocket.emitWithAck('user:profile', {});
+    const res2 = (await userSocket.emitWithAck('user:profile', {})) as ChaosApiResponse;
     expect(res2.success).toBe(true);
-    expect(res2.data.email).toBe(testEmail);
+    expect(res2.data?.email).toBe(testEmail);
 
     userSocket.disconnect();
   });
@@ -97,11 +111,14 @@ describe('Layer 7: Network Resilience & Chaos Recovery Suite', () => {
     });
 
     expect(refreshRes.status).toBe(201);
-    const refreshJson: any = await refreshRes.json();
+    const refreshJson = (await refreshRes.json()) as ChaosApiResponse;
     expect(refreshJson.success).toBe(true);
 
-    const refreshCookies = (refreshRes.headers as any).getSetCookie
-      ? (refreshRes.headers as any).getSetCookie()
+    const refreshHeaders = refreshRes.headers as unknown as {
+      getSetCookie?: () => string[];
+    };
+    const refreshCookies = refreshHeaders.getSetCookie
+      ? refreshHeaders.getSetCookie()
       : [refreshRes.headers.get('set-cookie') || ''];
     let newAccessToken = '';
     for (const c of refreshCookies) {
@@ -124,9 +141,9 @@ describe('Layer 7: Network Resilience & Chaos Recovery Suite', () => {
       newSocket.on('connect_error', (err) => reject(err));
     });
 
-    const profileRes: any = await newSocket.emitWithAck('user:profile', {});
+    const profileRes = (await newSocket.emitWithAck('user:profile', {})) as ChaosApiResponse;
     expect(profileRes.success).toBe(true);
-    expect(profileRes.data.email).toBe(testEmail);
+    expect(profileRes.data?.email).toBe(testEmail);
 
     newSocket.disconnect();
   });
@@ -174,9 +191,9 @@ describe('Layer 7: Network Resilience & Chaos Recovery Suite', () => {
     expect(sockets.every((s) => s.connected)).toBe(true);
 
     // Verify all sockets can execute RPCs concurrently
-    const rpcResults: any[] = await Promise.all(
+    const rpcResults = (await Promise.all(
       sockets.map((s) => s.emitWithAck('user:profile', {})),
-    );
+    )) as ChaosApiResponse[];
 
     expect(rpcResults.every((r) => r.success === true)).toBe(true);
 

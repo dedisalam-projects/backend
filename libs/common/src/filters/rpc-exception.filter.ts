@@ -1,12 +1,14 @@
 import { Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { BaseRpcExceptionFilter, RpcException } from '@nestjs/microservices';
 import { Observable, throwError } from 'rxjs';
+import { HttpExceptionResponseBody, RpcExceptionResponseBody } from '../interfaces';
 
 @Catch()
 export class RpcExceptionFilter extends BaseRpcExceptionFilter {
   private readonly logger = new Logger(RpcExceptionFilter.name);
 
-  override catch(exception: any, host: ArgumentsHost): Observable<any> {
+  override catch(exception: unknown, host?: ArgumentsHost): Observable<RpcExceptionResponseBody> {
+    void host;
     if (exception instanceof HttpException) {
       const statusCode = exception.getStatus();
       const res = exception.getResponse();
@@ -15,7 +17,7 @@ export class RpcExceptionFilter extends BaseRpcExceptionFilter {
       if (typeof res === 'string') {
         message = res;
       } else if (typeof res === 'object' && res !== null) {
-        const resObj: any = res;
+        const resObj = res as HttpExceptionResponseBody;
         if (Array.isArray(resObj.message)) {
           message = resObj.message.join(', ');
         } else if (typeof resObj.message === 'string') {
@@ -33,11 +35,14 @@ export class RpcExceptionFilter extends BaseRpcExceptionFilter {
     if (exception instanceof RpcException) {
       const error = exception.getError();
       if (typeof error === 'object' && error !== null) {
-        const errObj: any = error;
+        const errObj = error as RpcExceptionResponseBody;
         return throwError(() => ({
           status: 'error',
-          statusCode: errObj.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-          message: errObj.message || 'Internal server error',
+          statusCode:
+            typeof errObj.statusCode === 'number'
+              ? errObj.statusCode
+              : HttpStatus.INTERNAL_SERVER_ERROR,
+          message: typeof errObj.message === 'string' ? errObj.message : 'Internal server error',
           ...errObj,
         }));
       }
@@ -49,7 +54,8 @@ export class RpcExceptionFilter extends BaseRpcExceptionFilter {
     }
 
     const message = exception instanceof Error ? exception.message : 'Internal server error';
-    this.logger.error(`Unhandled RPC Exception: ${message}`, exception?.stack);
+    const stack = exception instanceof Error ? exception.stack : undefined;
+    this.logger.error(`Unhandled RPC Exception: ${message}`, stack);
 
     return throwError(() => ({
       status: 'error',

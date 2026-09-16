@@ -28,13 +28,16 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
         // Clean up data to avoid duplicating message in data payload
         let responseData = data;
         if (data && typeof data === 'object' && 'message' in data) {
-          const { message: _, ...rest } = data;
+          const rest = { ...(data as Record<string, unknown>) };
+          delete rest.message;
           // if rest has data property (e.g., { message, data }), use rest.data
           responseData =
-            rest.data !== undefined && Object.keys(rest).length === 1 ? rest.data : rest;
+            rest['data'] !== undefined && Object.keys(rest).length === 1
+              ? (rest['data'] as T)
+              : (rest as unknown as T);
           // exception for auth where it returns { message, user } or { accessToken, refreshToken, user }
-          if (Object.keys(responseData).length === 0) {
-            responseData = null;
+          if (Object.keys(rest).length === 0) {
+            responseData = null as unknown as T;
           }
         }
 
