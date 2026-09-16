@@ -53,3 +53,6 @@ Thumbs.db
 # Docker local persistence data
 .docker-data/
 
+# Playwright MCP artifacts
+.playwright-mcp/
+

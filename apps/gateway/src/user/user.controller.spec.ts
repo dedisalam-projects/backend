@@ -94,5 +94,48 @@ describe('UserController', () => {
         new HttpException('Internal Server Error', HttpStatus.BAD_GATEWAY),
       );
     });
+
+    it('should map RMQ error with numeric statusCode 400 to HttpException with 400 status', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({ status: 'error', statusCode: 400, message: 'Invalid query params' })),
+      );
+
+      const promise = controller.getUsers({ page: 1, limit: 10 });
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Invalid query params',
+      });
+    });
+
+    it('should fallback to 500 without TypeError when RMQ returns string status "error"', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({ status: 'error', message: 'User service error' })),
+      );
+
+      const promise = controller.getUsers({ page: 1, limit: 10 });
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'User service error',
+      });
+    });
+
+    it('should handle array error message properly', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({
+          status: 'error',
+          statusCode: 400,
+          message: ['page must be a number', 'limit must be a number'],
+        })),
+      );
+
+      const promise = controller.getUsers({ page: 1, limit: 10 });
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'page must be a number, limit must be a number',
+      });
+    });
   });
 });

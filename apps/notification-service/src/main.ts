@@ -3,7 +3,7 @@ import { Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import { AppModule } from './app/app.module';
-import { TransformInterceptor } from '@dedisalam/common';
+import { TransformInterceptor, RpcExceptionFilter } from '@dedisalam/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -43,8 +43,9 @@ async function bootstrap() {
     },
   });
 
-  // Global Interceptor
+  // Global Interceptor & Filter
   app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalFilters(new RpcExceptionFilter());
 
   app.enableShutdownHooks();
 
