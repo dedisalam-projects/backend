@@ -56,7 +56,13 @@ metadata:
 [What problem this solves - be specific]
 
 ## Solution
-[The pattern/technique/workaround - with code examples]
+[The pattern/technique/workaround - MUST include concrete examples: e.g., token-lean code boilerplates, file trees, configuration snippets, or markdown templates to anchor LLM execution without token waste]
+
+### Deterministic Example Format Mapping
+To prevent omission of crucial context, strictly map the skill's nature to the correct example format:
+- **Programming / Shell / DevOps**: (target-stacks contains `python`, `bash`, `docker`, `react`, etc.) MUST use an **Executable Code Block** (token-lean boilerplate).
+- **Architecture / Project Structure**: MUST use a **File Tree** (ASCII directory structure showing placements).
+- **Meta-Rules / Workflows / Audits**: MUST use a **Markdown Template** or **Prompt Format** (e.g., Do/Don't comparison).
 
 ## When to Use
 [Trigger conditions]

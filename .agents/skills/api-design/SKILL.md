@@ -522,3 +522,7 @@ Before shipping a new endpoint:
 - [ ] Response does not leak internal details (stack traces, SQL errors)
 - [ ] Consistent naming with existing endpoints (camelCase vs snake_case)
 - [ ] Documented (OpenAPI/Swagger spec updated)
+
+
+> [!IMPORTANT]
+> **Rule Adherence**: Always strictly follow the `api-design` conventions outlined above to ensure workspace consistency and prevent regressions.

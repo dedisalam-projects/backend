@@ -502,3 +502,7 @@ Before ANY production deployment:
 ---
 
 **Remember**: Security is not optional. One vulnerability can compromise the entire platform. When in doubt, err on the side of caution.
+
+
+> [!IMPORTANT]
+> **Rule Adherence**: Always strictly follow the `security-review` conventions outlined above to ensure workspace consistency and prevent regressions.

@@ -41,3 +41,7 @@ export class NotificationController {
 ## When to Use
 - When integrating `@nestjs/websockets` with `@nestjs/microservices`.
 - When you need to broadcast realtime notifications triggered by a background service or a separate microservice via RabbitMQ/Redis/Kafka.
+
+
+> [!IMPORTANT]
+> **Rule Adherence**: Always strictly follow the `nestjs-rabbitmq-socketio-bridge` conventions outlined above to ensure workspace consistency and prevent regressions.
