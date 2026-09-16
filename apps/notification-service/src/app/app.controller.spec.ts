@@ -59,7 +59,7 @@ describe('AppController', () => {
         userId: 'u1',
         type: 'ORDER',
         isRead: false,
-      } as any);
+      } as unknown as Notification);
 
       await appController.handleNotificationSend({
         message: 'Order Created',
@@ -79,7 +79,7 @@ describe('AppController', () => {
     it('should gracefully handle omitted payload and pinoLogger.assign failure', async () => {
       const spyProcess = jest
         .spyOn(appService, 'processNotification')
-        .mockResolvedValueOnce({} as any);
+        .mockResolvedValueOnce({} as unknown as Notification);
       (mockPinoLogger.assign as jest.Mock).mockImplementationOnce(() => {
         throw new Error('Logger context not found');
       });
@@ -96,7 +96,7 @@ describe('AppController', () => {
 
   describe('handleNotificationList', () => {
     it('should delegate to appService.getNotifications and return results', async () => {
-      const mockList = [{ id: '1', title: 'Test' }] as any;
+      const mockList = [{ id: '1', title: 'Test' }] as unknown as Notification[];
       jest.spyOn(appService, 'getNotifications').mockResolvedValueOnce(mockList);
 
       const result = await appController.handleNotificationList({ userId: 'u123' });
@@ -109,7 +109,7 @@ describe('AppController', () => {
     it('should process notification, log user creation, and emit gateway.notify.user to Gateway', async () => {
       const spyProcess = jest
         .spyOn(appService, 'processNotification')
-        .mockResolvedValueOnce({} as any);
+        .mockResolvedValueOnce({} as unknown as Notification);
 
       await appController.handleUserCreated({ userId: 'u1', name: 'John Doe' });
 
@@ -134,7 +134,7 @@ describe('AppController', () => {
     it('should forward rich user payload and timestamp when provided', async () => {
       const spyProcess = jest
         .spyOn(appService, 'processNotification')
-        .mockResolvedValueOnce({} as any);
+        .mockResolvedValueOnce({} as unknown as Notification);
 
       const payload = {
         userId: 'u-rich',
@@ -143,7 +143,7 @@ describe('AppController', () => {
         timestamp: '2026-09-13T01:00:00.000Z',
       };
 
-      await appController.handleUserCreated(payload as any);
+      await appController.handleUserCreated(payload);
 
       expect(spyProcess).toHaveBeenCalledWith(
         'Welcome to our platform, Rich User!',
@@ -159,9 +159,9 @@ describe('AppController', () => {
     it('should handle missing payload data gracefully (Negative Test)', async () => {
       const spyProcess = jest
         .spyOn(appService, 'processNotification')
-        .mockResolvedValueOnce({} as any);
+        .mockResolvedValueOnce({} as unknown as Notification);
 
-      await appController.handleUserCreated({} as any);
+      await appController.handleUserCreated({} as unknown as { userId: string; name: string });
 
       expect(spyProcess).toHaveBeenCalledWith(
         'Welcome to our platform, User!',
@@ -197,7 +197,7 @@ describe('AppController', () => {
     it('should supply default timestamp and empty changes if omitted', async () => {
       await appController.handleUserUpdated({
         userId: 'u2',
-      } as any);
+      } as unknown as { userId: string; changes: Record<string, unknown> });
 
       expect(mockGatewayClient.emit).toHaveBeenCalledWith(
         'gateway.user.updated',
@@ -210,7 +210,9 @@ describe('AppController', () => {
     });
 
     it('should handle undefined payload gracefully', async () => {
-      await appController.handleUserUpdated({} as any);
+      await appController.handleUserUpdated(
+        {} as unknown as { userId: string; changes: Record<string, unknown> },
+      );
 
       expect(mockGatewayClient.emit).toHaveBeenCalledWith(
         'gateway.user.updated',
@@ -239,7 +241,7 @@ describe('AppController', () => {
     it('should supply default timestamp if omitted', async () => {
       await appController.handleUserDeleted({
         userId: 'u2',
-      } as any);
+      } as unknown as { userId: string });
 
       expect(mockGatewayClient.emit).toHaveBeenCalledWith(
         'gateway.user.deleted',
@@ -251,7 +253,7 @@ describe('AppController', () => {
     });
 
     it('should handle undefined payload gracefully', async () => {
-      await appController.handleUserDeleted({} as any);
+      await appController.handleUserDeleted({} as unknown as { userId: string });
 
       expect(mockGatewayClient.emit).toHaveBeenCalledWith(
         'gateway.user.deleted',
@@ -281,7 +283,7 @@ describe('AppController', () => {
 
   describe('handleMarkAsRead', () => {
     it('should delegate to appService.markAsRead and return result', async () => {
-      const mockUpdated = { id: 'notif-1', isRead: true } as any;
+      const mockUpdated = { id: 'notif-1', isRead: true } as unknown as Notification;
       jest.spyOn(appService, 'markAsRead').mockResolvedValueOnce(mockUpdated);
 
       const result = await appController.handleMarkAsRead({ id: 'notif-1', userId: 'u123' });
@@ -299,7 +301,9 @@ describe('AppController', () => {
         type: 'ALERT',
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
       };
-      jest.spyOn(appService, 'broadcastNotification').mockResolvedValueOnce(savedDoc as any);
+      jest
+        .spyOn(appService, 'broadcastNotification')
+        .mockResolvedValueOnce(savedDoc as unknown as Notification);
 
       const payload = {
         title: 'Maintenance',

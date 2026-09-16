@@ -6,7 +6,7 @@ import { Notification } from '@dedisalam/database';
 describe('AppService', () => {
   let service: AppService;
 
-  const mockSave = jest.fn().mockImplementation(function (this: any) {
+  const mockSave = jest.fn().mockImplementation(function (this: unknown) {
     return Promise.resolve(this);
   });
 
@@ -16,12 +16,15 @@ describe('AppService', () => {
   const mockFindOneAndUpdate = jest.fn();
 
   // Mock constructor for new this.notificationModel(...)
-  const mockNotificationModel: any = jest.fn().mockImplementation((dto) => {
+  const mockNotificationModel = jest.fn().mockImplementation((dto: Record<string, unknown>) => {
     return {
       ...dto,
       save: mockSave,
     };
-  });
+  }) as unknown as jest.Mock & {
+    find: jest.Mock;
+    findOneAndUpdate: jest.Mock;
+  };
   mockNotificationModel.find = mockFind;
   mockNotificationModel.findOneAndUpdate = mockFindOneAndUpdate;
 

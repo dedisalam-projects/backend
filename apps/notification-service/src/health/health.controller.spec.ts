@@ -4,6 +4,7 @@ import {
   HealthCheckService,
   MongooseHealthIndicator,
   MicroserviceHealthIndicator,
+  HealthIndicatorFunction,
 } from '@nestjs/terminus';
 import { ConfigService } from '@nestjs/config';
 import { Transport } from '@nestjs/microservices';
@@ -17,7 +18,7 @@ describe('HealthController', () => {
 
   beforeEach(async () => {
     healthCheckService = {
-      check: jest.fn().mockImplementation(async (indicators: any[]) => {
+      check: jest.fn().mockImplementation(async (indicators: HealthIndicatorFunction[]) => {
         const results = await Promise.all(indicators.map((fn) => fn()));
         return { status: 'ok', info: Object.assign({}, ...results) };
       }),
