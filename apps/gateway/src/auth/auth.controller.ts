@@ -58,28 +58,43 @@ export class AuthController {
           stack?: string;
           statusCode?: number;
           status?: number;
+          response?: unknown;
+          error?: unknown;
         }
       | null
       | undefined;
+
+    // Unwrap nested error payload from microservice response
+    const payload = (err as any)?.response || (err as any)?.error || err;
+
     const errMessage = typeof err?.message === 'string' ? err.message : 'Unknown error';
     this.logger.error(`Error in ${operation}: ${errMessage}`, err?.stack);
+
     if (error instanceof HttpException) {
       throw error;
     }
 
     const numericStatus =
-      typeof err?.statusCode === 'number'
-        ? err.statusCode
-        : typeof err?.status === 'number'
-          ? err.status
-          : HttpStatus.INTERNAL_SERVER_ERROR;
+      typeof payload?.statusCode === 'number'
+        ? payload.statusCode
+        : typeof payload?.status === 'number'
+          ? payload.status
+          : typeof err?.statusCode === 'number'
+            ? err.statusCode
+            : typeof err?.status === 'number'
+              ? err.status
+              : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const message =
-      typeof err?.message === 'string'
-        ? err.message
-        : Array.isArray(err?.message)
-          ? err.message.join(', ')
-          : 'Internal Server Error';
+      typeof payload?.message === 'string'
+        ? payload.message
+        : Array.isArray(payload?.message)
+          ? payload.message.join(', ')
+          : typeof err?.message === 'string'
+            ? err.message
+            : Array.isArray(err?.message)
+              ? err.message.join(', ')
+              : 'Internal Server Error';
 
     throw new HttpException(message, numericStatus);
   }

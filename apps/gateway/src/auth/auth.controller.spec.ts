@@ -247,6 +247,76 @@ describe('AuthController', () => {
         message: 'Access denied',
       });
     });
+
+    it('should extract statusCode and message from wrapped response object', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({
+          response: {
+            statusCode: HttpStatus.UNAUTHORIZED,
+            message: 'Nested invalid credentials',
+          },
+        })),
+      );
+
+      const promise = controller.login({ email: 'wrong@test.com', password: 'bad' }, mockResponse);
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.UNAUTHORIZED,
+        message: 'Nested invalid credentials',
+      });
+    });
+
+    it('should extract status and array message from wrapped error object', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({
+          error: {
+            status: HttpStatus.BAD_REQUEST,
+            message: ['Nested error array'],
+          },
+        })),
+      );
+
+      const promise = controller.login({ email: 'wrong@test.com', password: 'bad' }, mockResponse);
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Nested error array',
+      });
+    });
+
+    it('should fallback to outer err status and message if nested payload lacks them', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({
+          response: { someOtherField: true },
+          statusCode: HttpStatus.PAYMENT_REQUIRED,
+          message: 'Outer message',
+        })),
+      );
+
+      const promise = controller.login({ email: 'test@test.com', password: 'bad' }, mockResponse);
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+        message: 'Outer message',
+      });
+    });
+
+    it('should fallback to outer err status and array message if nested payload lacks them', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({
+          error: { someOtherField: true },
+          status: HttpStatus.PAYMENT_REQUIRED,
+          message: ['Outer message 1', 'Outer message 2'],
+        })),
+      );
+
+      const promise = controller.login({ email: 'test@test.com', password: 'bad' }, mockResponse);
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+        message: 'Outer message 1, Outer message 2',
+      });
+    });
   });
 
   describe('register', () => {
