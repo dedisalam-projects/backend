@@ -45,7 +45,7 @@ export class AppController {
       const getResult = await this.redisService.get('test_key');
       this.logger.log({ correlationId }, `Redis Set/Get test successful: ${getResult}`);
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
+      const errMsg = (err as Error).message;
       this.logger.error({ correlationId }, `Redis Set/Get test failed: ${errMsg}`);
     }
 
@@ -60,7 +60,7 @@ export class AppController {
         throw new Error(`MongoDB is not connected (readyState: ${readyState})`);
       }
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
+      const errMsg = (err as Error).message;
       this.logger.error({ correlationId }, `MongoDB connection check/ping failed: ${errMsg}`);
     }
 

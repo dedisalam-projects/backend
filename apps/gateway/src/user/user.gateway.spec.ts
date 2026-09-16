@@ -97,7 +97,6 @@ describe('UserGateway', () => {
       const next5 = jest.fn();
       const client5 = {
         handshake: { headers: { cookie: `accessToken=${validToken}` } },
-        data: {},
       } as unknown as Socket;
       middleware(client5, next5);
       expect(next5).toHaveBeenCalledWith();

@@ -20,7 +20,7 @@ export class HealthController {
           const status = await this.redisService.getClient().ping();
           return { redis: { status: status === 'PONG' ? 'up' : 'down' } };
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
+          const message = (err as Error).message;
           return { redis: { status: 'down', message } };
         }
       },

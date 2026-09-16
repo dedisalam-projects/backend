@@ -68,8 +68,8 @@ export class AuthService implements OnApplicationBootstrap {
         );
       }
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      const errStack = err instanceof Error ? err.stack : undefined;
+      const errMsg = (err as Error).message;
+      const errStack = (err as Error).stack;
       this.logger.error(`Bootstrap superadmin check failed: ${errMsg}`, errStack);
     }
   }
