@@ -1,15 +1,24 @@
 import { io, Socket } from 'socket.io-client';
 import * as jwt from 'jsonwebtoken';
 
-describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () => {
+interface SecurityWsResponse {
+  success?: boolean;
+  error?: {
+    code?: string;
+    message?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+describe('Layer 6: WebSocket Security, RBAC & Exploit Defense Suite', () => {
   const GATEWAY_URL = process.env['GATEWAY_URL'] || 'http://localhost:3000';
+  let userSocket: Socket;
   let userToken: string;
   let adminToken: string;
-  let userSocket: Socket;
-
+  const password = 'SecuredPassword123!';
   const normalEmail = `sec_user_${Date.now()}@example.com`;
   const adminEmail = `sec_admin_${Date.now()}@example.com`;
-  const password = 'StrongPassword123!';
 
   beforeAll(async () => {
     // 1. Create and authenticate normal user
@@ -28,8 +37,11 @@ describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () =
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: normalEmail, password }),
     });
-    const userCookies = (userLoginRes.headers as any).getSetCookie
-      ? (userLoginRes.headers as any).getSetCookie()
+    const userHeaders = userLoginRes.headers as unknown as {
+      getSetCookie?: () => string[];
+    };
+    const userCookies = userHeaders.getSetCookie
+      ? userHeaders.getSetCookie()
       : [userLoginRes.headers.get('set-cookie') || ''];
     for (const c of userCookies) {
       const match = c.match(/accessToken=([^;]+)/);
@@ -52,8 +64,11 @@ describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () =
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: adminEmail, password }),
     });
-    const adminCookies = (adminLoginRes.headers as any).getSetCookie
-      ? (adminLoginRes.headers as any).getSetCookie()
+    const adminHeaders = adminLoginRes.headers as unknown as {
+      getSetCookie?: () => string[];
+    };
+    const adminCookies = adminHeaders.getSetCookie
+      ? adminHeaders.getSetCookie()
       : [adminLoginRes.headers.get('set-cookie') || ''];
     for (const c of adminCookies) {
       const match = c.match(/accessToken=([^;]+)/);
@@ -79,19 +94,19 @@ describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () =
 
   describe('Privilege Escalation & Event Spoofing Defense', () => {
     it('Sec 1: should reject unauthorized regular user attempting admin:join', async () => {
-      const res: any = await userSocket.emitWithAck('admin:join', {});
+      const res = (await userSocket.emitWithAck('admin:join', {})) as SecurityWsResponse;
       expect(res).toBeDefined();
       expect(res.success).toBe(false);
       expect(res.error?.code).toBe('FORBIDDEN');
     });
 
     it('Sec 2: should reject unauthorized regular user attempting admin:users:create', async () => {
-      const res: any = await userSocket.emitWithAck('admin:users:create', {
+      const res = (await userSocket.emitWithAck('admin:users:create', {
         email: `spoofed_${Date.now()}@example.com`,
         password: 'Password123!',
         name: 'Spoofed User',
         role: 'admin',
-      });
+      })) as SecurityWsResponse;
 
       expect(res).toBeDefined();
       expect(res.success).toBe(false);
@@ -99,10 +114,10 @@ describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () =
     });
 
     it('Sec 3: should reject unauthorized regular user attempting admin:users:update', async () => {
-      const res: any = await userSocket.emitWithAck('admin:users:update', {
+      const res = (await userSocket.emitWithAck('admin:users:update', {
         userId: 'any-user-id',
         name: 'Hacked Name',
-      });
+      })) as SecurityWsResponse;
 
       expect(res).toBeDefined();
       expect(res.success).toBe(false);
@@ -110,9 +125,9 @@ describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () =
     });
 
     it('Sec 4: should reject unauthorized regular user attempting admin:users:delete', async () => {
-      const res: any = await userSocket.emitWithAck('admin:users:delete', {
+      const res = (await userSocket.emitWithAck('admin:users:delete', {
         userId: 'any-user-id',
-      });
+      })) as SecurityWsResponse;
 
       expect(res).toBeDefined();
       expect(res.success).toBe(false);
@@ -187,12 +202,15 @@ describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () =
 
       await new Promise<void>((resolve) => adminSocket.on('connect', () => resolve()));
 
-      const injectionPayload: any = {
+      const injectionPayload: Record<string, unknown> = {
         userId: { $ne: null }, // Attempting NoSQL injection to match all users
         name: { $gt: '' },
       };
 
-      const res: any = await adminSocket.emitWithAck('admin:users:update', injectionPayload);
+      const res = (await adminSocket.emitWithAck(
+        'admin:users:update',
+        injectionPayload,
+      )) as SecurityWsResponse;
       expect(res).toBeDefined();
       expect(res.success).toBe(false);
       expect(res.error?.code).toBe('VALIDATION_ERROR');
@@ -205,11 +223,14 @@ describe('Security Layer: WebSocket Penetration & Injection Defense Suite', () =
     it('Sec 8: should not pollute Object.prototype when receiving __proto__ or constructor keys', async () => {
       const maliciousPayload = JSON.parse('{"__proto__":{"polluted":true},"name":"Safe Name"}');
 
-      const res: any = await userSocket.emitWithAck('user:profile', maliciousPayload);
+      const res = (await userSocket.emitWithAck(
+        'user:profile',
+        maliciousPayload,
+      )) as SecurityWsResponse;
       expect(res).toBeDefined();
 
       // Verify that global prototype was NOT contaminated
-      expect(({} as any).polluted).toBeUndefined();
+      expect(({} as Record<string, unknown>)['polluted']).toBeUndefined();
       expect(Object.prototype.hasOwnProperty.call(Object.prototype, 'polluted')).toBe(false);
     });
   });

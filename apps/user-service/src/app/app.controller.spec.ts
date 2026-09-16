@@ -11,7 +11,14 @@ describe('AppController', () => {
   let mockPinoLogger: Partial<PinoLogger>;
   let mockRmqClient: { emit: jest.Mock };
   let mockRedisClient: { set: jest.Mock; get: jest.Mock };
-  let mockConnection: any;
+  let mockConnection: {
+    readyState: number;
+    db?: {
+      admin: () => {
+        ping: jest.Mock;
+      };
+    };
+  };
 
   beforeEach(async () => {
     mockPinoLogger = {
@@ -79,7 +86,7 @@ describe('AppController', () => {
     it('should handle missing payload properties gracefully (Negative Test)', async () => {
       const appController = app.get<AppController>(AppController);
       const mockContext = {} as TcpContext;
-      const result = await appController.hello({} as any, mockContext);
+      const result = await appController.hello({}, mockContext);
 
       expect(result).toEqual({
         message: 'Hello World from User Service',

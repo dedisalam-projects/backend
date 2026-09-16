@@ -65,7 +65,7 @@ describe('UserController', () => {
 
       mockUserService.send.mockReturnValue(of(mockResponse));
 
-      const result = await controller.getUsers(undefined as any);
+      const result = await controller.getUsers(undefined as unknown as UserPaginationQueryDto);
 
       expect(mockUserService.send).toHaveBeenCalledWith('user.list.paginated', {});
       expect(result.success).toBe(true);

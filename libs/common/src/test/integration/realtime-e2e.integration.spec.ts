@@ -1,5 +1,32 @@
 import { io, Socket } from 'socket.io-client';
 
+interface TestApiResponse {
+  success?: boolean;
+  message?: string;
+  data?: {
+    id?: string;
+    _id?: string;
+    email?: string;
+    name?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface TestBroadcastData {
+  event?: string;
+  data?: {
+    email?: string;
+    name?: string;
+    userId?: string;
+    [key: string]: unknown;
+  };
+  email?: string;
+  name?: string;
+  userId?: string;
+  [key: string]: unknown;
+}
+
 describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
   const GATEWAY_URL = process.env['GATEWAY_URL'] || 'http://localhost:3000';
   let adminSocket1: Socket;
@@ -28,7 +55,7 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
     });
 
     expect(res.status).toBe(400);
-    const json: any = await res.json();
+    const json = (await res.json()) as TestApiResponse;
     expect(json.message).toBeDefined();
   });
 
@@ -45,7 +72,7 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
     });
 
     expect(registerRes.status).toBe(201);
-    const regJson: any = await registerRes.json();
+    const regJson = (await registerRes.json()) as TestApiResponse;
     expect(regJson.success).toBe(true);
 
     const loginRes = await fetch(`${GATEWAY_URL}/api/v1/auth/login`, {
@@ -58,11 +85,14 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
     });
 
     expect(loginRes.status).toBe(201);
-    const loginJson: any = await loginRes.json();
+    const loginJson = (await loginRes.json()) as TestApiResponse;
     expect(loginJson.success).toBe(true);
 
-    const cookies = (loginRes.headers as any).getSetCookie
-      ? (loginRes.headers as any).getSetCookie()
+    const headersWithGetSetCookie = loginRes.headers as unknown as {
+      getSetCookie?: () => string[];
+    };
+    const cookies = headersWithGetSetCookie.getSetCookie
+      ? headersWithGetSetCookie.getSetCookie()
       : [loginRes.headers.get('set-cookie') || ''];
     let extractedToken = '';
     for (const c of cookies) {
@@ -89,7 +119,7 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
   });
 
   it('Step 4: should fetch user profile via user:profile ack RPC', async () => {
-    const profileRes: any = await adminSocket1.emitWithAck('user:profile', {});
+    const profileRes = (await adminSocket1.emitWithAck('user:profile', {})) as TestApiResponse;
     expect(profileRes).toBeDefined();
     expect(profileRes.success).toBe(true);
     expect(profileRes.data?.email).toBe(testEmail);
@@ -107,28 +137,28 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
     });
 
     // Both join admin room
-    const join1: any = await adminSocket1.emitWithAck('admin:join', {});
-    const join2: any = await adminSocket2.emitWithAck('admin:join', {});
+    const join1 = (await adminSocket1.emitWithAck('admin:join', {})) as TestApiResponse;
+    const join2 = (await adminSocket2.emitWithAck('admin:join', {})) as TestApiResponse;
     expect(join1.success).toBe(true);
     expect(join2.success).toBe(true);
 
     const targetEmail = `created_user_${Date.now()}@example.com`;
 
     // Listen for realtime broadcast on adminSocket2
-    let liveCreatedData: any = null;
-    adminSocket2.once('user:created', (payload) => {
+    let liveCreatedData: TestBroadcastData | null = null;
+    adminSocket2.once('user:created', (payload: TestBroadcastData) => {
       liveCreatedData = payload;
     });
 
-    const createRes: any = await adminSocket1.emitWithAck('admin:users:create', {
+    const createRes = (await adminSocket1.emitWithAck('admin:users:create', {
       email: targetEmail,
       password: 'UserPassword123!',
       name: 'Created Realtime User',
       role: 'user',
-    });
+    })) as TestApiResponse;
 
     expect(createRes.success).toBe(true);
-    createdUserId = createRes.data?.id || createRes.data?._id;
+    createdUserId = (createRes.data?.id || createRes.data?._id) as string;
     expect(createdUserId).toBeDefined();
 
     // Wait 300ms for broadcast
@@ -138,19 +168,19 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
       expect(liveCreatedData.event).toBe('USER_CREATED');
     }
     const createdPayload = liveCreatedData?.data || liveCreatedData;
-    expect(createdPayload.email).toBe(targetEmail);
+    expect(createdPayload?.email).toBe(targetEmail);
   });
 
   it('Step 6: should broadcast user:updated event when user is modified', async () => {
-    let liveUpdatedData: any = null;
-    adminSocket2.once('user:updated', (payload) => {
+    let liveUpdatedData: TestBroadcastData | null = null;
+    adminSocket2.once('user:updated', (payload: TestBroadcastData) => {
       liveUpdatedData = payload;
     });
 
-    const updateRes: any = await adminSocket1.emitWithAck('admin:users:update', {
+    const updateRes = (await adminSocket1.emitWithAck('admin:users:update', {
       userId: createdUserId,
       name: 'Renamed Realtime User',
-    });
+    })) as TestApiResponse;
 
     expect(updateRes.success).toBe(true);
     await new Promise((r) => setTimeout(r, 300));
@@ -159,18 +189,18 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
       expect(liveUpdatedData.event).toBe('USER_UPDATED');
     }
     const updatedPayload = liveUpdatedData?.data || liveUpdatedData;
-    expect(updatedPayload.name).toBe('Renamed Realtime User');
+    expect(updatedPayload?.name).toBe('Renamed Realtime User');
   });
 
   it('Step 7: should broadcast user:deleted event when user is removed', async () => {
-    let liveDeletedData: any = null;
-    adminSocket2.once('user:deleted', (payload) => {
+    let liveDeletedData: TestBroadcastData | null = null;
+    adminSocket2.once('user:deleted', (payload: TestBroadcastData) => {
       liveDeletedData = payload;
     });
 
-    const deleteRes: any = await adminSocket1.emitWithAck('admin:users:delete', {
+    const deleteRes = (await adminSocket1.emitWithAck('admin:users:delete', {
       userId: createdUserId,
-    });
+    })) as TestApiResponse;
 
     expect(deleteRes.success).toBe(true);
     await new Promise((r) => setTimeout(r, 300));
@@ -179,7 +209,7 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
       expect(liveDeletedData.event).toBe('USER_DELETED');
     }
     const deletedPayload = liveDeletedData?.data || liveDeletedData;
-    expect(deletedPayload.userId).toBe(createdUserId);
+    expect(deletedPayload?.userId).toBe(createdUserId);
   });
 
   it('Step 8: should connect to /notifications namespace, list, and broadcast notifications', async () => {
@@ -198,11 +228,11 @@ describe('Layer 4: Automated Realtime Socket.IO E2E Integration Suite', () => {
       liveBroadcastReceived = true;
     });
 
-    const broadcastRes: any = await notificationSocket.emitWithAck('admin:notification:broadcast', {
+    const broadcastRes = (await notificationSocket.emitWithAck('admin:notification:broadcast', {
       title: 'Integration Test Alert',
       message: 'Testing realtime notification distribution',
       type: 'SUCCESS',
-    });
+    })) as TestApiResponse;
 
     expect(broadcastRes).toBeDefined();
     expect(broadcastRes.success).toBe(true);

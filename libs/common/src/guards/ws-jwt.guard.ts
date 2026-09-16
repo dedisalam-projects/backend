@@ -5,6 +5,16 @@ import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 import * as cookie from 'cookie';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { JwtPayload } from '../interfaces';
+
+export interface WsClientSocket {
+  handshake?: {
+    auth?: { token?: string };
+    headers?: { authorization?: string; cookie?: string };
+    query?: { token?: string | string[] };
+  };
+  data?: { user?: JwtPayload; [key: string]: unknown };
+}
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
@@ -23,7 +33,7 @@ export class WsJwtGuard implements CanActivate {
       return true;
     }
 
-    const client = context.switchToWs().getClient();
+    const client = context.switchToWs().getClient<WsClientSocket>();
     const token = this.extractToken(client);
 
     if (!token) {
@@ -36,7 +46,7 @@ export class WsJwtGuard implements CanActivate {
         throw new Error('JWT_SECRET is not defined in configuration');
       }
 
-      const decoded = jwt.verify(token, secret) as any;
+      const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
       client.data = client.data || {};
       client.data.user = decoded;
       return true;
@@ -45,7 +55,7 @@ export class WsJwtGuard implements CanActivate {
     }
   }
 
-  private extractToken(client: any): string | null {
+  private extractToken(client?: WsClientSocket | null): string | null {
     if (!client || !client.handshake) {
       return null;
     }

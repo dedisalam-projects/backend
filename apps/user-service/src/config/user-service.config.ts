@@ -33,7 +33,7 @@ export class UserServiceConfigDto {
   REDIS_URL = 'redis://localhost:6379';
 }
 
-export function validate(config: Record<string, any>) {
+export function validate(config: Record<string, unknown>) {
   const validatedConfig = plainToInstance(UserServiceConfigDto, config, {
     enableImplicitConversion: true,
   });

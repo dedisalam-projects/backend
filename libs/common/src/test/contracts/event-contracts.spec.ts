@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { validateSync, IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import { validateSync, IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class UserCreatedPayloadDto {
   @IsString()
@@ -47,7 +47,7 @@ export class UserUpdatedEventContract {
   userId!: string;
 
   @IsNotEmpty()
-  changes!: Record<string, any>;
+  changes!: Record<string, unknown>;
 
   @IsString()
   @IsNotEmpty()
@@ -114,11 +114,11 @@ export class NotificationPushContract {
   userId!: string;
 
   @IsNotEmpty()
-  notification!: Record<string, any>;
+  notification!: Record<string, unknown>;
 }
 
 describe('Layer 5: Microservice Asynchronous Event Contracts', () => {
-  function verifyContract<T extends object>(cls: new () => T, payload: any): void {
+  function verifyContract<T extends object>(cls: new () => T, payload: unknown): void {
     const instance = plainToInstance(cls, payload);
     const errors = validateSync(instance as object, { skipMissingProperties: false });
     if (errors.length > 0) {

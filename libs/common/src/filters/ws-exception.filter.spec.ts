@@ -1,11 +1,12 @@
 import { WsExceptionFilter } from './ws-exception.filter';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
+import { Socket } from 'socket.io';
 
 describe('WsExceptionFilter', () => {
   let filter: WsExceptionFilter;
-  let mockClient: any;
-  let mockHost: any;
+  let mockClient: Partial<Socket>;
+  let mockHost: ArgumentsHost;
   let ackCallback: jest.Mock;
 
   beforeEach(() => {
@@ -17,10 +18,12 @@ describe('WsExceptionFilter', () => {
 
     mockHost = {
       switchToWs: () => ({
-        getClient: () => mockClient,
+        getClient: () => mockClient as Socket,
+        getData: jest.fn(),
+        getPattern: jest.fn(),
       }),
       getArgs: () => [{}, ackCallback],
-    };
+    } as unknown as ArgumentsHost;
   });
 
   describe('HttpException handling', () => {
@@ -112,7 +115,7 @@ describe('WsExceptionFilter', () => {
     });
 
     it('should handle HttpException with null response', () => {
-      const exception = new HttpException(null as any, HttpStatus.BAD_REQUEST);
+      const exception = new HttpException(null as unknown as string, HttpStatus.BAD_REQUEST);
 
       filter.catch(exception, mockHost);
 
@@ -142,7 +145,7 @@ describe('WsExceptionFilter', () => {
     });
 
     it('should format WsException with null error', () => {
-      const exception = new WsException(null as any);
+      const exception = new WsException(null as unknown as string);
 
       filter.catch(exception, mockHost);
 
@@ -260,7 +263,7 @@ describe('WsExceptionFilter', () => {
 
   describe('Dispatch mechanisms', () => {
     it('should emit to client when ackCallback is omitted', () => {
-      mockHost.getArgs = () => [{}]; // no function arg
+      mockHost.getArgs = (() => [{}]) as unknown as ArgumentsHost['getArgs'];
 
       filter.catch(new Error('Boom'), mockHost);
 
@@ -276,8 +279,12 @@ describe('WsExceptionFilter', () => {
     });
 
     it('should handle missing client gracefully when no ackCallback', () => {
-      mockHost.getArgs = () => [{}];
-      mockHost.switchToWs = () => ({ getClient: () => null });
+      mockHost.getArgs = (() => [{}]) as unknown as ArgumentsHost['getArgs'];
+      mockHost.switchToWs = (() => ({
+        getClient: () => null,
+        getData: jest.fn(),
+        getPattern: jest.fn(),
+      })) as unknown as ArgumentsHost['switchToWs'];
 
       expect(() => filter.catch(new Error('Boom'), mockHost)).not.toThrow();
     });

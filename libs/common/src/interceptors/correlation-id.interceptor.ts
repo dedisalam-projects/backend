@@ -4,7 +4,7 @@ import { Response, Request } from 'express';
 
 @Injectable()
 export class CorrelationIdInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const httpContext = context.switchToHttp();
     const request = httpContext.getRequest<Request & { id?: string }>();
     const response = httpContext.getResponse<Response>();

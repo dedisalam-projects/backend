@@ -4,12 +4,14 @@ import { ConfigService } from '@nestjs/config';
 import { of } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
 import { WsException } from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { AdminCreateUserDto, AdminUpdateUserDto } from '@dedisalam/common';
 
 describe('UserGateway', () => {
   let gateway: UserGateway;
   let mockUserService: { send: jest.Mock };
   let mockConfigService: { get: jest.Mock };
-  let mockServer: any;
+  let mockServer: { to: jest.Mock };
   let mockToEmit: jest.Mock;
 
   const jwtSecret = 'test-jwt-secret';
@@ -42,76 +44,87 @@ describe('UserGateway', () => {
     }).compile();
 
     gateway = module.get<UserGateway>(UserGateway);
-    gateway.server = mockServer;
+    gateway.server = mockServer as unknown as Server;
   });
 
   describe('afterInit', () => {
     it('should register middleware and handle missing token, invalid token, missing secret, and valid token', () => {
-      let middleware: any;
-      const fakeServer: any = {
-        use: jest.fn().mockImplementation((fn) => {
-          middleware = fn;
-        }),
-      };
+      let middleware!: (client: Socket, next: (err?: Error) => void) => void;
+      const fakeServer = {
+        use: jest
+          .fn()
+          .mockImplementation((fn: (client: Socket, next: (err?: Error) => void) => void) => {
+            middleware = fn;
+          }),
+      } as unknown as Server;
 
       gateway.afterInit(fakeServer);
       expect(fakeServer.use).toHaveBeenCalled();
 
       // 1. Missing token
       const next1 = jest.fn();
-      middleware({ handshake: {} }, next1);
+      middleware({ handshake: {} } as unknown as Socket, next1);
       expect(next1).toHaveBeenCalledWith(expect.any(Error));
       expect(next1.mock.calls[0][0].message).toContain('Authentication token is required');
 
       // 2. Valid token
       const validToken = jwt.sign({ sub: 'u1', email: 'u@test.com' }, jwtSecret);
       const next2 = jest.fn();
-      const client2: any = { handshake: { auth: { token: validToken } } };
+      const client2 = {
+        handshake: { auth: { token: validToken } },
+        data: {},
+      } as unknown as Socket;
       middleware(client2, next2);
       expect(next2).toHaveBeenCalledWith();
-      expect(client2.data.user.email).toBe('u@test.com');
+      expect((client2 as unknown as { data: { user: { email: string } } }).data.user.email).toBe(
+        'u@test.com',
+      );
 
       // 3. Invalid token
       const next3 = jest.fn();
-      middleware({ handshake: { auth: { token: 'bad-token' } } }, next3);
+      middleware({ handshake: { auth: { token: 'bad-token' } } } as unknown as Socket, next3);
       expect(next3).toHaveBeenCalledWith(expect.any(Error));
       expect(next3.mock.calls[0][0].message).toContain('Invalid or expired token');
 
       // 4. Missing secret
       mockConfigService.get.mockReturnValueOnce(null);
       const next4 = jest.fn();
-      middleware({ handshake: { auth: { token: validToken } } }, next4);
+      middleware({ handshake: { auth: { token: validToken } } } as unknown as Socket, next4);
       expect(next4).toHaveBeenCalledWith(expect.any(Error));
       expect(next4.mock.calls[0][0].message).toContain('Invalid or expired token');
 
       // 5. Valid token via cookie
       const next5 = jest.fn();
-      const client5: any = { handshake: { headers: { cookie: `accessToken=${validToken}` } } };
+      const client5 = {
+        handshake: { headers: { cookie: `accessToken=${validToken}` } },
+      } as unknown as Socket;
       middleware(client5, next5);
       expect(next5).toHaveBeenCalledWith();
-      expect(client5.data.user.email).toBe('u@test.com');
+      expect((client5 as unknown as { data: { user: { email: string } } }).data.user.email).toBe(
+        'u@test.com',
+      );
     });
   });
 
   describe('handleConnection', () => {
     it('should log and accept if client.data.user is already authenticated by middleware', () => {
-      const mockClient: any = {
+      const mockClient = {
         id: 'client-already-auth',
         data: { user: { email: 'already@test.com' } },
         emit: jest.fn(),
         disconnect: jest.fn(),
-      };
+      } as unknown as Socket;
       gateway.handleConnection(mockClient);
       expect(mockClient.disconnect).not.toHaveBeenCalled();
     });
 
     it('should reject connection when no token is present', () => {
-      const mockClient: any = {
+      const mockClient = {
         id: 'client-1',
         handshake: {},
         emit: jest.fn(),
         disconnect: jest.fn(),
-      };
+      } as unknown as Socket;
 
       gateway.handleConnection(mockClient);
 
@@ -124,25 +137,25 @@ describe('UserGateway', () => {
 
     it('should accept connection when token is in handshake.auth.token with Bearer prefix', () => {
       const token = jwt.sign({ sub: 'user-1', email: 'user@test.com', role: 'user' }, jwtSecret);
-      const mockClient: any = {
+      const mockClient = {
         id: 'client-2',
         handshake: {
           auth: { token: `Bearer ${token}` },
         },
         emit: jest.fn(),
         disconnect: jest.fn(),
-      };
+      } as unknown as Socket;
 
       gateway.handleConnection(mockClient);
 
-      expect(mockClient.data.user).toBeDefined();
-      expect(mockClient.data.user.email).toBe('user@test.com');
+      expect(mockClient.data?.user).toBeDefined();
+      expect((mockClient.data?.user as { email?: string })?.email).toBe('user@test.com');
       expect(mockClient.disconnect).not.toHaveBeenCalled();
     });
 
     it('should accept connection when token is in handshake.headers.authorization', () => {
       const token = jwt.sign({ sub: 'user-2', email: 'header@test.com', role: 'user' }, jwtSecret);
-      const mockClient: any = {
+      const mockClient = {
         id: 'client-3',
         handshake: {
           headers: { authorization: `Bearer ${token}` },
@@ -150,11 +163,11 @@ describe('UserGateway', () => {
         data: {},
         emit: jest.fn(),
         disconnect: jest.fn(),
-      };
+      } as unknown as Socket;
 
       gateway.handleConnection(mockClient);
 
-      expect(mockClient.data.user.email).toBe('header@test.com');
+      expect((mockClient.data?.user as { email?: string })?.email).toBe('header@test.com');
     });
 
     it('should accept connection when token is in handshake.headers.authorization without Bearer', () => {
@@ -162,7 +175,7 @@ describe('UserGateway', () => {
         { sub: 'user-2b', email: 'header2@test.com', role: 'user' },
         jwtSecret,
       );
-      const mockClient: any = {
+      const mockClient = {
         id: 'client-3b',
         handshake: {
           headers: { authorization: token },
@@ -170,16 +183,16 @@ describe('UserGateway', () => {
         data: {},
         emit: jest.fn(),
         disconnect: jest.fn(),
-      };
+      } as unknown as Socket;
 
       gateway.handleConnection(mockClient);
 
-      expect(mockClient.data.user.email).toBe('header2@test.com');
+      expect((mockClient.data?.user as { email?: string })?.email).toBe('header2@test.com');
     });
 
     it('should accept connection when token is in handshake.query.token', () => {
       const token = jwt.sign({ sub: 'user-3', email: 'query@test.com', role: 'user' }, jwtSecret);
-      const mockClient: any = {
+      const mockClient = {
         id: 'client-4',
         handshake: {
           query: { token },
@@ -187,11 +200,11 @@ describe('UserGateway', () => {
         data: {},
         emit: jest.fn(),
         disconnect: jest.fn(),
-      };
+      } as unknown as Socket;
 
       gateway.handleConnection(mockClient);
 
-      expect(mockClient.data.user.email).toBe('query@test.com');
+      expect((mockClient.data?.user as { email?: string })?.email).toBe('query@test.com');
     });
 
     it('should accept connection when token is in handshake.headers.cookie', () => {
@@ -199,7 +212,7 @@ describe('UserGateway', () => {
         { sub: 'user-cookie', email: 'cookie@test.com', role: 'user' },
         jwtSecret,
       );
-      const mockClient: any = {
+      const mockClient = {
         id: 'client-cookie',
         handshake: {
           headers: { cookie: `accessToken=${token}; other=abc` },
@@ -207,22 +220,22 @@ describe('UserGateway', () => {
         data: {},
         emit: jest.fn(),
         disconnect: jest.fn(),
-      };
+      } as unknown as Socket;
 
       gateway.handleConnection(mockClient);
 
-      expect(mockClient.data.user.email).toBe('cookie@test.com');
+      expect((mockClient.data?.user as { email?: string })?.email).toBe('cookie@test.com');
     });
 
     it('should reject connection when cookie header lacks accessToken', () => {
-      const mockClient: any = {
+      const mockClient = {
         id: 'client-no-token-cookie',
         handshake: {
           headers: { cookie: 'other=abc; session=123' },
         },
         emit: jest.fn(),
         disconnect: jest.fn(),
-      };
+      } as unknown as Socket;
 
       gateway.handleConnection(mockClient);
 
@@ -234,14 +247,14 @@ describe('UserGateway', () => {
     });
 
     it('should reject connection when token is invalid', () => {
-      const mockClient: any = {
+      const mockClient = {
         id: 'client-5',
         handshake: {
           auth: { token: 'invalid-jwt-token' },
         },
         emit: jest.fn(),
         disconnect: jest.fn(),
-      };
+      } as unknown as Socket;
 
       gateway.handleConnection(mockClient);
 
@@ -255,14 +268,14 @@ describe('UserGateway', () => {
     it('should reject connection when JWT_SECRET is missing', () => {
       mockConfigService.get.mockReturnValueOnce(null);
       const token = jwt.sign({ sub: 'u1' }, 'any-key');
-      const mockClient: any = {
+      const mockClient = {
         id: 'client-6',
         handshake: {
           auth: { token },
         },
         emit: jest.fn(),
         disconnect: jest.fn(),
-      };
+      } as unknown as Socket;
 
       gateway.handleConnection(mockClient);
 
@@ -272,19 +285,19 @@ describe('UserGateway', () => {
 
   describe('handleDisconnect', () => {
     it('should handle disconnect cleanly without error', () => {
-      const mockClient: any = { id: 'client-d1' };
+      const mockClient = { id: 'client-d1' } as unknown as Socket;
       expect(() => gateway.handleDisconnect(mockClient)).not.toThrow();
     });
   });
 
   describe('handleGetProfile', () => {
     it('should throw WsException if user is not authenticated', async () => {
-      const mockClient: any = { data: {} };
+      const mockClient = { data: {} } as unknown as Socket;
       await expect(gateway.handleGetProfile(mockClient)).rejects.toThrow(WsException);
     });
 
     it('should retrieve user profile successfully', async () => {
-      const mockClient: any = { data: { user: { sub: 'u1' } } };
+      const mockClient = { data: { user: { sub: 'u1' } } } as unknown as Socket;
       const profile = { id: 'u1', email: 'test@example.com' };
       mockUserService.send.mockReturnValueOnce(of(profile));
 
@@ -298,14 +311,14 @@ describe('UserGateway', () => {
 
   describe('handleUpdateProfile', () => {
     it('should throw WsException if user is not authenticated', async () => {
-      const mockClient: any = { data: {} };
+      const mockClient = { data: {} } as unknown as Socket;
       await expect(gateway.handleUpdateProfile(mockClient, { name: 'New' })).rejects.toThrow(
         WsException,
       );
     });
 
     it('should update user profile successfully', async () => {
-      const mockClient: any = { data: { user: { sub: 'u1' } } };
+      const mockClient = { data: { user: { sub: 'u1' } } } as unknown as Socket;
       const updated = { id: 'u1', name: 'New Name' };
       mockUserService.send.mockReturnValueOnce(of(updated));
 
@@ -322,25 +335,25 @@ describe('UserGateway', () => {
 
   describe('admin operations & checkAdmin', () => {
     it('should throw WsException if client has no user data in checkAdmin', async () => {
-      const mockClient: any = { data: {} };
+      const mockClient = { data: {} } as unknown as Socket;
       await expect(gateway.handleAdminJoin(mockClient)).rejects.toThrow(WsException);
     });
 
     it('should throw FORBIDDEN WsException if user is not an admin', async () => {
-      const mockClient: any = { data: { user: { sub: 'u1', role: 'user' } } };
+      const mockClient = { data: { user: { sub: 'u1', role: 'user' } } } as unknown as Socket;
       await expect(gateway.handleAdminJoin(mockClient)).rejects.toThrow(WsException);
     });
 
     it('should throw FORBIDDEN WsException if user has no role or roles properties', async () => {
-      const mockClient: any = { data: { user: { sub: 'u1' } } };
+      const mockClient = { data: { user: { sub: 'u1' } } } as unknown as Socket;
       await expect(gateway.handleAdminJoin(mockClient)).rejects.toThrow(WsException);
     });
 
     it('should allow handleAdminJoin when user is admin and join room', async () => {
-      const mockClient: any = {
+      const mockClient = {
         data: { user: { sub: 'a1', email: 'admin@test.com', roles: ['admin'] } },
         join: jest.fn(),
-      };
+      } as unknown as Socket;
 
       const result = await gateway.handleAdminJoin(mockClient);
 
@@ -350,34 +363,37 @@ describe('UserGateway', () => {
     });
 
     it('should allow admin when roles is string or super_admin', async () => {
-      const mockClient: any = {
+      const mockClient = {
         data: { user: { sub: 'a2', email: 'super@test.com', role: 'super_admin' } },
         join: jest.fn(),
-      };
+      } as unknown as Socket;
 
       const result = await gateway.handleAdminJoin(mockClient);
       expect(result.success).toBe(true);
     });
 
     it('should allow admin when user.roles is a single string', async () => {
-      const mockClient: any = {
+      const mockClient = {
         data: { user: { sub: 'a3', email: 'admin2@test.com', roles: 'admin' } },
         join: jest.fn(),
-      };
+      } as unknown as Socket;
 
       const result = await gateway.handleAdminJoin(mockClient);
       expect(result.success).toBe(true);
     });
 
     it('should handleAdminCreateUser and emit user:created to admin:users room', async () => {
-      const mockClient: any = {
+      const mockClient = {
         data: { user: { sub: 'a1', roles: ['admin'] } },
-      };
+      } as unknown as Socket;
       const newUser = { id: 'new-u', email: 'created@test.com' };
       mockUserService.send.mockReturnValueOnce(of(newUser));
 
       const createDto = { email: 'created@test.com', password: 'p', name: 'Created' };
-      const result = await gateway.handleAdminCreateUser(mockClient, createDto as any);
+      const result = await gateway.handleAdminCreateUser(
+        mockClient,
+        createDto as unknown as AdminCreateUserDto,
+      );
 
       expect(mockUserService.send).toHaveBeenCalledWith('user.create', createDto);
       expect(mockServer.to).toHaveBeenCalledWith('admin:users');
@@ -390,14 +406,17 @@ describe('UserGateway', () => {
     });
 
     it('should handleAdminUpdateUser and emit user:updated to admin:users room', async () => {
-      const mockClient: any = {
+      const mockClient = {
         data: { user: { sub: 'a1', roles: ['admin'] } },
-      };
+      } as unknown as Socket;
       const updatedUser = { id: 'target-u', name: 'Updated' };
       mockUserService.send.mockReturnValueOnce(of(updatedUser));
 
       const updateDto = { userId: 'target-u', name: 'Updated' };
-      const result = await gateway.handleAdminUpdateUser(mockClient, updateDto as any);
+      const result = await gateway.handleAdminUpdateUser(
+        mockClient,
+        updateDto as unknown as AdminUpdateUserDto,
+      );
 
       expect(mockUserService.send).toHaveBeenCalledWith('user.update.admin', updateDto);
       expect(mockServer.to).toHaveBeenCalledWith('admin:users');
@@ -410,18 +429,18 @@ describe('UserGateway', () => {
     });
 
     it('should handleAdminDeleteUser throw error when userId missing', async () => {
-      const mockClient: any = {
+      const mockClient = {
         data: { user: { sub: 'a1', roles: ['admin'] } },
-      };
-      await expect(gateway.handleAdminDeleteUser(mockClient, {} as any)).rejects.toThrow(
-        WsException,
-      );
+      } as unknown as Socket;
+      await expect(
+        gateway.handleAdminDeleteUser(mockClient, {} as unknown as { userId: string }),
+      ).rejects.toThrow(WsException);
     });
 
     it('should handleAdminDeleteUser and emit user:deleted to admin:users room', async () => {
-      const mockClient: any = {
+      const mockClient = {
         data: { user: { sub: 'a1', roles: ['admin'] } },
-      };
+      } as unknown as Socket;
       mockUserService.send.mockReturnValueOnce(of({ message: 'deleted' }));
 
       const result = await gateway.handleAdminDeleteUser(mockClient, { userId: 'del-u' });

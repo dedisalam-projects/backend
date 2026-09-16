@@ -12,6 +12,7 @@
     "@nestjs/swagger": "^11.4.6",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/websockets": "^11.1.28",
+    "@nestjs/microservices": "^11.1.28",
     "passport-jwt": "^4.0.1",
     "@nestjs/config": "^4.0.4",
     "node-vault": "^0.12.0",

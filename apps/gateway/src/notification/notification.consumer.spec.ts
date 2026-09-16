@@ -4,7 +4,12 @@ import { NotificationGateway } from './notification.gateway';
 
 describe('NotificationConsumer', () => {
   let consumer: NotificationConsumer;
-  let mockNotificationGateway: any;
+  let mockNotificationGateway: {
+    server: {
+      emit: jest.Mock;
+      to: jest.Mock;
+    };
+  };
   let mockToEmit: jest.Mock;
 
   beforeEach(async () => {
@@ -23,7 +28,7 @@ describe('NotificationConsumer', () => {
       providers: [
         {
           provide: NotificationGateway,
-          useValue: mockNotificationGateway,
+          useValue: mockNotificationGateway as unknown as NotificationGateway,
         },
       ],
     }).compile();
@@ -44,7 +49,7 @@ describe('NotificationConsumer', () => {
     });
 
     it('should handle missing payload gracefully (Negative Test)', () => {
-      const payload = {} as any;
+      const payload = {};
       const response = consumer.handleNotificationPush(payload);
 
       expect(response).toEqual({ status: 'success' });
@@ -55,7 +60,7 @@ describe('NotificationConsumer', () => {
     });
 
     it('should handle null server gracefully', () => {
-      mockNotificationGateway.server = null;
+      (mockNotificationGateway as unknown as { server: null }).server = null;
       const response = consumer.handleNotificationPush({ message: 'Hi' });
       expect(response).toEqual({ status: 'success' });
     });
@@ -70,7 +75,7 @@ describe('NotificationConsumer', () => {
     });
 
     it('should handle null server gracefully', () => {
-      mockNotificationGateway.server = null;
+      (mockNotificationGateway as unknown as { server: null }).server = null;
       expect(() => consumer.handleUserLoggedIn({ email: 'test@example.com' })).not.toThrow();
     });
   });
@@ -104,7 +109,7 @@ describe('NotificationConsumer', () => {
     });
 
     it('should handle null server gracefully', () => {
-      mockNotificationGateway.server = null;
+      (mockNotificationGateway as unknown as { server: null }).server = null;
       expect(() => consumer.handleUserCreated({ user: { id: 'u1' } })).not.toThrow();
     });
   });
@@ -126,7 +131,7 @@ describe('NotificationConsumer', () => {
     });
 
     it('should handle null server gracefully', () => {
-      mockNotificationGateway.server = null;
+      (mockNotificationGateway as unknown as { server: null }).server = null;
       expect(() => consumer.handleUserUpdated({ userId: 'u1' })).not.toThrow();
     });
   });
@@ -147,7 +152,7 @@ describe('NotificationConsumer', () => {
     });
 
     it('should handle null server gracefully', () => {
-      mockNotificationGateway.server = null;
+      (mockNotificationGateway as unknown as { server: null }).server = null;
       expect(() => consumer.handleUserDeleted({ userId: 'u1' })).not.toThrow();
     });
   });
@@ -170,7 +175,7 @@ describe('NotificationConsumer', () => {
     });
 
     it('should handle null server gracefully', () => {
-      mockNotificationGateway.server = null;
+      (mockNotificationGateway as unknown as { server: null }).server = null;
       expect(() => consumer.handleNotifyUser({ userId: 'u1' })).not.toThrow();
     });
   });
@@ -195,7 +200,7 @@ describe('NotificationConsumer', () => {
     });
 
     it('should handle null server gracefully', () => {
-      mockNotificationGateway.server = null;
+      (mockNotificationGateway as unknown as { server: null }).server = null;
       expect(() => consumer.handleBroadcastPush({ title: 'Alert' })).not.toThrow();
     });
   });

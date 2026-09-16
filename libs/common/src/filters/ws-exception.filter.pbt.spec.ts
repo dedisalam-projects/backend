@@ -1,5 +1,5 @@
 import * as fc from 'fast-check';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { WsExceptionFilter } from './ws-exception.filter';
 
@@ -29,7 +29,7 @@ describe('WsExceptionFilter Property-Based Testing (Fast-Check)', () => {
             getArgs: () => [{}, ackCallback],
           };
 
-          expect(() => filter.catch(rawError, mockHost as any)).not.toThrow();
+          expect(() => filter.catch(rawError, mockHost as unknown as ArgumentsHost)).not.toThrow();
           expect(ackCallback).toHaveBeenCalledTimes(1);
           const response = ackCallback.mock.calls[0][0];
           expect(response).toMatchObject({
@@ -74,7 +74,9 @@ describe('WsExceptionFilter Property-Based Testing (Fast-Check)', () => {
             getArgs: () => [{}], // No callback in args
           };
 
-          expect(() => filter.catch(exceptionInstance, mockHost as any)).not.toThrow();
+          expect(() =>
+            filter.catch(exceptionInstance, mockHost as unknown as ArgumentsHost),
+          ).not.toThrow();
           expect(mockClient.emit).toHaveBeenCalledWith(
             'exception',
             expect.objectContaining({

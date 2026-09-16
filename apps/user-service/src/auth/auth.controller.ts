@@ -1,6 +1,12 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { LoginDto, RegisterDto, RefreshTokenDto } from '@dedisalam/common';
+import {
+  LoginDto,
+  RegisterDto,
+  RefreshTokenDto,
+  AdminCreateUserDto,
+  UserPaginationQueryDto,
+} from '@dedisalam/common';
 import { AuthService } from './auth.service';
 
 @Controller()
@@ -23,7 +29,7 @@ export class AuthController {
   }
 
   @MessagePattern('user.profile')
-  async getProfile(@Payload() data: any) {
+  async getProfile(@Payload() data: { userId: string }) {
     return this.authService.getProfile(data.userId);
   }
 
@@ -38,22 +44,30 @@ export class AuthController {
   }
 
   @MessagePattern('user.update')
-  async updateProfile(@Payload() data: any) {
+  async updateProfile(@Payload() data: { userId?: string; [key: string]: unknown }) {
     return this.authService.updateProfile(data);
   }
 
   @MessagePattern('user.create')
-  async createUser(@Payload() data: any) {
+  async createUser(
+    @Payload()
+    data: AdminCreateUserDto | { email: string; password: string; name: string; role?: string },
+  ) {
     return this.authService.createUser(data);
   }
 
   @MessagePattern('user.list.paginated')
-  async getUsersPaginated(@Payload() query: any) {
+  async getUsersPaginated(
+    @Payload()
+    query:
+      | UserPaginationQueryDto
+      | { page?: number | string; limit?: number | string; [key: string]: unknown },
+  ) {
     return this.authService.getUsersPaginated(query);
   }
 
   @MessagePattern('user.update.admin')
-  async updateUserByAdmin(@Payload() data: { userId: string; [key: string]: any }) {
+  async updateUserByAdmin(@Payload() data: { userId: string; [key: string]: unknown }) {
     const { userId, ...updateData } = data;
     return this.authService.updateUserByAdmin(userId, updateData);
   }

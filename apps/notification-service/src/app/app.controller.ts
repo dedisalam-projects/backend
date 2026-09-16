@@ -1,12 +1,5 @@
 import { Controller, Logger, Inject } from '@nestjs/common';
-import {
-  EventPattern,
-  Payload,
-  Ctx,
-  RmqContext,
-  ClientProxy,
-  MessagePattern,
-} from '@nestjs/microservices';
+import { EventPattern, Payload, ClientProxy, MessagePattern } from '@nestjs/microservices';
 import { AppService } from './app.service';
 import { PinoLogger } from 'nestjs-pino';
 
@@ -59,12 +52,12 @@ export class AppController {
     data: {
       userId: string;
       name: string;
-      user?: any;
+      user?: Record<string, unknown>;
       timestamp?: string;
     },
   ) {
     this.logger.log(`Received user.created event for ${data?.userId}`);
-    const name = data?.name || data?.user?.name || 'User';
+    const name = data?.name || (data?.user?.name as string | undefined) || 'User';
     const message = `Welcome to our platform, ${name}!`;
     await this.appService.processNotification(message, data?.userId, 'WELCOME');
 
@@ -90,7 +83,7 @@ export class AppController {
     @Payload()
     data: {
       userId: string;
-      changes: Record<string, any>;
+      changes: Record<string, unknown>;
       timestamp?: string;
     },
   ) {
@@ -122,7 +115,7 @@ export class AppController {
   }
 
   @EventPattern('user.logged_in')
-  async handleUserLoggedIn(@Payload() data: any) {
+  async handleUserLoggedIn(@Payload() data: { email?: string; [key: string]: unknown }) {
     this.logger.log(`Received user.logged_in event for ${data?.email}`);
     this.gatewayClient.emit('user.logged_in', data);
   }
@@ -137,13 +130,14 @@ export class AppController {
     @Payload() data: { title: string; message: string; type?: string; recipientId?: string },
   ) {
     const saved = await this.appService.broadcastNotification(data);
+    const savedDoc = saved as unknown as { _id?: unknown; createdAt?: unknown };
     this.gatewayClient.emit('notification.broadcast.push', {
-      id: (saved as any)._id,
+      id: savedDoc._id,
       title: saved.title,
       message: saved.message,
       type: saved.type,
       recipientId: data.recipientId,
-      createdAt: (saved as any).createdAt,
+      createdAt: savedDoc.createdAt,
     });
     return saved;
   }

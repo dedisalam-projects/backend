@@ -36,24 +36,30 @@ export class UserController {
         data: response,
         meta: { timestamp: new Date().toISOString() },
       };
-    } catch (error: any) {
-      this.logger.error(`Error in getUsers: ${error?.message}`, error?.stack);
+    } catch (error: unknown) {
+      const err = error as {
+        message?: string | string[];
+        statusCode?: number;
+        status?: number;
+        stack?: string;
+      };
+      this.logger.error(`Error in getUsers: ${err?.message}`, err?.stack);
       if (error instanceof HttpException) {
         throw error;
       }
 
       const numericStatus =
-        typeof error?.statusCode === 'number'
-          ? error.statusCode
-          : typeof error?.status === 'number'
-            ? error.status
+        typeof err?.statusCode === 'number'
+          ? err.statusCode
+          : typeof err?.status === 'number'
+            ? err.status
             : HttpStatus.INTERNAL_SERVER_ERROR;
 
       const message =
-        typeof error?.message === 'string'
-          ? error.message
-          : Array.isArray(error?.message)
-            ? error.message.join(', ')
+        typeof err?.message === 'string'
+          ? err.message
+          : Array.isArray(err?.message)
+            ? err.message.join(', ')
             : 'Internal Server Error';
 
       throw new HttpException(message, numericStatus);

@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 
 describe('AppService', () => {
   let service: AppService;
-  let mockUserClient: any;
+  let mockUserClient: { send: jest.Mock; emit: jest.Mock };
 
   beforeEach(async () => {
     mockUserClient = {

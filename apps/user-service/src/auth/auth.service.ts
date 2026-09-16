@@ -14,7 +14,15 @@ import { randomBytes, createHash } from 'crypto';
 import { User, UserDocument, RedisService } from '@dedisalam/database';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
-import { UserRole } from '@dedisalam/common';
+import {
+  AdminCreateUserDto,
+  JwtPayload,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  UserPaginationQueryDto,
+  UserRole,
+} from '@dedisalam/common';
 
 @Injectable()
 export class AuthService implements OnApplicationBootstrap {
@@ -59,12 +67,16 @@ export class AuthService implements OnApplicationBootstrap {
           `🚀 Bootstrap: Default superadmin initialized successfully (${defaultEmail})`,
         );
       }
-    } catch (err: any) {
-      this.logger.error(`Bootstrap superadmin check failed: ${err.message}`, err.stack);
+    } catch (err: unknown) {
+      const errMsg = (err as Error).message;
+      const errStack = (err as Error).stack;
+      this.logger.error(`Bootstrap superadmin check failed: ${errMsg}`, errStack);
     }
   }
 
-  async register(data: any) {
+  async register(
+    data: RegisterDto | { email: string; password: string; name: string; role?: string },
+  ) {
     const { email, password, name } = data;
     if (!email || !password || !name) {
       throw new BadRequestException('Email, password, and name are required');
@@ -88,7 +100,7 @@ export class AuthService implements OnApplicationBootstrap {
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
-      isActive: (newUser as any).isActive ?? true,
+      isActive: (newUser as unknown as { isActive?: boolean }).isActive ?? true,
     };
     const timestamp = new Date().toISOString();
 
@@ -109,7 +121,7 @@ export class AuthService implements OnApplicationBootstrap {
     };
   }
 
-  async login(data: any) {
+  async login(data: LoginDto | { email: string; password: string }) {
     const { email, password } = data;
     const user = await this.userModel.findOne({ email }).select('+password');
     if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -146,7 +158,7 @@ export class AuthService implements OnApplicationBootstrap {
     };
   }
 
-  async refresh(data: any) {
+  async refresh(data: RefreshTokenDto | { userId: string; refreshToken: string }) {
     const { userId, refreshToken } = data;
     if (!userId || !refreshToken) {
       throw new UnauthorizedException('Missing refresh token or userId');
@@ -204,12 +216,12 @@ export class AuthService implements OnApplicationBootstrap {
     }));
   }
 
-  async logout(data: any) {
-    const { refreshToken, accessToken, userId } = data;
+  async logout(data: { refreshToken?: string; accessToken?: string; userId?: string }) {
+    const { accessToken, userId } = data;
 
     if (accessToken) {
-      const decoded: any = jwt.decode(accessToken);
-      if (decoded && decoded.exp) {
+      const decoded = jwt.decode(accessToken) as JwtPayload | null;
+      if (decoded && typeof decoded.exp === 'number') {
         const ttl = decoded.exp - Math.floor(Date.now() / 1000);
         if (ttl > 0) {
           await this.redisService.set(`blacklist:${accessToken}`, 'true', ttl);
@@ -226,11 +238,11 @@ export class AuthService implements OnApplicationBootstrap {
     return { message: 'Logged out successfully' };
   }
 
-  async updateProfile(data: any) {
+  async updateProfile(data: { userId?: string; name?: string; password?: string }) {
     const { userId, name, password } = data;
     if (!userId) throw new BadRequestException('userId is required');
 
-    const updateData: any = {};
+    const updateData: { name?: string; password?: string } = {};
     if (name) updateData.name = name;
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
@@ -239,7 +251,7 @@ export class AuthService implements OnApplicationBootstrap {
     const updatedUser = await this.userModel.findByIdAndUpdate(userId, updateData, { new: true });
     if (!updatedUser) throw new BadRequestException('User not found');
 
-    const changes: any = {};
+    const changes: { name?: string } = {};
     if (name) changes.name = name;
 
     this.notificationClient.emit('user.updated', {
@@ -257,7 +269,11 @@ export class AuthService implements OnApplicationBootstrap {
     };
   }
 
-  async createUser(data: any) {
+  async createUser(
+    data:
+      | AdminCreateUserDto
+      | { email: string; password: string; name: string; role?: UserRole | string },
+  ) {
     const { email, password, name, role } = data;
     if (!email || !password || !name) {
       throw new BadRequestException('Email, password, and name are required');
@@ -301,22 +317,32 @@ export class AuthService implements OnApplicationBootstrap {
       name: newUser.name,
       role: newUser.role,
       isActive: newUser.isActive,
-      createdAt: (newUser as any).createdAt,
+      createdAt: (newUser as unknown as { createdAt?: Date }).createdAt,
     };
   }
 
-  async getUsersPaginated(query: any) {
+  async getUsersPaginated(
+    query:
+      | UserPaginationQueryDto
+      | {
+          page?: number | string;
+          limit?: number | string;
+          search?: string;
+          role?: string;
+          [key: string]: unknown;
+        },
+  ) {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
 
     if (query.search && typeof query.search === 'string' && query.search.trim()) {
       const searchRegex = { $regex: query.search.trim(), $options: 'i' };
-      filter.$or = [{ name: searchRegex }, { email: searchRegex }];
+      filter['$or'] = [{ name: searchRegex }, { email: searchRegex }];
     }
 
     if (query.role && typeof query.role === 'string') {
-      filter.role = query.role;
+      filter['role'] = query.role;
     }
 
     const total = await this.userModel.countDocuments(filter);
@@ -333,7 +359,7 @@ export class AuthService implements OnApplicationBootstrap {
         name: u.name,
         role: u.role,
         isActive: u.isActive,
-        createdAt: (u as any).createdAt,
+        createdAt: (u as unknown as { createdAt?: Date }).createdAt,
       })),
       meta: {
         total,
@@ -344,10 +370,18 @@ export class AuthService implements OnApplicationBootstrap {
     };
   }
 
-  async updateUserByAdmin(userId: string, data: any) {
+  async updateUserByAdmin(
+    userId: string,
+    data: { name?: string; role?: UserRole | string; isActive?: boolean; password?: string },
+  ) {
     if (!userId) throw new BadRequestException('userId is required');
 
-    const updateData: any = {};
+    const updateData: {
+      name?: string;
+      role?: UserRole | string;
+      isActive?: boolean;
+      password?: string;
+    } = {};
     if (data.name) updateData.name = data.name;
     if (data.role) updateData.role = data.role;
     if (typeof data.isActive === 'boolean') updateData.isActive = data.isActive;
@@ -358,7 +392,7 @@ export class AuthService implements OnApplicationBootstrap {
     const updatedUser = await this.userModel.findByIdAndUpdate(userId, updateData, { new: true });
     if (!updatedUser) throw new BadRequestException('User not found');
 
-    const changes: any = {};
+    const changes: { name?: string; role?: UserRole | string; isActive?: boolean } = {};
     if (data.name !== undefined) changes.name = data.name;
     if (data.role !== undefined) changes.role = data.role;
     if (typeof data.isActive === 'boolean') changes.isActive = data.isActive;
@@ -375,7 +409,7 @@ export class AuthService implements OnApplicationBootstrap {
       name: updatedUser.name,
       role: updatedUser.role,
       isActive: updatedUser.isActive,
-      updatedAt: (updatedUser as any).updatedAt,
+      updatedAt: (updatedUser as unknown as { updatedAt?: Date }).updatedAt,
     };
   }
 

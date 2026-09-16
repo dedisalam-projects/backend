@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { of, throwError } from 'rxjs';
+import { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { AuthController } from './auth.controller';
 
@@ -9,7 +10,7 @@ describe('AuthController', () => {
   let controller: AuthController;
   let mockUserService: { send: jest.Mock };
   let mockConfigService: { get: jest.Mock };
-  let mockResponse: any;
+  let mockResponse: Response;
 
   const jwtSecret = 'test-secret';
 
@@ -30,7 +31,7 @@ describe('AuthController', () => {
     mockResponse = {
       cookie: jest.fn(),
       clearCookie: jest.fn(),
-    };
+    } as unknown as Response;
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -281,12 +282,12 @@ describe('AuthController', () => {
 
   describe('refresh', () => {
     it('should refresh tokens using cookies and rotate cookie tokens', async () => {
-      const req: any = {
+      const req = {
         cookies: {
           refreshToken: 'cookie-refresh-token',
         },
         headers: {},
-      };
+      } as unknown as Request;
       const body = { userId: 'u123' };
       const refreshResult = {
         accessToken: 'new-access-token',
@@ -294,7 +295,7 @@ describe('AuthController', () => {
       };
       mockUserService.send.mockReturnValue(of(refreshResult));
 
-      const result = await controller.refresh(req, body, mockResponse);
+      const result = await controller.refresh(req, body, mockResponse as unknown as Response);
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({});
@@ -314,16 +315,16 @@ describe('AuthController', () => {
 
     it('should extract userId from accessToken cookie if body.userId is omitted', async () => {
       const validToken = jwt.sign({ sub: 'user-from-cookie' }, jwtSecret);
-      const req: any = {
+      const req = {
         cookies: {
           refreshToken: 'refresh-abc',
           accessToken: validToken,
         },
         headers: {},
-      };
+      } as unknown as Request;
       mockUserService.send.mockReturnValue(of({ accessToken: 'a2', refreshToken: 'r2' }));
 
-      const result = await controller.refresh(req, {}, mockResponse);
+      const result = await controller.refresh(req, {}, mockResponse as unknown as Response);
 
       expect(result.success).toBe(true);
       expect(mockUserService.send).toHaveBeenCalledWith('auth.refresh', {
@@ -334,17 +335,17 @@ describe('AuthController', () => {
 
     it('should extract userId from authorization header if accessToken cookie is omitted', async () => {
       const validToken = jwt.sign({ userId: 'user-from-header' }, jwtSecret);
-      const req: any = {
+      const req = {
         cookies: {
           refreshToken: 'refresh-abc',
         },
         headers: {
           authorization: `Bearer ${validToken}`,
         },
-      };
+      } as unknown as Request;
       mockUserService.send.mockReturnValue(of({}));
 
-      const result = await controller.refresh(req, {}, mockResponse);
+      const result = await controller.refresh(req, {}, mockResponse as unknown as Response);
 
       expect(result.success).toBe(true);
       expect(mockUserService.send).toHaveBeenCalledWith('auth.refresh', {
@@ -354,49 +355,49 @@ describe('AuthController', () => {
     });
 
     it('should throw UnauthorizedException if refreshToken is missing', async () => {
-      const req: any = { cookies: {}, headers: {} };
-      await expect(controller.refresh(req, { userId: 'u1' }, mockResponse)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      const req = { cookies: {}, headers: {} } as unknown as Request;
+      await expect(
+        controller.refresh(req, { userId: 'u1' }, mockResponse as unknown as Response),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if userId cannot be resolved', async () => {
-      const req: any = { cookies: { refreshToken: 'token' }, headers: {} };
-      await expect(controller.refresh(req, {}, mockResponse)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      const req = { cookies: { refreshToken: 'token' }, headers: {} } as unknown as Request;
+      await expect(
+        controller.refresh(req, {}, mockResponse as unknown as Response),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should rethrow HttpException if thrown during refresh', async () => {
-      const req: any = { cookies: { refreshToken: 'bad' }, headers: {} };
+      const req = { cookies: { refreshToken: 'bad' }, headers: {} } as unknown as Request;
       const httpErr = new HttpException('Invalid refresh token', HttpStatus.UNAUTHORIZED);
       mockUserService.send.mockReturnValue(throwError(() => httpErr));
 
-      await expect(controller.refresh(req, { userId: 'u1' }, mockResponse)).rejects.toThrow(
-        httpErr,
-      );
+      await expect(
+        controller.refresh(req, { userId: 'u1' }, mockResponse as unknown as Response),
+      ).rejects.toThrow(httpErr);
     });
 
     it('should wrap generic error during refresh', async () => {
-      const req: any = { cookies: { refreshToken: 'bad' }, headers: {} };
+      const req = { cookies: { refreshToken: 'bad' }, headers: {} } as unknown as Request;
       mockUserService.send.mockReturnValue(throwError(() => new Error('Redis down')));
 
-      await expect(controller.refresh(req, { userId: 'u1' }, mockResponse)).rejects.toThrow(
-        HttpException,
-      );
+      await expect(
+        controller.refresh(req, { userId: 'u1' }, mockResponse as unknown as Response),
+      ).rejects.toThrow(HttpException);
     });
 
     it('should handle nullish response gracefully in refresh', async () => {
-      const req: any = {
+      const req = {
         cookies: {
           refreshToken: 'cookie-refresh-token',
         },
         headers: {},
-      };
+      } as unknown as Request;
       const body = { userId: 'u123' };
       mockUserService.send.mockReturnValue(of(null));
 
-      const result = await controller.refresh(req, body, mockResponse);
+      const result = await controller.refresh(req, body, mockResponse as unknown as Response);
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({});
@@ -406,16 +407,16 @@ describe('AuthController', () => {
 
   describe('logout', () => {
     it('should logout and clear cookies across all paths', async () => {
-      const req: any = {
+      const req = {
         cookies: {
           refreshToken: 'cookie-r',
           accessToken: 'cookie-a',
         },
         headers: {},
-      };
+      } as unknown as Request;
       mockUserService.send.mockReturnValue(of({ message: 'Logged out successfully' }));
 
-      const result = await controller.logout(req, {}, mockResponse);
+      const result = await controller.logout(req, {}, mockResponse as unknown as Response);
 
       expect(result.success).toBe(true);
       expect(mockResponse.clearCookie).toHaveBeenCalledWith('accessToken', expect.any(Object));
@@ -424,15 +425,15 @@ describe('AuthController', () => {
 
     it('should extract tokens and userId from body or headers if cookies missing', async () => {
       const validToken = jwt.sign({ sub: 'user-logout' }, jwtSecret);
-      const req: any = {
+      const req = {
         cookies: {},
         headers: {
           authorization: `Bearer ${validToken}`,
         },
-      };
+      } as unknown as Request;
       mockUserService.send.mockReturnValue(of({ message: 'Logged out successfully' }));
 
-      await controller.logout(req, { refreshToken: 'body-r' }, mockResponse);
+      await controller.logout(req, { refreshToken: 'body-r' }, mockResponse as unknown as Response);
 
       expect(mockUserService.send).toHaveBeenCalledWith('auth.logout', {
         refreshToken: 'body-r',
@@ -443,13 +444,13 @@ describe('AuthController', () => {
 
     it('should extract userId with userId field from token during logout', async () => {
       const validToken = jwt.sign({ userId: 'user-logout-2' }, jwtSecret);
-      const req: any = {
+      const req = {
         cookies: { accessToken: validToken },
         headers: {},
-      };
+      } as unknown as Request;
       mockUserService.send.mockReturnValue(of({ message: 'Logged out' }));
 
-      await controller.logout(req, {}, mockResponse);
+      await controller.logout(req, {}, mockResponse as unknown as Response);
 
       expect(mockUserService.send).toHaveBeenCalledWith('auth.logout', {
         refreshToken: '',
@@ -459,13 +460,13 @@ describe('AuthController', () => {
     });
 
     it('should handle logout when body provides accessToken and userId directly', async () => {
-      const req: any = { cookies: {}, headers: {} };
+      const req = { cookies: {}, headers: {} } as unknown as Request;
       mockUserService.send.mockReturnValue(of({ message: 'Logged out' }));
 
       await controller.logout(
         req,
         { refreshToken: 'r', accessToken: 'a', userId: 'direct-u' },
-        mockResponse,
+        mockResponse as unknown as Response,
       );
 
       expect(mockUserService.send).toHaveBeenCalledWith('auth.logout', {
@@ -476,18 +477,22 @@ describe('AuthController', () => {
     });
 
     it('should rethrow HttpException during logout', async () => {
-      const req: any = { cookies: {}, headers: {} };
+      const req = { cookies: {}, headers: {} } as unknown as Request;
       const httpErr = new HttpException('Logout error', HttpStatus.BAD_REQUEST);
       mockUserService.send.mockReturnValue(throwError(() => httpErr));
 
-      await expect(controller.logout(req, {}, mockResponse)).rejects.toThrow(httpErr);
+      await expect(controller.logout(req, {}, mockResponse as unknown as Response)).rejects.toThrow(
+        httpErr,
+      );
     });
 
     it('should wrap generic error during logout', async () => {
-      const req: any = { cookies: {}, headers: {} };
+      const req = { cookies: {}, headers: {} } as unknown as Request;
       mockUserService.send.mockReturnValue(throwError(() => new Error('Error')));
 
-      await expect(controller.logout(req, {}, mockResponse)).rejects.toThrow(HttpException);
+      await expect(controller.logout(req, {}, mockResponse as unknown as Response)).rejects.toThrow(
+        HttpException,
+      );
     });
   });
 });

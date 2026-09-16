@@ -17,7 +17,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
 import * as cookie from 'cookie';
-import { NotificationBroadcastDto, WsExceptionFilter } from '@dedisalam/common';
+import { JwtPayload, NotificationBroadcastDto, WsExceptionFilter } from '@dedisalam/common';
 
 @WebSocketGateway({
   namespace: '/notifications',
@@ -42,7 +42,7 @@ export class NotificationGateway
   ) {}
 
   afterInit(server: Server) {
-    server.use((client: any, next: (err?: Error) => void) => {
+    server.use((client: Socket, next: (err?: Error) => void) => {
       const token = this.extractToken(client);
       if (!token) {
         return next(new Error('UNAUTHORIZED: Authentication token is required'));
@@ -51,7 +51,7 @@ export class NotificationGateway
       try {
         const secret = this.configService.get<string>('JWT_SECRET');
         if (!secret) throw new Error('JWT_SECRET is not configured');
-        const decoded = jwt.verify(token, secret) as any;
+        const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
         client.data = client.data || {};
         client.data.user = decoded;
         next();
@@ -62,7 +62,7 @@ export class NotificationGateway
   }
 
   handleConnection(client: Socket) {
-    let decoded = client.data?.user;
+    let decoded = client.data?.user as JwtPayload | undefined;
 
     if (!decoded) {
       const token = this.extractToken(client);
@@ -79,7 +79,7 @@ export class NotificationGateway
       try {
         const secret = this.configService.get<string>('JWT_SECRET');
         if (!secret) throw new Error('JWT_SECRET is not configured');
-        decoded = jwt.verify(token, secret) as any;
+        decoded = jwt.verify(token, secret) as unknown as JwtPayload;
         client.data = client.data || {};
         client.data.user = decoded;
       } catch {

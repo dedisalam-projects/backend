@@ -1,5 +1,6 @@
 import { RpcExceptionFilter } from './rpc-exception.filter';
 import {
+  ArgumentsHost,
   HttpException,
   HttpStatus,
   UnauthorizedException,
@@ -11,11 +12,11 @@ import { firstValueFrom } from 'rxjs';
 
 describe('RpcExceptionFilter', () => {
   let filter: RpcExceptionFilter;
-  let mockHost: any;
+  let mockHost: ArgumentsHost;
 
   beforeEach(() => {
     filter = new RpcExceptionFilter();
-    mockHost = {} as any;
+    mockHost = {} as unknown as ArgumentsHost;
   });
 
   describe('HttpException handling', () => {
@@ -117,7 +118,7 @@ describe('RpcExceptionFilter', () => {
     });
 
     it('should serialize RpcException with empty or unknown error gracefully', async () => {
-      const exception = new RpcException(null as any);
+      const exception = new RpcException(null as unknown as string);
 
       const observable = filter.catch(exception, mockHost);
 
