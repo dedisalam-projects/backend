@@ -41,10 +41,22 @@ export class UserController {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new HttpException(
-        error?.message || 'Internal Server Error',
-        error?.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+
+      const numericStatus =
+        typeof error?.statusCode === 'number'
+          ? error.statusCode
+          : typeof error?.status === 'number'
+            ? error.status
+            : HttpStatus.INTERNAL_SERVER_ERROR;
+
+      const message =
+        typeof error?.message === 'string'
+          ? error.message
+          : Array.isArray(error?.message)
+            ? error.message.join(', ')
+            : 'Internal Server Error';
+
+      throw new HttpException(message, numericStatus);
     }
   }
 }

@@ -190,6 +190,62 @@ describe('AuthController', () => {
         controller.login({ email: 'wrong@test.com', password: 'bad' }, mockResponse),
       ).rejects.toThrow('Internal Server Error');
     });
+
+    it('should map RMQ error with numeric statusCode 401 to HttpException with 401 status', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({ status: 'error', statusCode: 401, message: 'Invalid credentials' })),
+      );
+
+      const promise = controller.login({ email: 'wrong@test.com', password: 'bad' }, mockResponse);
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.UNAUTHORIZED,
+        message: 'Invalid credentials',
+      });
+    });
+
+    it('should fallback to 500 without TypeError when RMQ returns string status "error"', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({ status: 'error', message: 'Something went wrong' })),
+      );
+
+      const promise = controller.login({ email: 'wrong@test.com', password: 'bad' }, mockResponse);
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Something went wrong',
+      });
+    });
+
+    it('should handle array error messages properly in RMQ error', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({
+          status: 'error',
+          statusCode: 400,
+          message: ['email must be valid', 'password required'],
+        })),
+      );
+
+      const promise = controller.login({ email: 'wrong@test.com', password: 'bad' }, mockResponse);
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'email must be valid, password required',
+      });
+    });
+
+    it('should use numeric error.status when error.statusCode is absent', async () => {
+      mockUserService.send.mockReturnValue(
+        throwError(() => ({ status: HttpStatus.FORBIDDEN, message: 'Access denied' })),
+      );
+
+      const promise = controller.login({ email: 'wrong@test.com', password: 'bad' }, mockResponse);
+      await expect(promise).rejects.toThrow(HttpException);
+      await expect(promise).rejects.toMatchObject({
+        status: HttpStatus.FORBIDDEN,
+        message: 'Access denied',
+      });
+    });
   });
 
   describe('register', () => {
