@@ -402,3 +402,7 @@ Use Pub/Sub for fire-and-forget. Switch to Streams if you need guaranteed delive
 - Skill: `database-migrations` — schema versioning
 - Skill: `django-patterns` — Django cache framework integration
 - Agent: `database-reviewer` — full database review workflow
+
+
+> [!IMPORTANT]
+> **Rule Adherence**: Always strictly follow the `redis-patterns` conventions outlined above to ensure workspace consistency and prevent regressions.

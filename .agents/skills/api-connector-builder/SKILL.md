@@ -119,3 +119,7 @@ src/integrations/
 - `backend-patterns`
 - `mcp-server-patterns`
 - `github-ops`
+
+
+> [!IMPORTANT]
+> **Rule Adherence**: Always strictly follow the `api-connector-builder` conventions outlined above to ensure workspace consistency and prevent regressions.

@@ -610,3 +610,7 @@ When writing standalone initialization scripts (e.g. `scripts/seed.js`):
 5. **Credential Parity & UI Alignment**: Ensure default credential conventions (`superadmin@example.com` with `Admin123!`, `admin@example.com` with `password123`) match across bootstrap hooks, standalone seeders, documentation, and development test UIs (`playground.html`).
 
 **Remember**: Backend patterns enable scalable, maintainable server-side applications. Choose patterns that fit your complexity level.
+
+
+> [!IMPORTANT]
+> **Rule Adherence**: Always strictly follow the `backend-patterns` conventions outlined above to ensure workspace consistency and prevent regressions.

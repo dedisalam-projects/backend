@@ -223,3 +223,7 @@ docker compose -f ../infrastructure/docker-compose.yml build --no-cache gateway
 - When deploying or debugging the dev server stack (`docker-compose.dev.server.yml`).
 - When starting any backend development or testing task to verify that MongoDB, RabbitMQ, and Redis are ready.
 - When building, tagging, or pushing production container images to Docker Hub.
+
+
+> [!IMPORTANT]
+> **Rule Adherence**: Always strictly follow the `docker-backend-orchestration` conventions outlined above to ensure workspace consistency and prevent regressions.

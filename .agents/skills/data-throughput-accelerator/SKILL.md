@@ -72,3 +72,7 @@ Data throughput result:
 - Do not call a pipeline complete until the target tables and manifest agree.
 - For finance, healthcare, regulated, or customer-impacting data, preserve
   replay evidence and approval gates.
+
+
+> [!IMPORTANT]
+> **Rule Adherence**: Always strictly follow the `data-throughput-accelerator` conventions outlined above to ensure workspace consistency and prevent regressions.

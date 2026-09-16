@@ -28,6 +28,7 @@ Every AI agent **must** strictly comply with root hygiene rules:
 2. **Never Create Scratch Scripts at Root**: Temporary diagnostic, seed, or migration scripts must reside inside the internal scratch directory (`brain/<id>/scratch/`) and be deleted immediately after execution.
 3. **Never Save Screenshots or Media at Root**: Playwright screenshots or media artifacts must be directed to `.agents/artifacts/screenshots/`, `design-ui-ux/`, or the respective sub-project assets directory.
 4. **PM2 Runner Orchestration**: Multi-app PM2 runtime configurations reside in `.agents/ecosystem.config.js`. Launch via `npx pm2 start .agents/ecosystem.config.js` or `npx pm2 restart <appName>`.
+5. **Never Dump Command Logs at Root**: Do not pipe terminal outputs or build logs directly to `.txt` or `.log` files in the root folder (e.g., `backend-log.txt`). All persistent logs must be directed to a designated `.logs/` or `tmp/` directory (which must be gitignored), or treated as ephemeral scratchpads.
 
 ## Multi-Repo Git Operations
 Understand the repository structure for this project:
