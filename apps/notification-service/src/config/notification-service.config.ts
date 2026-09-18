@@ -40,12 +40,8 @@ export class NotificationServiceConfigDto {
 }
 
 export function validate(config: Record<string, unknown>) {
-  const validatedConfig = plainToInstance(NotificationServiceConfigDto, config, {
-    enableImplicitConversion: true,
-  });
-  const errors = validateSync(validatedConfig, {
-    skipMissingProperties: false,
-  });
+  const validatedConfig = plainToInstance(NotificationServiceConfigDto, config);
+  const errors = validateSync(validatedConfig);
 
   if (errors.length > 0) {
     throw new Error(errors.toString());

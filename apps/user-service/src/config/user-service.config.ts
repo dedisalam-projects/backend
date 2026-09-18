@@ -34,12 +34,8 @@ export class UserServiceConfigDto {
 }
 
 export function validate(config: Record<string, unknown>) {
-  const validatedConfig = plainToInstance(UserServiceConfigDto, config, {
-    enableImplicitConversion: true,
-  });
-  const errors = validateSync(validatedConfig, {
-    skipMissingProperties: false,
-  });
+  const validatedConfig = plainToInstance(UserServiceConfigDto, config);
+  const errors = validateSync(validatedConfig);
 
   if (errors.length > 0) {
     throw new Error(errors.toString());

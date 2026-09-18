@@ -19,6 +19,7 @@ describe('AuthService', () => {
     find: jest.Mock;
     findByIdAndUpdate: jest.Mock;
     findByIdAndDelete: jest.Mock;
+    deleteMany: jest.Mock;
     countDocuments: jest.Mock;
   };
   let mockRedisService: { get: jest.Mock; set: jest.Mock };
@@ -33,6 +34,7 @@ describe('AuthService', () => {
       find: jest.fn(),
       findByIdAndUpdate: jest.fn(),
       findByIdAndDelete: jest.fn(),
+      deleteMany: jest.fn(),
       countDocuments: jest.fn(),
     };
 
@@ -449,10 +451,10 @@ describe('AuthService', () => {
 
       expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
         'u1',
-        expect.objectContaining({
+        {
           name: 'New Name',
           password: expect.any(String),
-        }),
+        },
         { new: true },
       );
       expect(result.name).toBe('New Name');
@@ -481,7 +483,7 @@ describe('AuthService', () => {
 
       expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
         'u1',
-        expect.not.objectContaining({ name: expect.anything() }),
+        { password: expect.any(String) },
         { new: true },
       );
       expect(result.id).toBe('u1');
@@ -657,12 +659,12 @@ describe('AuthService', () => {
 
       expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
         'u-target',
-        expect.objectContaining({
+        {
           name: 'Updated Name',
           role: 'admin',
           isActive: false,
           password: expect.any(String),
-        }),
+        },
         { new: true },
       );
       expect(result.id).toBe('u-target');
@@ -752,7 +754,7 @@ describe('AuthService', () => {
 
       expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
         'u-target',
-        expect.objectContaining({ name: 'New Name', isActive: false }),
+        { name: 'New Name', isActive: false },
         { new: true },
       );
       expect(mockNotificationClient.emit).toHaveBeenCalledWith(
@@ -827,6 +829,51 @@ describe('AuthService', () => {
         message: 'User deleted successfully',
         userId: 'u-del',
       });
+    });
+  });
+
+  describe('deleteUsers', () => {
+    it('should throw BadRequestException if userIds is not a non-empty array', async () => {
+      await expect(service.deleteUsers(undefined as any)).rejects.toThrow(BadRequestException);
+      await expect(service.deleteUsers([])).rejects.toThrow(BadRequestException);
+      await expect(service.deleteUsers('not-array' as any)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if all provided userIds belong to superadmin or are invalid', async () => {
+      mockUserModel.find.mockResolvedValueOnce([
+        { _id: 'admin1', role: 'super_admin', email: 'admin@b.com' },
+        { _id: 'admin2', role: 'admin', email: 'superadmin@example.com' },
+      ]);
+
+      await expect(service.deleteUsers(['admin1', 'admin2'])).rejects.toThrow(BadRequestException);
+    });
+
+    it('should delete valid users and skip superadmins', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2025-01-01T00:00:00Z'));
+
+      mockUserModel.find.mockResolvedValueOnce([
+        { _id: 'u1', role: 'user', email: 'u1@b.com' },
+        { _id: 'u2', role: 'admin', email: 'u2@b.com' },
+        { _id: 'super', role: 'super_admin', email: 'super@b.com' },
+      ]);
+      mockUserModel.deleteMany.mockResolvedValueOnce({ deletedCount: 2 });
+
+      const result = await service.deleteUsers(['u1', 'u2', 'super']);
+
+      expect(mockUserModel.deleteMany).toHaveBeenCalledWith({ _id: { $in: ['u1', 'u2'] } });
+      expect(mockRedisService.set).toHaveBeenCalledWith('refresh_token:u1', '', 1);
+      expect(mockRedisService.set).toHaveBeenCalledWith('refresh_token:u2', '', 1);
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith('users.deletedMany', {
+        userIds: ['u1', 'u2'],
+        timestamp: '2025-01-01T00:00:00.000Z',
+      });
+      expect(result).toEqual({
+        message: 'Users deleted successfully',
+        deletedCount: 2,
+        userIds: ['u1', 'u2'],
+      });
+
+      jest.useRealTimers();
     });
   });
 });

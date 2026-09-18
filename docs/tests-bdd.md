@@ -1,8 +1,17 @@
+﻿---
+type: guide
+tags:
+  - testing
+  - bdd
+  - cucumber
+aliases: ["Testing","BDD"]
+status: active
+---
 # BDD Scenarios untuk Unit Test Backend (UU-48)
 
-Berkas ini memuat skenario pengujian unit (Unit Tests) berbasis perilaku (BDD - Given/When/Then) untuk aplikasi Backend (API Gateway, User Service, Notification Service) dengan penekanan pada skenario kegagalan (Negative Tests) dan isolasi murni tanpa basis data sungguhan.
+Berkas ini memuat skenario pengujian unit (Unit Tests) berbasis perilaku (BDD - Given/When/Then) untuk aplikasi Backend ([[API_GATEWAY|API Gateway]], [[MICROSERVICES|User Service]], [[MICROSERVICES|Notification Service]]) dengan penekanan pada skenario kegagalan (Negative Tests) dan isolasi murni tanpa basis data sungguhan.
 
-## 1. API Gateway (`app.controller.spec.ts`)
+## 1. [[API_GATEWAY|API Gateway]] (`app.controller.spec.ts`)
 Komponen ini bertanggung jawab merutekan permintaan HTTP ke Microservices.
 
 ### Skenario 1.1: Mendapatkan Sapaan Sukses (Happy Path)
@@ -15,7 +24,7 @@ Komponen ini bertanggung jawab merutekan permintaan HTTP ke Microservices.
 **When** klien memanggil endpoint `GET /api/v1/hello`.
 **Then** sistem melempar error `HttpException` (atau mengembalikan pesan error gracefully).
 
-## 2. User Service (`app.controller.spec.ts`)
+## 2. [[MICROSERVICES|User Service]] (`app.controller.spec.ts`)
 Komponen ini melayani Request TCP dari Gateway.
 
 ### Skenario 2.1: Mengembalikan Payload Sukses (Happy Path)
@@ -28,7 +37,7 @@ Komponen ini melayani Request TCP dari Gateway.
 **When** koneksi TCP memanggil dengan pola yang salah.
 **Then** aplikasi mengembalikan error yang tertangkap di level transport. (Ini biasanya dikelola oleh nestjs, namun kita bisa membuat tes khusus jika ada validasi payload).
 
-## 3. Notification Service (`app.controller.spec.ts` & `notification.gateway.spec.ts`)
+## 3. [[MICROSERVICES|Notification Service]] (`app.controller.spec.ts` & `notification.gateway.spec.ts`)
 Komponen ini melayani event dari RabbitMQ dan memancarkannya ke Socket.IO.
 
 ### Skenario 3.1: Menerima Event Sukses (Happy Path)
@@ -40,3 +49,4 @@ Komponen ini melayani event dari RabbitMQ dan memancarkannya ke Socket.IO.
 **Given** event `test.hello` datang dengan tipe payload yang salah / kosong (null).
 **When** fungsi `handleHelloEvent` mencoba memproses.
 **Then** fungsi menangani dengan `try-catch` / logging dan tidak menyebabkan crash pada service.
+

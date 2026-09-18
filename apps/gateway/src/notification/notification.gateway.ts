@@ -49,13 +49,13 @@ export class NotificationGateway
       }
 
       try {
-        const secret = this.configService.get<string>('JWT_SECRET');
-        if (!secret) throw new Error('JWT_SECRET is not configured');
+        const secret = this.configService.get<string>('JWT_SECRET') as string;
         const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
         client.data = client.data || {};
         client.data.user = decoded;
         next();
-      } catch {
+      } catch (err: any) {
+        this.logger.error(`Error verifying token: ${err.message}`);
         next(new Error('UNAUTHORIZED: Invalid or expired token'));
       }
     });
@@ -77,12 +77,12 @@ export class NotificationGateway
       }
 
       try {
-        const secret = this.configService.get<string>('JWT_SECRET');
-        if (!secret) throw new Error('JWT_SECRET is not configured');
+        const secret = this.configService.get<string>('JWT_SECRET') as string;
         decoded = jwt.verify(token, secret) as unknown as JwtPayload;
         client.data = client.data || {};
         client.data.user = decoded;
-      } catch {
+        this.logger.log(`Client connected to /notifications: ${decoded.email} (${client.id})`);
+      } catch (err: any) {
         this.logger.warn(`Connection rejected for client ${client.id}: Invalid token`);
         client.emit('exception', {
           success: false,
@@ -125,9 +125,7 @@ export class NotificationGateway
     }
     if (client.handshake?.headers?.cookie && typeof client.handshake.headers.cookie === 'string') {
       const parsedCookies = cookie.parse(client.handshake.headers.cookie);
-      if (parsedCookies['accessToken']) {
-        return parsedCookies['accessToken'];
-      }
+      return parsedCookies['accessToken'] || null;
     }
     return null;
   }

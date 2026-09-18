@@ -5,6 +5,7 @@ import { Notification } from '@dedisalam/database';
 
 describe('AppService', () => {
   let service: AppService;
+  let loggerSpy: jest.SpyInstance;
 
   const mockSave = jest.fn().mockImplementation(function (this: unknown) {
     return Promise.resolve(this);
@@ -40,10 +41,18 @@ describe('AppService', () => {
     }).compile();
 
     service = app.get<AppService>(AppService);
+    loggerSpy = jest
+      .spyOn(require('@nestjs/common').Logger.prototype, 'log')
+      .mockImplementation(() => undefined);
+  });
+
+  afterAll(() => {
+    loggerSpy.mockRestore();
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    loggerSpy.mockClear();
   });
 
   describe('processNotification', () => {
@@ -55,6 +64,9 @@ describe('AppService', () => {
       expect(result.title).toBe('BILLING');
       expect(result.type).toBe('BILLING');
       expect(result.isRead).toBe(false);
+      expect(loggerSpy).toHaveBeenCalledWith(
+        'Processing and persisting notification: Payment Received',
+      );
       expect(mockSave).toHaveBeenCalled();
     });
 
@@ -66,6 +78,7 @@ describe('AppService', () => {
       expect(result.title).toBe('System Alert');
       expect(result.type).toBe('INFO');
       expect(result.isRead).toBe(false);
+      expect(loggerSpy).toHaveBeenCalledWith('Processing and persisting notification: No message');
       expect(mockSave).toHaveBeenCalled();
     });
   });

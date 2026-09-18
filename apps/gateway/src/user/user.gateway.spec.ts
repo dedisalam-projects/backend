@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
 import { WsException } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Logger as import_logger } from '@nestjs/common';
 import { AdminCreateUserDto, AdminUpdateUserDto } from '@dedisalam/common';
 
 describe('UserGateway', () => {
@@ -13,10 +14,27 @@ describe('UserGateway', () => {
   let mockConfigService: { get: jest.Mock };
   let mockServer: { to: jest.Mock };
   let mockToEmit: jest.Mock;
+  let loggerSpy: jest.SpyInstance;
+  let loggerWarnSpy: jest.SpyInstance;
+
+  async function expectWsException(promise: Promise<any>, expectedError?: any) {
+    try {
+      await promise;
+      fail('Expected WsException to be thrown');
+    } catch (e) {
+      expect(e).toBeInstanceOf(WsException);
+      if (expectedError) {
+        expect((e as WsException).getError()).toEqual(expectedError);
+      }
+    }
+  }
 
   const jwtSecret = 'test-jwt-secret';
 
   beforeEach(async () => {
+    loggerSpy = jest.spyOn(import_logger.prototype, 'log').mockImplementation();
+    loggerWarnSpy = jest.spyOn(import_logger.prototype, 'warn').mockImplementation();
+
     mockUserService = {
       send: jest.fn(),
     };
@@ -106,6 +124,13 @@ describe('UserGateway', () => {
     });
   });
 
+  describe('handleDisconnect', () => {
+    it('should log when client disconnects', () => {
+      gateway.handleDisconnect({ id: 'client-disc' } as unknown as Socket);
+      expect(loggerSpy).toHaveBeenCalledWith('Client disconnected from /users: client-disc');
+    });
+  });
+
   describe('handleConnection', () => {
     it('should log and accept if client.data.user is already authenticated by middleware', () => {
       const mockClient = {
@@ -116,6 +141,9 @@ describe('UserGateway', () => {
       } as unknown as Socket;
       gateway.handleConnection(mockClient);
       expect(mockClient.disconnect).not.toHaveBeenCalled();
+      expect(loggerSpy).toHaveBeenCalledWith(
+        `Client authenticated on /users: already@test.com (client-already-auth)`,
+      );
     });
 
     it('should reject connection when no token is present', () => {
@@ -133,6 +161,9 @@ describe('UserGateway', () => {
         error: { code: 'UNAUTHORIZED', message: 'Authentication token is required' },
       });
       expect(mockClient.disconnect).toHaveBeenCalledWith(true);
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        `Connection rejected for client client-1: Missing token`,
+      );
     });
 
     it('should accept connection when token is in handshake.auth.token with Bearer prefix', () => {
@@ -151,6 +182,9 @@ describe('UserGateway', () => {
       expect(mockClient.data?.user).toBeDefined();
       expect((mockClient.data?.user as { email?: string })?.email).toBe('user@test.com');
       expect(mockClient.disconnect).not.toHaveBeenCalled();
+      expect(loggerSpy).toHaveBeenCalledWith(
+        'Client authenticated on /users: user@test.com (client-2)',
+      );
     });
 
     it('should accept connection when token is in handshake.headers.authorization', () => {
@@ -168,6 +202,9 @@ describe('UserGateway', () => {
       gateway.handleConnection(mockClient);
 
       expect((mockClient.data?.user as { email?: string })?.email).toBe('header@test.com');
+      expect(loggerSpy).toHaveBeenCalledWith(
+        'Client authenticated on /users: header@test.com (client-3)',
+      );
     });
 
     it('should accept connection when token is in handshake.headers.authorization without Bearer', () => {
@@ -246,6 +283,22 @@ describe('UserGateway', () => {
       expect(mockClient.disconnect).toHaveBeenCalledWith(true);
     });
 
+    it('should handle array headers gracefully without crashing', () => {
+      const mockClient = {
+        id: 'client-array',
+        handshake: {
+          headers: { authorization: ['Bearer abc'], cookie: ['accessToken=123'] },
+          query: { token: ['query-token'] },
+        },
+        emit: jest.fn(),
+        disconnect: jest.fn(),
+      } as unknown as Socket;
+
+      gateway.handleConnection(mockClient);
+
+      expect(mockClient.disconnect).toHaveBeenCalledWith(true);
+    });
+
     it('should reject connection when token is invalid', () => {
       const mockClient = {
         id: 'client-5',
@@ -263,6 +316,9 @@ describe('UserGateway', () => {
         error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token' },
       });
       expect(mockClient.disconnect).toHaveBeenCalledWith(true);
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        'Connection rejected for client client-5: Invalid token',
+      );
     });
 
     it('should reject connection when JWT_SECRET is missing', () => {
@@ -280,6 +336,9 @@ describe('UserGateway', () => {
       gateway.handleConnection(mockClient);
 
       expect(mockClient.disconnect).toHaveBeenCalledWith(true);
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        'Connection rejected for client client-6: Invalid token',
+      );
     });
   });
 
@@ -293,7 +352,16 @@ describe('UserGateway', () => {
   describe('handleGetProfile', () => {
     it('should throw WsException if user is not authenticated', async () => {
       const mockClient = { data: {} } as unknown as Socket;
-      await expect(gateway.handleGetProfile(mockClient)).rejects.toThrow(WsException);
+      await expectWsException(gateway.handleGetProfile(mockClient), {
+        code: 'UNAUTHORIZED',
+        message: 'User session not found',
+      });
+
+      const mockClientNoData = {} as unknown as Socket;
+      await expectWsException(gateway.handleGetProfile(mockClientNoData), {
+        code: 'UNAUTHORIZED',
+        message: 'User session not found',
+      });
     });
 
     it('should retrieve user profile successfully', async () => {
@@ -306,15 +374,24 @@ describe('UserGateway', () => {
       expect(mockUserService.send).toHaveBeenCalledWith('user.profile', { userId: 'u1' });
       expect(result.success).toBe(true);
       expect(result.data).toEqual(profile);
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
     });
   });
 
   describe('handleUpdateProfile', () => {
     it('should throw WsException if user is not authenticated', async () => {
       const mockClient = { data: {} } as unknown as Socket;
-      await expect(gateway.handleUpdateProfile(mockClient, { name: 'New' })).rejects.toThrow(
-        WsException,
-      );
+      await expectWsException(gateway.handleUpdateProfile(mockClient, { name: 'New' }), {
+        code: 'UNAUTHORIZED',
+        message: 'User session not found',
+      });
+
+      const mockClientNoData = {} as unknown as Socket;
+      await expectWsException(gateway.handleUpdateProfile(mockClientNoData, { name: 'New' }), {
+        code: 'UNAUTHORIZED',
+        message: 'User session not found',
+      });
     });
 
     it('should update user profile successfully', async () => {
@@ -330,23 +407,40 @@ describe('UserGateway', () => {
       });
       expect(result.success).toBe(true);
       expect(result.data).toEqual(updated);
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
     });
   });
 
   describe('admin operations & checkAdmin', () => {
     it('should throw WsException if client has no user data in checkAdmin', async () => {
       const mockClient = { data: {} } as unknown as Socket;
-      await expect(gateway.handleAdminJoin(mockClient)).rejects.toThrow(WsException);
+      await expectWsException(gateway.handleAdminJoin(mockClient), {
+        code: 'UNAUTHORIZED',
+        message: 'Not authenticated',
+      });
+
+      const mockClientNoData = {} as unknown as Socket;
+      await expectWsException(gateway.handleAdminJoin(mockClientNoData), {
+        code: 'UNAUTHORIZED',
+        message: 'Not authenticated',
+      });
     });
 
     it('should throw FORBIDDEN WsException if user is not an admin', async () => {
       const mockClient = { data: { user: { sub: 'u1', role: 'user' } } } as unknown as Socket;
-      await expect(gateway.handleAdminJoin(mockClient)).rejects.toThrow(WsException);
+      await expectWsException(gateway.handleAdminJoin(mockClient), {
+        code: 'FORBIDDEN',
+        message: 'Forbidden: Admin privileges required',
+      });
     });
 
     it('should throw FORBIDDEN WsException if user has no role or roles properties', async () => {
       const mockClient = { data: { user: { sub: 'u1' } } } as unknown as Socket;
-      await expect(gateway.handleAdminJoin(mockClient)).rejects.toThrow(WsException);
+      await expectWsException(gateway.handleAdminJoin(mockClient), {
+        code: 'FORBIDDEN',
+        message: 'Forbidden: Admin privileges required',
+      });
     });
 
     it('should allow handleAdminJoin when user is admin and join room', async () => {
@@ -360,6 +454,9 @@ describe('UserGateway', () => {
       expect(mockClient.join).toHaveBeenCalledWith('admin:users');
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ room: 'admin:users', joined: true });
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
+      expect(loggerSpy).toHaveBeenCalledWith(`Admin admin@test.com joined room: admin:users`);
     });
 
     it('should allow admin when roles is string or super_admin', async () => {
@@ -380,6 +477,14 @@ describe('UserGateway', () => {
 
       const result = await gateway.handleAdminJoin(mockClient);
       expect(result.success).toBe(true);
+    });
+
+    it('should throw WsException in handleAdminCreateUser if not admin', async () => {
+      const mockClient = { data: { user: { sub: 'u1', role: 'user' } } } as unknown as Socket;
+      await expectWsException(gateway.handleAdminCreateUser(mockClient, {} as AdminCreateUserDto), {
+        code: 'FORBIDDEN',
+        message: 'Forbidden: Admin privileges required',
+      });
     });
 
     it('should handleAdminCreateUser and emit user:created to admin:users room', async () => {
@@ -403,6 +508,19 @@ describe('UserGateway', () => {
       });
       expect(result.success).toBe(true);
       expect(result.data).toEqual(newUser);
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
+      expect(loggerSpy).toHaveBeenCalledWith(
+        `Broadcasted user:created event for user created@test.com to admin:users`,
+      );
+    });
+
+    it('should throw WsException in handleAdminUpdateUser if not admin', async () => {
+      const mockClient = { data: { user: { sub: 'u1', role: 'user' } } } as unknown as Socket;
+      await expectWsException(gateway.handleAdminUpdateUser(mockClient, {} as AdminUpdateUserDto), {
+        code: 'FORBIDDEN',
+        message: 'Forbidden: Admin privileges required',
+      });
     });
 
     it('should handleAdminUpdateUser and emit user:updated to admin:users room', async () => {
@@ -426,15 +544,33 @@ describe('UserGateway', () => {
       });
       expect(result.success).toBe(true);
       expect(result.data).toEqual(updatedUser);
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
+      expect(loggerSpy).toHaveBeenCalledWith(
+        `Broadcasted user:updated event for user target-u to admin:users`,
+      );
+    });
+
+    it('should throw WsException in handleAdminDeleteUser if not admin', async () => {
+      const mockClient = { data: { user: { sub: 'u1', role: 'user' } } } as unknown as Socket;
+      await expectWsException(gateway.handleAdminDeleteUser(mockClient, { userId: '1' }), {
+        code: 'FORBIDDEN',
+        message: 'Forbidden: Admin privileges required',
+      });
     });
 
     it('should handleAdminDeleteUser throw error when userId missing', async () => {
       const mockClient = {
         data: { user: { sub: 'a1', roles: ['admin'] } },
       } as unknown as Socket;
-      await expect(
+      await expectWsException(
         gateway.handleAdminDeleteUser(mockClient, {} as unknown as { userId: string }),
-      ).rejects.toThrow(WsException);
+        { code: 'BAD_REQUEST', message: 'userId is required' },
+      );
+      await expectWsException(gateway.handleAdminDeleteUser(mockClient, undefined as any), {
+        code: 'BAD_REQUEST',
+        message: 'userId is required',
+      });
     });
 
     it('should handleAdminDeleteUser and emit user:deleted to admin:users room', async () => {
@@ -452,6 +588,55 @@ describe('UserGateway', () => {
         data: { userId: 'del-u' },
       });
       expect(result.success).toBe(true);
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
+      expect(loggerSpy).toHaveBeenCalledWith(
+        `Broadcasted user:deleted event for user del-u to admin:users`,
+      );
+    });
+
+    it('should throw WsException in handleAdminDeleteUsers if not admin', async () => {
+      const mockClient = { data: { user: { sub: 'u1', role: 'user' } } } as unknown as Socket;
+      await expectWsException(gateway.handleAdminDeleteUsers(mockClient, { userIds: ['1'] }), {
+        code: 'FORBIDDEN',
+        message: 'Forbidden: Admin privileges required',
+      });
+    });
+
+    it('should throw WsException in handleAdminDeleteUsers if userIds missing', async () => {
+      const mockClient = { data: { user: { sub: 'a1', roles: ['admin'] } } } as unknown as Socket;
+      await expectWsException(gateway.handleAdminDeleteUsers(mockClient, {} as any), {
+        code: 'BAD_REQUEST',
+        message: 'userIds array is required',
+      });
+      await expectWsException(gateway.handleAdminDeleteUsers(mockClient, undefined as any), {
+        code: 'BAD_REQUEST',
+        message: 'userIds array is required',
+      });
+      await expectWsException(
+        gateway.handleAdminDeleteUsers(mockClient, { userIds: 'not-array' } as any),
+        { code: 'BAD_REQUEST', message: 'userIds array is required' },
+      );
+    });
+
+    it('should handleAdminDeleteUsers and emit to admin:users room', async () => {
+      const mockClient = { data: { user: { sub: 'a1', roles: ['admin'] } } } as unknown as Socket;
+      mockUserService.send.mockReturnValueOnce(of({ message: 'deleted' }));
+      const result = await gateway.handleAdminDeleteUsers(mockClient, { userIds: ['id1', 'id2'] });
+      expect(mockUserService.send).toHaveBeenCalledWith('user.delete.many', {
+        userIds: ['id1', 'id2'],
+      });
+      expect(mockServer.to).toHaveBeenCalledWith('admin:users');
+      expect(mockToEmit).toHaveBeenCalledWith('users:deletedMany', {
+        event: 'USERS_DELETED_MANY',
+        data: { userIds: ['id1', 'id2'] },
+      });
+      expect(result.success).toBe(true);
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
+      expect(loggerSpy).toHaveBeenCalledWith(
+        `Broadcasted users:deletedMany event for users id1,id2 to admin:users`,
+      );
     });
   });
 });

@@ -29,4 +29,23 @@ describe('GatewayConfig', () => {
 
     expect(() => validate(invalidConfig)).toThrow();
   });
+
+  it('should use default values when optional config is omitted', () => {
+    const validConfig = {
+      JWT_SECRET: 'super-secret',
+    };
+
+    const result = validate(validConfig);
+    expect(result).toBeInstanceOf(GatewayConfigDto);
+    expect(result.JWT_SECRET).toBe('super-secret');
+    expect(result.PORT).toBe(3000);
+    expect(result.USER_SERVICE_TCP_PORT).toBe(3001);
+    expect(result.GATEWAY_TCP_PORT).toBe(4000);
+    expect(result.NODE_ENV).toBe(Environment.Development);
+    expect(result.JWT_EXPIRES_IN).toBe('15m');
+    expect(result.USER_SERVICE_TCP_HOST).toBe('localhost');
+    expect(result.REDIS_URL).toBe('redis://localhost:6379');
+    expect(result.COOKIE_DOMAIN).toBeUndefined();
+    expect(result.REFRESH_COOKIE_PATH).toBe('/api/v1/auth');
+  });
 });

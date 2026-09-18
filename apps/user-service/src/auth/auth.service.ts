@@ -439,4 +439,36 @@ export class AuthService implements OnApplicationBootstrap {
       userId,
     };
   }
+
+  async deleteUsers(userIds: string[]) {
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      throw new BadRequestException('userIds array is required and cannot be empty');
+    }
+
+    const usersToEvaluate = await this.userModel.find({ _id: { $in: userIds } });
+    const validUserIds = usersToEvaluate
+      .filter((u) => u.role !== 'super_admin' && u.email !== 'superadmin@example.com')
+      .map((u) => u._id);
+
+    if (validUserIds.length === 0) {
+      throw new BadRequestException('No valid users to delete or cannot delete superadmin users');
+    }
+
+    const result = await this.userModel.deleteMany({ _id: { $in: validUserIds } });
+
+    for (const id of validUserIds) {
+      await this.redisService.set(`refresh_token:${id.toString()}`, '', 1);
+    }
+
+    this.notificationClient.emit('users.deletedMany', {
+      userIds: validUserIds,
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      message: 'Users deleted successfully',
+      deletedCount: result.deletedCount,
+      userIds: validUserIds,
+    };
+  }
 }

@@ -4,9 +4,12 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 import { ServerOptions } from 'socket.io';
 
 // Mock ioredis and @socket.io/redis-adapter
+import Redis from 'ioredis';
+import { createAdapter } from '@socket.io/redis-adapter';
+
 jest.mock('ioredis', () => {
   return jest.fn().mockImplementation(() => ({
-    duplicate: jest.fn().mockReturnValue({}),
+    duplicate: jest.fn().mockReturnValue({ isDuplicate: true }),
   }));
 });
 
@@ -17,7 +20,10 @@ jest.mock('@socket.io/redis-adapter', () => ({
 interface MockServerOptions {
   cors: {
     origin: (origin: string | null, callback: (err: Error | null, allow?: boolean) => void) => void;
+    credentials?: boolean;
+    methods?: string[];
   };
+  transports?: string[];
 }
 
 describe('RedisIoAdapter', () => {
@@ -44,6 +50,16 @@ describe('RedisIoAdapter', () => {
   describe('connectToRedis', () => {
     it('should initialize Redis pub and sub clients and build adapterConstructor', async () => {
       await adapter.connectToRedis();
+      expect(Redis).toHaveBeenCalledWith('redis://localhost:6379');
+
+      const mockRedisInstance = (Redis as unknown as jest.Mock).mock.results[0].value;
+      expect(mockRedisInstance.duplicate).toHaveBeenCalled();
+
+      expect(createAdapter).toHaveBeenCalledWith(
+        mockRedisInstance,
+        expect.objectContaining({ isDuplicate: true }),
+      );
+
       expect(
         (adapter as unknown as { adapterConstructor?: unknown }).adapterConstructor,
       ).toBeDefined();
@@ -80,21 +96,42 @@ describe('RedisIoAdapter', () => {
 
       expect(passedOptions).toBeDefined();
       expect(typeof passedOptions.cors.origin).toBe('function');
+      expect(passedOptions.cors.credentials).toBe(true);
+      expect(passedOptions.cors.methods).toEqual(['GET', 'POST']);
+      expect(passedOptions.transports).toEqual(['websocket', 'polling']);
 
       // Test with no origin
       const callbackNoOrigin = jest.fn();
       passedOptions.cors.origin(null, callbackNoOrigin);
       expect(callbackNoOrigin).toHaveBeenCalledWith(null, true);
 
-      // Test with origin
-      const callbackWithOrigin = jest.fn();
-      passedOptions.cors.origin('https://admin.localhost:3000', callbackWithOrigin);
-      expect(callbackWithOrigin).toHaveBeenCalledWith(null, true);
+      // Test with allowed origins (Regex boundary check)
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'https://admin.localhost:4200',
+        'http://127.0.0.1:4000',
+        'https://dedisalam.my.id',
+        'https://app.dedisalam.my.id',
+      ];
+      allowedOrigins.forEach((origin) => {
+        const cb = jest.fn();
+        passedOptions.cors.origin(origin, cb);
+        expect(cb).toHaveBeenCalledWith(null, true);
+      });
 
-      // Test with disallowed origin
-      const callbackDisallowed = jest.fn();
-      passedOptions.cors.origin('https://disallowed.com', callbackDisallowed);
-      expect(callbackDisallowed).toHaveBeenCalledWith(expect.any(Error), false);
+      // Test with disallowed origins
+      const disallowedOrigins = [
+        'https://disallowed.com',
+        'http://dedisalam.my.id', // http instead of https for dedisalam
+        'http://localhost:3001', // unsupported port
+        'https://127.0.0.1:80', // unsupported port
+        'http://attackerlocalhost:3000', // missing dot or protocol
+      ];
+      disallowedOrigins.forEach((origin) => {
+        const cb = jest.fn();
+        passedOptions.cors.origin(origin, cb);
+        expect(cb).toHaveBeenCalledWith(expect.any(Error), false);
+      });
     });
   });
 });

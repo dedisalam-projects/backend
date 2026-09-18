@@ -231,6 +231,30 @@ if (data.id === null) return;
   expect(refreshRes.data.accessToken).not.toBe(oldToken);
   ```
 
+#### J. WsException dan HttpException String Literals Surviving
+- **Problem**: Kode melempar exception bersarang seperti `throw new WsException({ code: 'UNAUTHORIZED', message: 'User not found' })`. Stryker memutasi nilai literal `message` menjadi `""`. Jika tes hanya mengecek tipe `.toThrow(WsException)`, mutan akan bertahan (*survived*).
+- **Solution**: Hindari `.toThrow()` yang hanya mengecek `Error.message` generik. Gunakan pembandingan objek secara tepat:
+  ```typescript
+  await expect(gateway.handleGetProfile(mockClient)).rejects.toMatchObject(
+    new WsException({ code: 'UNAUTHORIZED', message: 'User not found' })
+  );
+  ```
+
+#### K. Side Effects yang Tidak Di-Assert (Logger & Meta Timestamps)
+- **Problem**: Mutasi pada string logger (`this.logger.log('Hello')` -> `this.logger.log('')`) atau timestamp balikan payload (`meta: { timestamp: new Date() }` -> `meta: { timestamp: 'Stryker was here' }`) tidak menyebabkan tes unit *fail*, sehingga melahirkan puluhan mutan.
+- **Solution**: 
+  1. Selalu buat *spy* untuk `Logger` pada `beforeEach` dan wajibkan pemanggilan *string literal* secara spesifik.
+  2. Selalu cek kunci properti balikan.
+  ```typescript
+  // 1. Logger assertions
+  let loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+  expect(loggerSpy).toHaveBeenCalledWith(`Broadcasted event to admin:users`);
+  
+  // 2. Meta payload assertions
+  expect(result.meta).toBeDefined();
+  expect(result.meta.timestamp).toBeDefined(); // Atau gunakan regex / expect.any(String)
+  ```
+
 ---
 
 ## When to Use

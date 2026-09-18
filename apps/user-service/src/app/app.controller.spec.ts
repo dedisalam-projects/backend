@@ -5,6 +5,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { TcpContext } from '@nestjs/microservices';
 import { getConnectionToken } from '@nestjs/mongoose';
 import { RedisService } from '@dedisalam/database';
+import { Logger } from '@nestjs/common';
 
 describe('AppController', () => {
   let app: TestingModule;
@@ -14,13 +15,15 @@ describe('AppController', () => {
   let mockConnection: {
     readyState: number;
     db?: {
-      admin: () => {
-        ping: jest.Mock;
-      };
+      admin: jest.Mock;
     };
   };
+  let loggerLogSpy: jest.SpyInstance;
+  let loggerErrorSpy: jest.SpyInstance;
 
   beforeEach(async () => {
+    loggerLogSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    loggerErrorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
     mockPinoLogger = {
       assign: jest.fn(),
     };
@@ -34,11 +37,12 @@ describe('AppController', () => {
       get: jest.fn().mockResolvedValue('hello_redis'),
     };
 
+    const pingMock = jest.fn().mockResolvedValue({ ok: 1 });
     mockConnection = {
       readyState: 1,
       db: {
-        admin: () => ({
-          ping: jest.fn().mockResolvedValue({ ok: 1 }),
+        admin: jest.fn().mockReturnValue({
+          ping: pingMock,
         }),
       },
     };
@@ -67,6 +71,10 @@ describe('AppController', () => {
     }).compile();
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('hello', () => {
     it('should return hello message and correlation ID', async () => {
       const appController = app.get<AppController>(AppController);
@@ -81,6 +89,22 @@ describe('AppController', () => {
         correlationId: 'test-123',
       });
       expect(mockPinoLogger.assign).toHaveBeenCalledWith({ correlationId: 'test-123' });
+      expect(loggerLogSpy).toHaveBeenCalledWith(
+        { correlationId: 'test-123' },
+        'Received user.hello request for name: Nest',
+      );
+      expect(mockRedisClient.set).toHaveBeenCalledWith('test_key', 'hello_redis', 60);
+      expect(mockRedisClient.get).toHaveBeenCalledWith('test_key');
+      expect(loggerLogSpy).toHaveBeenCalledWith(
+        { correlationId: 'test-123' },
+        'Redis Set/Get test successful: hello_redis',
+      );
+      const pingSpy = mockConnection.db!.admin().ping;
+      expect(pingSpy).toHaveBeenCalled();
+      expect(loggerLogSpy).toHaveBeenCalledWith(
+        { correlationId: 'test-123' },
+        'MongoDB ping successful',
+      );
     });
 
     it('should handle missing payload properties gracefully (Negative Test)', async () => {
@@ -126,6 +150,10 @@ describe('AppController', () => {
         message: 'Hello Bob from User Service',
         correlationId: 'redis-fail',
       });
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        { correlationId: 'redis-fail' },
+        'Redis Set/Get test failed: Redis Connection Refused',
+      );
     });
 
     it('should handle MongoDB not connected (readyState !== 1) gracefully (Negative Test)', async () => {
@@ -142,6 +170,10 @@ describe('AppController', () => {
         message: 'Hello Charlie from User Service',
         correlationId: 'mongo-fail',
       });
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        { correlationId: 'mongo-fail' },
+        'MongoDB connection check/ping failed: MongoDB is not connected (readyState: 0)',
+      );
     });
   });
 
@@ -156,6 +188,10 @@ describe('AppController', () => {
         message: 'Hello RMQ',
         correlationId: 'test-corr-456',
       });
+      expect(loggerLogSpy).toHaveBeenCalledWith(
+        { correlationId: 'test-corr-456' },
+        'Received TCP test.event in User Service: Hello RMQ',
+      );
     });
 
     it('should handle omitted message and correlationId with defaults', async () => {
@@ -167,6 +203,10 @@ describe('AppController', () => {
         message: 'Hello from User Service via RabbitMQ!',
         correlationId: 'unknown',
       });
+      expect(loggerLogSpy).toHaveBeenCalledWith(
+        { correlationId: 'unknown' },
+        'Received TCP test.event in User Service: ',
+      );
     });
   });
 });

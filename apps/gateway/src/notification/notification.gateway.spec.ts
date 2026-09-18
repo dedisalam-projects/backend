@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { of } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
 import { WsException } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 
 describe('NotificationGateway', () => {
@@ -12,10 +13,25 @@ describe('NotificationGateway', () => {
   let mockConfigService: { get: jest.Mock };
   let mockServer: { emit: jest.Mock; to: jest.Mock };
   let mockToEmit: jest.Mock;
+  let loggerSpy: jest.SpyInstance;
+  let loggerWarnSpy: jest.SpyInstance;
+
+  async function expectWsException(promise: Promise<any>, expectedError: any) {
+    try {
+      await promise;
+      fail('Expected WsException to be thrown');
+    } catch (e) {
+      expect(e).toBeInstanceOf(WsException);
+      expect((e as WsException).getError()).toEqual(expectedError);
+    }
+  }
 
   const jwtSecret = 'test-jwt-secret';
 
   beforeEach(async () => {
+    loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    loggerWarnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+
     mockNotificationClient = {
       send: jest.fn(),
     };
@@ -115,6 +131,9 @@ describe('NotificationGateway', () => {
       expect(mockClient.join).toHaveBeenCalledWith('user_u123');
       expect(mockClient.emit).toHaveBeenCalledWith('hello', expect.any(Object));
       expect(mockClient.disconnect).not.toHaveBeenCalled();
+      expect(loggerSpy).toHaveBeenCalledWith(
+        `Client client-already-auth joined personal notification room: user_u123 and notifications broadcast channel`,
+      );
     });
 
     it('should reject connection when token is missing', () => {
@@ -132,6 +151,9 @@ describe('NotificationGateway', () => {
         error: { code: 'UNAUTHORIZED', message: 'Authentication token is required' },
       });
       expect(mockClient.disconnect).toHaveBeenCalledWith(true);
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        `Connection rejected for client c1: Missing token`,
+      );
     });
 
     it('should connect and join personal room when valid token is in auth.token', () => {
@@ -216,9 +238,10 @@ describe('NotificationGateway', () => {
 
     it('should reject connection when cookie header lacks accessToken', () => {
       const mockClient = {
-        id: 'c-no-token-cookie',
-        handshake: { headers: { cookie: 'other=abc; session=123' } },
-        join: jest.fn(),
+        id: 'client-no-token-cookie',
+        handshake: {
+          headers: { cookie: 'other=abc; session=123' },
+        },
         emit: jest.fn(),
         disconnect: jest.fn(),
       } as unknown as Socket;
@@ -229,6 +252,22 @@ describe('NotificationGateway', () => {
         success: false,
         error: { code: 'UNAUTHORIZED', message: 'Authentication token is required' },
       });
+      expect(mockClient.disconnect).toHaveBeenCalledWith(true);
+    });
+
+    it('should handle array headers gracefully without crashing', () => {
+      const mockClient = {
+        id: 'client-array',
+        handshake: {
+          headers: { authorization: ['Bearer abc'], cookie: ['accessToken=123'] },
+          query: { token: ['query-token'] },
+        },
+        emit: jest.fn(),
+        disconnect: jest.fn(),
+      } as unknown as Socket;
+
+      gateway.handleConnection(mockClient);
+
       expect(mockClient.disconnect).toHaveBeenCalledWith(true);
     });
 
@@ -247,6 +286,9 @@ describe('NotificationGateway', () => {
         error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token' },
       });
       expect(mockClient.disconnect).toHaveBeenCalledWith(true);
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        `Connection rejected for client c5: Invalid token`,
+      );
     });
 
     it('should reject connection when JWT_SECRET is not configured', () => {
@@ -268,13 +310,23 @@ describe('NotificationGateway', () => {
     it('should handle disconnect cleanly', () => {
       const mockClient = { id: 'c-disc' } as unknown as Socket;
       expect(() => gateway.handleDisconnect(mockClient)).not.toThrow();
+      expect(loggerSpy).toHaveBeenCalledWith(`Client disconnected from /notifications: c-disc`);
     });
   });
 
   describe('handleListNotifications', () => {
-    it('should throw WsException if user is not authenticated', async () => {
+    it('should throw WsException if user is not authenticated or client.data is missing', async () => {
       const mockClient = { data: {} } as unknown as Socket;
-      await expect(gateway.handleListNotifications(mockClient)).rejects.toThrow(WsException);
+      await expectWsException(gateway.handleListNotifications(mockClient), {
+        code: 'UNAUTHORIZED',
+        message: 'User session not found',
+      });
+
+      const mockClientNoData = {} as unknown as Socket;
+      await expectWsException(gateway.handleListNotifications(mockClientNoData), {
+        code: 'UNAUTHORIZED',
+        message: 'User session not found',
+      });
     });
 
     it('should query notifications for user and return envelope', async () => {
@@ -289,16 +341,34 @@ describe('NotificationGateway', () => {
       });
       expect(result.success).toBe(true);
       expect(result.data).toEqual(notifications);
+      expect(result.meta.timestamp).toBeDefined();
     });
   });
 
   describe('handleMarkAsRead', () => {
-    it('should throw WsException when userId or notification id is missing', async () => {
+    it('should throw WsException when userId or notification id is missing, or body/data is null', async () => {
       const mockClient = { data: {} } as unknown as Socket;
-      await expect(gateway.handleMarkAsRead(mockClient, { id: 'n1' })).rejects.toThrow(WsException);
+      await expectWsException(gateway.handleMarkAsRead(mockClient, { id: 'n1' }), {
+        code: 'BAD_REQUEST',
+        message: 'Notification id is required',
+      });
 
       const authedClient = { data: { user: { sub: 'u1' } } } as unknown as Socket;
-      await expect(gateway.handleMarkAsRead(authedClient, { id: '' })).rejects.toThrow(WsException);
+      await expectWsException(gateway.handleMarkAsRead(authedClient, { id: '' }), {
+        code: 'BAD_REQUEST',
+        message: 'Notification id is required',
+      });
+
+      const authedClientNoData = {} as unknown as Socket;
+      await expectWsException(gateway.handleMarkAsRead(authedClientNoData, { id: 'n1' }), {
+        code: 'BAD_REQUEST',
+        message: 'Notification id is required',
+      });
+
+      await expectWsException(gateway.handleMarkAsRead(authedClient, undefined as any), {
+        code: 'BAD_REQUEST',
+        message: 'Notification id is required',
+      });
     });
 
     it('should mark notification as read and return updated document', async () => {
@@ -314,29 +384,53 @@ describe('NotificationGateway', () => {
       });
       expect(result.success).toBe(true);
       expect(result.data).toEqual(updated);
+      expect(result.meta.timestamp).toBeDefined();
     });
   });
 
   describe('handleBroadcast & checkAdmin', () => {
     it('should throw UNAUTHORIZED if client has no user in checkAdmin', async () => {
       const mockClient = { data: {} } as unknown as Socket;
-      await expect(
-        gateway.handleBroadcast(mockClient, { title: 'T', message: 'M' }),
-      ).rejects.toThrow(WsException);
+      await expectWsException(gateway.handleBroadcast(mockClient, { title: 'T', message: 'M' }), {
+        code: 'UNAUTHORIZED',
+        message: 'Not authenticated',
+      });
     });
 
     it('should throw FORBIDDEN if user is not an admin', async () => {
       const mockClient = { data: { user: { sub: 'u1', role: 'user' } } } as unknown as Socket;
-      await expect(
-        gateway.handleBroadcast(mockClient, { title: 'T', message: 'M' }),
-      ).rejects.toThrow(WsException);
+      await expectWsException(gateway.handleBroadcast(mockClient, { title: 'T', message: 'M' }), {
+        code: 'FORBIDDEN',
+        message: 'Forbidden: Admin privileges required',
+      });
     });
 
     it('should throw FORBIDDEN if user has no role or roles property', async () => {
       const mockClient = { data: { user: { sub: 'u1' } } } as unknown as Socket;
-      await expect(
-        gateway.handleBroadcast(mockClient, { title: 'T', message: 'M' }),
-      ).rejects.toThrow(WsException);
+      await expectWsException(gateway.handleBroadcast(mockClient, { title: 'T', message: 'M' }), {
+        code: 'FORBIDDEN',
+        message: 'Forbidden: Admin privileges required',
+      });
+    });
+
+    it('should allow handleBroadcast when user is super_admin via single string role property', async () => {
+      const mockClient = {
+        data: { user: { sub: 'a2', email: 'super@test.com', role: 'super_admin' } },
+      } as unknown as Socket;
+      mockNotificationClient.send.mockReturnValueOnce(of({}));
+
+      const result = await gateway.handleBroadcast(mockClient, { title: 'T', message: 'M' });
+      expect(result.success).toBe(true);
+    });
+
+    it('should allow handleBroadcast when user is admin via roles property as single string', async () => {
+      const mockClient = {
+        data: { user: { sub: 'a3', email: 'admin2@test.com', roles: 'admin' } },
+      } as unknown as Socket;
+      mockNotificationClient.send.mockReturnValueOnce(of({}));
+
+      const result = await gateway.handleBroadcast(mockClient, { title: 'T', message: 'M' });
+      expect(result.success).toBe(true);
     });
 
     it('should broadcast globally when recipientId is omitted', async () => {
@@ -356,6 +450,7 @@ describe('NotificationGateway', () => {
       expect(mockServer.emit).toHaveBeenCalledWith('notification:broadcast', notifResponse);
       expect(result.success).toBe(true);
       expect(result.data).toEqual(notifResponse);
+      expect(result.meta.timestamp).toBeDefined();
     });
 
     it('should emit to user personal room when recipientId is specified', async () => {
@@ -371,6 +466,7 @@ describe('NotificationGateway', () => {
       expect(mockServer.to).toHaveBeenCalledWith('user_user-99');
       expect(mockToEmit).toHaveBeenCalledWith('notification:new', notifResponse);
       expect(result.success).toBe(true);
+      expect(result.meta.timestamp).toBeDefined();
     });
   });
 });

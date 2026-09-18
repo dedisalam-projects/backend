@@ -51,7 +51,7 @@ pipeline {
         stage('Lint & Static Analysis') {
             steps {
                 echo 'Running linting across workspace...'
-                sh 'npx nx run-many --target=lint --all --verbose'
+                sh "npx nx affected --target=lint --base=${NX_BASE} --head=HEAD --verbose"
             }
         }
         

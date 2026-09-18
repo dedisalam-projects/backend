@@ -1,3 +1,11 @@
+﻿---
+type: config
+tags:
+  - config
+  - setup
+aliases: ["Configuration","Config"]
+status: active
+---
 # Environment Variables Configuration
 
 The backend services rely on environment variables for configuration. All required variables should be defined in a `.env` file at the root of the project (you can copy from `.env.example`).
@@ -23,3 +31,4 @@ The backend services rely on environment variables for configuration. All requir
 
 > [!WARNING]
 > Do not commit `.env` files to version control. The `JWT_SECRET` and database passwords must be kept extremely secure in production.
+

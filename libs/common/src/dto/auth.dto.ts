@@ -49,3 +49,41 @@ export class RefreshTokenDto {
   @IsNotEmpty()
   refreshToken!: string;
 }
+
+export class AuthUserDto {
+  @ApiProperty({ example: '60d5ecb8b5436e2f8c5b5f8c' })
+  @IsString()
+  @IsNotEmpty()
+  id!: string;
+
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  @IsNotEmpty()
+  email!: string;
+
+  @ApiPropertyOptional({ example: 'John Doe' })
+  @IsString()
+  @IsOptional()
+  name?: string;
+}
+
+export class AuthResponseDto {
+  @ApiPropertyOptional({ description: 'JWT Access Token' })
+  @IsString()
+  @IsOptional()
+  accessToken?: string;
+
+  @ApiPropertyOptional({ description: 'JWT Refresh Token' })
+  @IsString()
+  @IsOptional()
+  refreshToken?: string;
+
+  @ApiPropertyOptional({ type: AuthUserDto })
+  @IsOptional()
+  user?: AuthUserDto;
+
+  @ApiPropertyOptional({ description: 'Success message' })
+  @IsString()
+  @IsOptional()
+  message?: string;
+}

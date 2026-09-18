@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PinoLogger } from 'nestjs-pino';
@@ -11,6 +12,7 @@ describe('AppController', () => {
   let mockPinoLogger: Partial<PinoLogger>;
   let mockGatewayClient: { emit: jest.Mock };
   let appService: AppService;
+  let loggerSpy: jest.SpyInstance;
 
   beforeAll(async () => {
     mockPinoLogger = {
@@ -45,10 +47,16 @@ describe('AppController', () => {
 
     appController = app.get<AppController>(AppController);
     appService = app.get<AppService>(AppService);
+    loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+  });
+
+  afterAll(() => {
+    loggerSpy.mockRestore();
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    loggerSpy.mockClear();
   });
 
   describe('handleNotificationSend', () => {
@@ -84,7 +92,7 @@ describe('AppController', () => {
         throw new Error('Logger context not found');
       });
 
-      await appController.handleNotificationSend({});
+      await appController.handleNotificationSend(undefined as any);
 
       expect(spyProcess).toHaveBeenCalledWith(undefined, undefined, undefined);
       expect(mockGatewayClient.emit).toHaveBeenCalledWith('notification.push', {
@@ -113,6 +121,7 @@ describe('AppController', () => {
 
       await appController.handleUserCreated({ userId: 'u1', name: 'John Doe' });
 
+      expect(loggerSpy).toHaveBeenCalledWith(`Received user.created event for u1`);
       expect(spyProcess).toHaveBeenCalledWith(
         'Welcome to our platform, John Doe!',
         'u1',
@@ -161,7 +170,7 @@ describe('AppController', () => {
         .spyOn(appService, 'processNotification')
         .mockResolvedValueOnce({} as unknown as Notification);
 
-      await appController.handleUserCreated({} as unknown as { userId: string; name: string });
+      await appController.handleUserCreated(undefined as any);
 
       expect(spyProcess).toHaveBeenCalledWith(
         'Welcome to our platform, User!',
@@ -187,6 +196,7 @@ describe('AppController', () => {
         timestamp: '2026-09-13T00:00:00.000Z',
       });
 
+      expect(loggerSpy).toHaveBeenCalledWith(`Received user.updated event for u1`);
       expect(mockGatewayClient.emit).toHaveBeenCalledWith('gateway.user.updated', {
         userId: 'u1',
         changes: { name: 'Jane Updated' },
@@ -210,9 +220,7 @@ describe('AppController', () => {
     });
 
     it('should handle undefined payload gracefully', async () => {
-      await appController.handleUserUpdated(
-        {} as unknown as { userId: string; changes: Record<string, unknown> },
-      );
+      await appController.handleUserUpdated(undefined as any);
 
       expect(mockGatewayClient.emit).toHaveBeenCalledWith(
         'gateway.user.updated',
@@ -232,6 +240,7 @@ describe('AppController', () => {
         timestamp: '2026-09-13T00:00:00.000Z',
       });
 
+      expect(loggerSpy).toHaveBeenCalledWith(`Received user.deleted event for u1`);
       expect(mockGatewayClient.emit).toHaveBeenCalledWith('gateway.user.deleted', {
         userId: 'u1',
         timestamp: '2026-09-13T00:00:00.000Z',
@@ -253,7 +262,7 @@ describe('AppController', () => {
     });
 
     it('should handle undefined payload gracefully', async () => {
-      await appController.handleUserDeleted({} as unknown as { userId: string });
+      await appController.handleUserDeleted(undefined as any);
 
       expect(mockGatewayClient.emit).toHaveBeenCalledWith(
         'gateway.user.deleted',
@@ -273,6 +282,7 @@ describe('AppController', () => {
         name: 'User 1',
       });
 
+      expect(loggerSpy).toHaveBeenCalledWith(`Received user.logged_in event for u1@example.com`);
       expect(mockGatewayClient.emit).toHaveBeenCalledWith('user.logged_in', {
         userId: 'u1',
         email: 'u1@example.com',

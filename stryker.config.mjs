@@ -4,23 +4,32 @@ export default {
   packageManager: 'npm',
   reporters: ['html', 'clear-text', 'progress'],
   testRunner: 'jest',
-  coverageAnalysis: 'off',
+  coverageAnalysis: 'perTest',
   jest: {
     projectType: 'custom',
-    configFile: 'libs/common/jest.config.cts',
+    configFile: 'apps/gateway/jest.config.cts',
     config: {
       testEnvironment: 'node',
     },
   },
   mutate: [
-    'libs/common/src/decorators/roles.decorator.ts',
+    'apps/gateway/src/**/*.ts',
     '!**/*.spec.ts',
+    '!**/*.module.ts',
+    '!**/main.ts',
+    '!**/environments/**'
+  ],
+  ignorePatterns: [
+    '.nx/**',
+    'dist/**',
+    'tmp/**',
+    '.stryker-tmp/**'
   ],
   thresholds: {
     high: 80,
     low: 60,
-    break: 50,
+    break: 85,
   },
-  concurrency: 1,
+  concurrency: 6,
   timeoutMS: 30000,
 };

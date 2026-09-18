@@ -11,6 +11,7 @@ describe('NotificationConsumer', () => {
     };
   };
   let mockToEmit: jest.Mock;
+  let loggerSpy: jest.SpyInstance;
 
   beforeEach(async () => {
     mockToEmit = jest.fn();
@@ -34,6 +35,17 @@ describe('NotificationConsumer', () => {
     }).compile();
 
     consumer = module.get<NotificationConsumer>(NotificationConsumer);
+    loggerSpy = jest
+      .spyOn(require('@nestjs/common').Logger.prototype, 'log')
+      .mockImplementation(() => undefined);
+  });
+
+  afterAll(() => {
+    loggerSpy.mockRestore();
+  });
+
+  beforeEach(() => {
+    loggerSpy.mockClear();
   });
 
   describe('handleNotificationPush', () => {
@@ -49,8 +61,7 @@ describe('NotificationConsumer', () => {
     });
 
     it('should handle missing payload gracefully (Negative Test)', () => {
-      const payload = {};
-      const response = consumer.handleNotificationPush(payload);
+      const response = consumer.handleNotificationPush(undefined as any);
 
       expect(response).toEqual({ status: 'success' });
       expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('hello', {
@@ -69,6 +80,9 @@ describe('NotificationConsumer', () => {
   describe('handleUserLoggedIn', () => {
     it('should emit login_event to clients', () => {
       consumer.handleUserLoggedIn({ email: 'test@example.com' });
+      expect(loggerSpy).toHaveBeenCalledWith(
+        `Received user.logged_in RMQ event for: test@example.com`,
+      );
       expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('login_event', {
         email: 'test@example.com',
       });
@@ -76,7 +90,7 @@ describe('NotificationConsumer', () => {
 
     it('should handle null server gracefully', () => {
       (mockNotificationGateway as unknown as { server: null }).server = null;
-      expect(() => consumer.handleUserLoggedIn({ email: 'test@example.com' })).not.toThrow();
+      expect(() => consumer.handleUserLoggedIn(undefined as any)).not.toThrow();
     });
   });
 
@@ -93,14 +107,21 @@ describe('NotificationConsumer', () => {
         timestamp: '2026-09-13T00:00:00.000Z',
       };
       consumer.handleUserCreated(payload);
+      expect(loggerSpy).toHaveBeenCalledWith(`Received user.created RMQ event for: u1`);
       expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_created', payload);
     });
 
     it('should handle payload with userId instead of user', () => {
       consumer.handleUserCreated({ userId: 'u2' });
+      expect(loggerSpy).toHaveBeenCalledWith(`Received user.created RMQ event for: u2`);
       expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_created', {
         userId: 'u2',
       });
+    });
+
+    it('should handle undefined payload gracefully', () => {
+      (mockNotificationGateway as unknown as { server: null }).server = null;
+      expect(() => consumer.handleUserCreated(undefined as any)).not.toThrow();
     });
 
     it('should handle empty or null data', () => {
@@ -122,6 +143,7 @@ describe('NotificationConsumer', () => {
         timestamp: '2026-09-13T00:00:00.000Z',
       };
       consumer.handleUserUpdated(payload);
+      expect(loggerSpy).toHaveBeenCalledWith(`Received user.updated RMQ event for: u1`);
       expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_updated', payload);
     });
 
@@ -134,6 +156,11 @@ describe('NotificationConsumer', () => {
       (mockNotificationGateway as unknown as { server: null }).server = null;
       expect(() => consumer.handleUserUpdated({ userId: 'u1' })).not.toThrow();
     });
+
+    it('should handle undefined payload gracefully', () => {
+      (mockNotificationGateway as unknown as { server: null }).server = null;
+      expect(() => consumer.handleUserUpdated(undefined as any)).not.toThrow();
+    });
   });
 
   describe('handleUserDeleted', () => {
@@ -143,6 +170,7 @@ describe('NotificationConsumer', () => {
         timestamp: '2026-09-13T00:00:00.000Z',
       };
       consumer.handleUserDeleted(payload);
+      expect(loggerSpy).toHaveBeenCalledWith(`Received user.deleted RMQ event for: u1`);
       expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('user_deleted', payload);
     });
 
@@ -155,11 +183,17 @@ describe('NotificationConsumer', () => {
       (mockNotificationGateway as unknown as { server: null }).server = null;
       expect(() => consumer.handleUserDeleted({ userId: 'u1' })).not.toThrow();
     });
+
+    it('should handle undefined payload gracefully', () => {
+      (mockNotificationGateway as unknown as { server: null }).server = null;
+      expect(() => consumer.handleUserDeleted(undefined as any)).not.toThrow();
+    });
   });
 
   describe('handleNotifyUser', () => {
     it('should emit to personal user room when userId is provided', () => {
       consumer.handleNotifyUser({ userId: 'u123', message: 'Hello user' });
+      expect(loggerSpy).toHaveBeenCalledWith(`Received gateway.notify.user RMQ event for: u123`);
       expect(mockNotificationGateway.server.to).toHaveBeenCalledWith('user_u123');
       expect(mockToEmit).toHaveBeenCalledWith('notification:new', {
         userId: 'u123',
@@ -178,11 +212,19 @@ describe('NotificationConsumer', () => {
       (mockNotificationGateway as unknown as { server: null }).server = null;
       expect(() => consumer.handleNotifyUser({ userId: 'u1' })).not.toThrow();
     });
+
+    it('should handle undefined payload gracefully', () => {
+      (mockNotificationGateway as unknown as { server: null }).server = null;
+      expect(() => consumer.handleNotifyUser(undefined as any)).not.toThrow();
+    });
   });
 
   describe('handleBroadcastPush', () => {
     it('should broadcast notification when no recipientId', () => {
       consumer.handleBroadcastPush({ title: 'Alert', message: 'Hello' });
+      expect(loggerSpy).toHaveBeenCalledWith(
+        `Received notification.broadcast.push RMQ event: Alert`,
+      );
       expect(mockNotificationGateway.server.emit).toHaveBeenCalledWith('notification:broadcast', {
         title: 'Alert',
         message: 'Hello',
@@ -191,6 +233,9 @@ describe('NotificationConsumer', () => {
 
     it('should emit to targeted recipient room when recipientId is provided', () => {
       consumer.handleBroadcastPush({ recipientId: 'r-456', title: 'Private Alert', message: 'Hi' });
+      expect(loggerSpy).toHaveBeenCalledWith(
+        `Received notification.broadcast.push RMQ event: Private Alert`,
+      );
       expect(mockNotificationGateway.server.to).toHaveBeenCalledWith('user_r-456');
       expect(mockToEmit).toHaveBeenCalledWith('notification:new', {
         recipientId: 'r-456',
@@ -202,6 +247,11 @@ describe('NotificationConsumer', () => {
     it('should handle null server gracefully', () => {
       (mockNotificationGateway as unknown as { server: null }).server = null;
       expect(() => consumer.handleBroadcastPush({ title: 'Alert' })).not.toThrow();
+    });
+
+    it('should handle undefined payload gracefully', () => {
+      (mockNotificationGateway as unknown as { server: null }).server = null;
+      expect(() => consumer.handleBroadcastPush(undefined as any)).not.toThrow();
     });
   });
 });

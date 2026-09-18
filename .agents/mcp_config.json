@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "obsidian": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-obsidian",
+        "d:/dedisalam/fullstack/backend/docs"
+      ]
+    }
+  }
+}

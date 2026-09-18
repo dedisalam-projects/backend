@@ -16,10 +16,10 @@ Semua namespace berjalan pada host dan port yang sama (misal `http://localhost:3
 | `/notifications` | Terautentikasi (JWT) | Feed notifikasi pribadi dan broadcast massal dari sistem/admin. |
 
 ### Dukungan Lintas Subdomain & CORS
-Gateway dikonfigurasi dengan dynamic CORS sehingga klien dari subdomain mana pun (`https://app.domain.com`, `https://admin.domain.com`, `http://localhost:3000`, `http://localhost:5173`, dll.) dapat terhubung secara transparan.
+[[API_GATEWAY|Gateway]] dikonfigurasi dengan dynamic CORS sehingga klien dari subdomain mana pun (`https://app.domain.com`, `https://admin.domain.com`, `http://localhost:3000`, `http://localhost:5173`, dll.) dapat terhubung secara transparan.
 
 ### Autentikasi Handshake Token & HttpOnly Cookie (Dual-Support)
-Gateway mendukung mode autentikasi ganda untuk fleksibilitas maksimal:
+[[API_GATEWAY|Gateway]] mendukung mode autentikasi ganda untuk fleksibilitas maksimal:
 1. **Web Browser (Micro-frontends)**: Browser mengirimkan HttpOnly cookie `accessToken` secara otomatis menggunakan `withCredentials: true` lintas subdomain (`.dedisalam.my.id`), memberikan proteksi total terhadap serangan XSS dan eliminasi URL token leaks.
 2. **Mobile & Desktop (`frontend-android`, `frontend-windows`, CLI)**: Token JWT dikirimkan melalui payload `auth: { token }` atau header `authorization: Bearer <token>`.
 

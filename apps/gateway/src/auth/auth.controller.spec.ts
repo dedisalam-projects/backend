@@ -1,9 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { of, throwError } from 'rxjs';
 import { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
+import { AuthResponseDto } from '@dedisalam/common';
 import { AuthController } from './auth.controller';
 
 describe('AuthController', () => {
@@ -11,10 +14,15 @@ describe('AuthController', () => {
   let mockUserService: { send: jest.Mock };
   let mockConfigService: { get: jest.Mock };
   let mockResponse: Response;
+  let loggerSpy: jest.SpyInstance;
+  let loggerErrorSpy: jest.SpyInstance;
 
   const jwtSecret = 'test-secret';
 
   beforeEach(async () => {
+    loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    loggerErrorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+
     mockUserService = {
       send: jest.fn(),
     };
@@ -44,6 +52,15 @@ describe('AuthController', () => {
     controller = module.get<AuthController>(AuthController);
   });
 
+  function mockAndValidateAuthContract(payload: any) {
+    const instance = plainToInstance(AuthResponseDto, payload);
+    const errors = validateSync(instance as object, { skipMissingProperties: false });
+    if (errors.length > 0) {
+      throw new Error(`Contract violation in mock data: ${errors.toString()}`);
+    }
+    mockUserService.send.mockReturnValue(of(payload));
+  }
+
   describe('login', () => {
     it('should authenticate user and set cookies in development (undefined domain)', async () => {
       const loginDto = { email: 'test@example.com', password: 'Password123!' };
@@ -52,11 +69,15 @@ describe('AuthController', () => {
         refreshToken: 'refresh-token-123',
         user: { id: 'u1', email: 'test@example.com' },
       };
-      mockUserService.send.mockReturnValue(of(authResult));
+      mockAndValidateAuthContract(authResult);
 
       const result = await controller.login(loginDto, mockResponse);
 
+      expect(mockUserService.send).toHaveBeenCalledWith('auth.login', loginDto);
       expect(result.success).toBe(true);
+      expect(result.message).toBe('Login successful');
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
       expect(result.data).toEqual({ user: { id: 'u1', email: 'test@example.com' } });
       expect(result.data.accessToken).toBeUndefined();
       expect(result.data.refreshToken).toBeUndefined();
@@ -69,7 +90,7 @@ describe('AuthController', () => {
           sameSite: 'lax',
           domain: undefined,
           path: '/',
-          maxAge: 15 * 60 * 1000,
+          maxAge: 900000,
         }),
       );
       expect(mockResponse.cookie).toHaveBeenCalledWith(
@@ -81,9 +102,10 @@ describe('AuthController', () => {
           sameSite: 'lax',
           domain: undefined,
           path: '/api/v1/auth',
-          maxAge: 7 * 24 * 60 * 60 * 1000,
+          maxAge: 604800000,
         }),
       );
+      expect(loggerSpy).toHaveBeenCalledWith('Handling POST login for email: test@example.com');
     });
 
     it('should set secure wildcard cookie in production', async () => {
@@ -98,7 +120,7 @@ describe('AuthController', () => {
         accessToken: 'access-token-prod',
         refreshToken: 'refresh-token-prod',
       };
-      mockUserService.send.mockReturnValue(of(authResult));
+      mockAndValidateAuthContract(authResult);
 
       await controller.login(loginDto, mockResponse);
 
@@ -120,7 +142,7 @@ describe('AuthController', () => {
 
       const loginDto = { email: 'test@example.com', password: 'Password123!' };
       const authResult = { accessToken: 'a1', refreshToken: 'r1' };
-      mockUserService.send.mockReturnValue(of(authResult));
+      mockAndValidateAuthContract(authResult);
 
       await controller.login(loginDto, mockResponse);
 
@@ -135,7 +157,7 @@ describe('AuthController', () => {
     });
 
     it('should handle response when tokens are missing without setting cookies', async () => {
-      mockUserService.send.mockReturnValue(of({ user: { id: 'u1' } }));
+      mockAndValidateAuthContract({ user: { id: 'u1', email: 'test@t.com' } });
       const result = await controller.login({ email: 't@t.com', password: 'p' }, mockResponse);
       expect(result.success).toBe(true);
       expect(mockResponse.cookie).not.toHaveBeenCalled();
@@ -156,7 +178,7 @@ describe('AuthController', () => {
       });
 
       const loginDto = { email: 'test@example.com', password: 'Password123!' };
-      mockUserService.send.mockReturnValue(of({ refreshToken: 'r-default' }));
+      mockAndValidateAuthContract({ refreshToken: 'r-default' });
 
       await controller.login(loginDto, mockResponse);
 
@@ -174,6 +196,7 @@ describe('AuthController', () => {
       await expect(
         controller.login({ email: 'wrong@test.com', password: 'bad' }, mockResponse),
       ).rejects.toThrow(err);
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Error in login: Invalid credentials', err.stack);
     });
 
     it('should wrap generic error in HttpException with 500 status', async () => {
@@ -182,6 +205,32 @@ describe('AuthController', () => {
       await expect(
         controller.login({ email: 'wrong@test.com', password: 'bad' }, mockResponse),
       ).rejects.toThrow(HttpException);
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        'Error in login: Connection failed',
+        expect.any(String),
+      );
+    });
+
+    it('should throw UnauthorizedException if header is not starting with Bearer', async () => {
+      const req = {
+        cookies: {},
+        headers: { authorization: 'Something Bearer token-123' },
+      } as unknown as Request;
+
+      await expect(
+        controller.refresh(req, { userId: '1' }, mockResponse as unknown as Response),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if header does not have space after Bearer', async () => {
+      const req = {
+        cookies: {},
+        headers: { authorization: 'BearerToken-123' },
+      } as unknown as Request;
+
+      await expect(
+        controller.refresh(req, { userId: '1' }, mockResponse as unknown as Response),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should handle error without message and status', async () => {
@@ -190,6 +239,10 @@ describe('AuthController', () => {
       await expect(
         controller.login({ email: 'wrong@test.com', password: 'bad' }, mockResponse),
       ).rejects.toThrow('Internal Server Error');
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        'Error in login: Internal Server Error',
+        undefined,
+      );
     });
 
     it('should map RMQ error with numeric statusCode 401 to HttpException with 401 status', async () => {
@@ -203,6 +256,7 @@ describe('AuthController', () => {
         status: HttpStatus.UNAUTHORIZED,
         message: 'Invalid credentials',
       });
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Error in login: Invalid credentials', undefined);
     });
 
     it('should fallback to 500 without TypeError when RMQ returns string status "error"', async () => {
@@ -216,6 +270,10 @@ describe('AuthController', () => {
         status: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Something went wrong',
       });
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        'Error in login: Something went wrong',
+        undefined,
+      );
     });
 
     it('should handle array error messages properly in RMQ error', async () => {
@@ -233,6 +291,11 @@ describe('AuthController', () => {
         status: HttpStatus.BAD_REQUEST,
         message: 'email must be valid, password required',
       });
+      // Since err itself is the payload here, err.message is an array, so errMessage was removed, and it uses message string.
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        'Error in login: email must be valid, password required',
+        undefined,
+      );
     });
 
     it('should use numeric error.status when error.statusCode is absent', async () => {
@@ -246,6 +309,7 @@ describe('AuthController', () => {
         status: HttpStatus.FORBIDDEN,
         message: 'Access denied',
       });
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Error in login: Access denied', undefined);
     });
 
     it('should extract statusCode and message from wrapped response object', async () => {
@@ -264,6 +328,10 @@ describe('AuthController', () => {
         status: HttpStatus.UNAUTHORIZED,
         message: 'Nested invalid credentials',
       });
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        'Error in login: Nested invalid credentials',
+        undefined,
+      );
     });
 
     it('should extract status and array message from wrapped error object', async () => {
@@ -282,6 +350,7 @@ describe('AuthController', () => {
         status: HttpStatus.BAD_REQUEST,
         message: 'Nested error array',
       });
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Error in login: Nested error array', undefined);
     });
 
     it('should fallback to outer err status and message if nested payload lacks them', async () => {
@@ -299,6 +368,7 @@ describe('AuthController', () => {
         status: HttpStatus.PAYMENT_REQUIRED,
         message: 'Outer message',
       });
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Error in login: Outer message', undefined);
     });
 
     it('should fallback to outer err status and array message if nested payload lacks them', async () => {
@@ -316,20 +386,31 @@ describe('AuthController', () => {
         status: HttpStatus.PAYMENT_REQUIRED,
         message: 'Outer message 1, Outer message 2',
       });
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        'Error in login: Outer message 1, Outer message 2',
+        undefined,
+      );
     });
   });
 
   describe('register', () => {
     it('should register user and return response', async () => {
       const registerDto = { email: 'new@test.com', password: 'Password123!', name: 'New User' };
-      const registeredUser = { id: 'u2', email: 'new@test.com', name: 'New User' };
-      mockUserService.send.mockReturnValue(of(registeredUser));
+      const registeredUser = {
+        user: { id: 'u2', email: 'new@test.com', name: 'New User' },
+        message: 'User registered successfully',
+      };
+      mockAndValidateAuthContract(registeredUser);
 
       const result = await controller.register(registerDto);
 
+      expect(mockUserService.send).toHaveBeenCalledWith('auth.register', registerDto);
       expect(result.success).toBe(true);
       expect(result.data).toEqual(registeredUser);
       expect(result.message).toBe('User registered successfully');
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
+      expect(loggerSpy).toHaveBeenCalledWith('Handling POST register for email: new@test.com');
     });
 
     it('should rethrow HttpException if thrown by userService', async () => {
@@ -363,7 +444,7 @@ describe('AuthController', () => {
         accessToken: 'new-access-token',
         refreshToken: 'new-refresh-token',
       };
-      mockUserService.send.mockReturnValue(of(refreshResult));
+      mockAndValidateAuthContract(refreshResult);
 
       const result = await controller.refresh(req, body, mockResponse as unknown as Response);
 
@@ -374,13 +455,23 @@ describe('AuthController', () => {
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         'accessToken',
         'new-access-token',
-        expect.any(Object),
+        expect.objectContaining({
+          path: '/',
+          maxAge: 900000,
+        }),
       );
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         'refreshToken',
         'new-refresh-token',
-        expect.any(Object),
+        expect.objectContaining({
+          path: '/api/v1/auth',
+          maxAge: 604800000,
+        }),
       );
+      expect(result.message).toBe('Token refreshed successfully');
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
+      expect(loggerSpy).toHaveBeenCalledWith('Handling POST refresh for userId: u123');
     });
 
     it('should extract userId from accessToken cookie if body.userId is omitted', async () => {
@@ -392,7 +483,7 @@ describe('AuthController', () => {
         },
         headers: {},
       } as unknown as Request;
-      mockUserService.send.mockReturnValue(of({ accessToken: 'a2', refreshToken: 'r2' }));
+      mockAndValidateAuthContract({ accessToken: 'a2', refreshToken: 'r2' });
 
       const result = await controller.refresh(req, {}, mockResponse as unknown as Response);
 
@@ -413,7 +504,7 @@ describe('AuthController', () => {
           authorization: `Bearer ${validToken}`,
         },
       } as unknown as Request;
-      mockUserService.send.mockReturnValue(of({}));
+      mockAndValidateAuthContract({});
 
       const result = await controller.refresh(req, {}, mockResponse as unknown as Response);
 
@@ -475,6 +566,71 @@ describe('AuthController', () => {
     });
   });
 
+  it('should not extract token if Bearer is not at the start', async () => {
+    const req = {
+      cookies: {},
+      headers: { authorization: 'Invalid Bearer token123' },
+    } as unknown as Request;
+    await expect(controller.refresh(req, {}, mockResponse as unknown as Response)).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('should handle token where Bearer has multiple spaces', async () => {
+    const validToken = jwt.sign({ sub: 'user-from-spaces' }, jwtSecret);
+    const req = {
+      cookies: { refreshToken: 'refresh-abc' },
+      headers: { authorization: `Bearer    ${validToken}` },
+    } as unknown as Request;
+    mockAndValidateAuthContract({ accessToken: 'a2', refreshToken: 'r2' });
+
+    const result = await controller.refresh(req, {}, mockResponse as unknown as Response);
+    expect(result.success).toBe(true);
+    expect(mockUserService.send).toHaveBeenCalledWith('auth.refresh', {
+      userId: 'user-from-spaces',
+      refreshToken: 'refresh-abc',
+    });
+  });
+
+  it('should throw UnauthorizedException if accessToken is invalid and cannot be decoded', async () => {
+    const req = {
+      cookies: { accessToken: 'invalid-token' },
+      headers: {},
+    } as unknown as Request;
+    try {
+      await controller.refresh(req, {}, mockResponse as unknown as Response);
+    } catch (err: any) {
+      expect(err.message).toBe('Missing refresh token or userId');
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        'Error in refresh: Missing refresh token or userId',
+        expect.any(String),
+      );
+    }
+  });
+
+  it('should throw UnauthorizedException and log correctly if body.userId and token are missing', async () => {
+    const req = {
+      cookies: {},
+      headers: {},
+    } as unknown as Request;
+    try {
+      await controller.refresh(req, {}, mockResponse as unknown as Response);
+    } catch (err: any) {
+      expect(err.message).toBe('Missing refresh token or userId');
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        'Error in refresh: Missing refresh token or userId',
+        expect.any(String),
+      );
+    }
+  });
+
+  it('should handle falsy error in handleError', async () => {
+    const req = { cookies: {}, headers: {} } as unknown as Request;
+    mockUserService.send.mockReturnValue(throwError(() => null));
+    await expect(controller.logout(req, {}, mockResponse as unknown as Response)).rejects.toThrow(
+      HttpException,
+    );
+  });
   describe('logout', () => {
     it('should logout and clear cookies across all paths', async () => {
       const req = {
@@ -484,13 +640,23 @@ describe('AuthController', () => {
         },
         headers: {},
       } as unknown as Request;
-      mockUserService.send.mockReturnValue(of({ message: 'Logged out successfully' }));
+      mockAndValidateAuthContract({ message: 'Logged out successfully' });
 
       const result = await controller.logout(req, {}, mockResponse as unknown as Response);
 
       expect(result.success).toBe(true);
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('accessToken', expect.any(Object));
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
+      expect(result.message).toBe('Logged out successfully');
+      expect(result.meta).toBeDefined();
+      expect(result.meta.timestamp).toBeDefined();
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+        'accessToken',
+        expect.objectContaining({ path: '/' }),
+      );
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+        'refreshToken',
+        expect.objectContaining({ path: '/api/v1/auth' }),
+      );
+      expect(loggerSpy).toHaveBeenCalledWith('Handling POST logout');
     });
 
     it('should extract tokens and userId from body or headers if cookies missing', async () => {
@@ -501,7 +667,7 @@ describe('AuthController', () => {
           authorization: `Bearer ${validToken}`,
         },
       } as unknown as Request;
-      mockUserService.send.mockReturnValue(of({ message: 'Logged out successfully' }));
+      mockAndValidateAuthContract({ message: 'Logged out successfully' });
 
       await controller.logout(req, { refreshToken: 'body-r' }, mockResponse as unknown as Response);
 
@@ -518,7 +684,7 @@ describe('AuthController', () => {
         cookies: { accessToken: validToken },
         headers: {},
       } as unknown as Request;
-      mockUserService.send.mockReturnValue(of({ message: 'Logged out' }));
+      mockAndValidateAuthContract({ message: 'Logged out' });
 
       await controller.logout(req, {}, mockResponse as unknown as Response);
 
@@ -531,7 +697,7 @@ describe('AuthController', () => {
 
     it('should handle logout when body provides accessToken and userId directly', async () => {
       const req = { cookies: {}, headers: {} } as unknown as Request;
-      mockUserService.send.mockReturnValue(of({ message: 'Logged out' }));
+      mockAndValidateAuthContract({ message: 'Logged out' });
 
       await controller.logout(
         req,
@@ -564,5 +730,74 @@ describe('AuthController', () => {
         HttpException,
       );
     });
+  });
+
+  it('should not extract accessToken if Bearer is not at the start during logout', async () => {
+    const req = {
+      cookies: { refreshToken: 'cookie-r' },
+      headers: { authorization: 'Invalid Bearer token123' },
+    } as unknown as Request;
+    mockAndValidateAuthContract({ message: 'Logged out successfully' });
+
+    await controller.logout(req, {}, mockResponse as unknown as Response);
+    expect(mockUserService.send).toHaveBeenCalledWith('auth.logout', {
+      refreshToken: 'cookie-r',
+      accessToken: 'Invalid Bearer token123',
+      userId: undefined,
+    });
+  });
+
+  it('should handle token where Bearer has multiple spaces during logout', async () => {
+    const req = {
+      cookies: { refreshToken: 'cookie-r' },
+      headers: { authorization: 'Bearer    token123' },
+    } as unknown as Request;
+    mockAndValidateAuthContract({ message: 'Logged out successfully' });
+
+    await controller.logout(req, {}, mockResponse as unknown as Response);
+    expect(mockUserService.send).toHaveBeenCalledWith('auth.logout', {
+      refreshToken: 'cookie-r',
+      accessToken: 'token123',
+      userId: undefined,
+    });
+  });
+
+  it('should handle undefined cookies object gracefully during logout', async () => {
+    const req = {
+      headers: {},
+    } as unknown as Request;
+    mockAndValidateAuthContract({ message: 'Logged out successfully' });
+
+    await controller.logout(req, { refreshToken: 'body-r' }, mockResponse as unknown as Response);
+    expect(mockUserService.send).toHaveBeenCalledWith('auth.logout', {
+      refreshToken: 'body-r',
+      accessToken: undefined,
+      userId: undefined,
+    });
+  });
+
+  it('should call clearCookie with exact paths', async () => {
+    const req = { cookies: {}, headers: {} } as unknown as Request;
+    mockAndValidateAuthContract({ message: 'Logged out successfully' });
+
+    await controller.logout(req, {}, mockResponse as unknown as Response);
+
+    expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+      'accessToken',
+      expect.objectContaining({ path: '/' }),
+    );
+    expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+      'refreshToken',
+      expect.objectContaining({ path: '/api/v1/auth' }),
+    );
+    expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+      'refreshToken',
+      expect.objectContaining({ path: '/api/v1/auth/refresh' }),
+    );
+    expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+      'refreshToken',
+      expect.objectContaining({ path: '/' }),
+    );
+    expect(loggerSpy).toHaveBeenCalledWith('Handling POST logout');
   });
 });

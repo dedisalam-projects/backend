@@ -52,49 +52,28 @@ export class AuthController {
   }
 
   private handleError(error: unknown, operation: string): never {
-    const err = error as
-      | {
-          message?: string | string[];
-          stack?: string;
-          statusCode?: number;
-          status?: number;
-          response?: unknown;
-          error?: unknown;
-        }
-      | null
-      | undefined;
-
-    // Unwrap nested error payload from microservice response
-    const payload = (err as any)?.response || (err as any)?.error || err;
-
-    const errMessage = typeof err?.message === 'string' ? err.message : 'Unknown error';
-    this.logger.error(`Error in ${operation}: ${errMessage}`, err?.stack);
-
     if (error instanceof HttpException) {
+      this.logger.error(`Error in ${operation}: ${error.message}`, error.stack);
       throw error;
     }
 
-    const numericStatus =
-      typeof payload?.statusCode === 'number'
-        ? payload.statusCode
-        : typeof payload?.status === 'number'
-          ? payload.status
-          : typeof err?.statusCode === 'number'
-            ? err.statusCode
-            : typeof err?.status === 'number'
-              ? err.status
-              : HttpStatus.INTERNAL_SERVER_ERROR;
+    const err = (error || {}) as any;
+    const payload = err.response || err.error;
 
-    const message =
-      typeof payload?.message === 'string'
-        ? payload.message
-        : Array.isArray(payload?.message)
-          ? payload.message.join(', ')
-          : typeof err?.message === 'string'
-            ? err.message
-            : Array.isArray(err?.message)
-              ? err.message.join(', ')
-              : 'Internal Server Error';
+    // Determine status
+    const statusCandidate = payload?.statusCode ?? payload?.status ?? err.statusCode ?? err.status;
+    const numericStatus =
+      typeof statusCandidate === 'number' ? statusCandidate : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    // Determine message
+    const msgCandidate = payload?.message ?? err.message;
+    const message = Array.isArray(msgCandidate)
+      ? msgCandidate.join(', ')
+      : typeof msgCandidate === 'string'
+        ? msgCandidate
+        : 'Internal Server Error';
+
+    this.logger.error(`Error in ${operation}: ${message}`, err.stack);
 
     throw new HttpException(message, numericStatus);
   }

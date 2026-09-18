@@ -16,6 +16,7 @@ describe('AuthController', () => {
     getUsersPaginated: jest.Mock;
     updateUserByAdmin: jest.Mock;
     deleteUser: jest.Mock;
+    deleteUsers: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -31,6 +32,7 @@ describe('AuthController', () => {
       getUsersPaginated: jest.fn(),
       updateUserByAdmin: jest.fn(),
       deleteUser: jest.fn(),
+      deleteUsers: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -138,5 +140,12 @@ describe('AuthController', () => {
     const result = await controller.deleteUser({ userId: 'u1' });
     expect(mockAuthService.deleteUser).toHaveBeenCalledWith('u1');
     expect(result).toEqual({ userId: 'u1' });
+  });
+  it('should delegate deleteUsers to authService.deleteUsers', async () => {
+    mockAuthService.deleteUsers.mockResolvedValueOnce({ userIds: ['u1', 'u2'] });
+
+    const result = await controller.deleteUsers({ userIds: ['u1', 'u2'] });
+    expect(mockAuthService.deleteUsers).toHaveBeenCalledWith(['u1', 'u2']);
+    expect(result).toEqual({ userIds: ['u1', 'u2'] });
   });
 });

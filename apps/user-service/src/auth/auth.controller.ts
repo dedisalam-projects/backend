@@ -76,4 +76,9 @@ export class AuthController {
   async deleteUser(@Payload() data: { userId: string }) {
     return this.authService.deleteUser(data.userId);
   }
+
+  @MessagePattern('user.delete.many')
+  async deleteUsers(@Payload() data: { userIds: string[] }) {
+    return this.authService.deleteUsers(data.userIds);
+  }
 }

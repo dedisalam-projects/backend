@@ -52,13 +52,13 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       }
 
       try {
-        const secret = this.configService.get<string>('JWT_SECRET');
-        if (!secret) throw new Error('JWT_SECRET is not configured');
+        const secret = this.configService.get<string>('JWT_SECRET') as string;
         const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
         client.data = client.data || {};
         client.data.user = decoded;
         next();
-      } catch {
+      } catch (err: any) {
+        this.logger.error(`Error verifying token: ${err.message}`);
         next(new Error('UNAUTHORIZED: Invalid or expired token'));
       }
     });
@@ -82,13 +82,12 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     }
 
     try {
-      const secret = this.configService.get<string>('JWT_SECRET');
-      if (!secret) throw new Error('JWT_SECRET is not configured');
+      const secret = this.configService.get<string>('JWT_SECRET') as string;
       const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
       client.data = client.data || {};
       client.data.user = decoded;
       this.logger.log(`Client authenticated on /users: ${decoded.email} (${client.id})`);
-    } catch {
+    } catch (err: any) {
       this.logger.warn(`Connection rejected for client ${client.id}: Invalid token`);
       client.emit('exception', {
         success: false,
@@ -116,9 +115,7 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     }
     if (client.handshake?.headers?.cookie && typeof client.handshake.headers.cookie === 'string') {
       const parsedCookies = cookie.parse(client.handshake.headers.cookie);
-      if (parsedCookies['accessToken']) {
-        return parsedCookies['accessToken'];
-      }
+      return parsedCookies['accessToken'] || null;
     }
     return null;
   }
@@ -258,6 +255,35 @@ export class UserGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       data: { userId: body.userId },
     });
     this.logger.log(`Broadcasted user:deleted event for user ${body.userId} to admin:users`);
+
+    return {
+      success: true,
+      data: response,
+      meta: { timestamp: new Date().toISOString() },
+    };
+  }
+
+  @SubscribeMessage('admin:users:deleteMany')
+  async handleAdminDeleteUsers(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { userIds: string[] },
+  ) {
+    this.checkAdmin(client);
+    if (!body?.userIds || !Array.isArray(body.userIds)) {
+      throw new WsException({ code: 'BAD_REQUEST', message: 'userIds array is required' });
+    }
+    const response = await firstValueFrom(
+      this.userService.send('user.delete.many', { userIds: body.userIds }).pipe(timeout(10000)),
+    );
+
+    // Live broadcast deletion to all connected admins
+    this.server.to('admin:users').emit('users:deletedMany', {
+      event: 'USERS_DELETED_MANY',
+      data: { userIds: response.userIds || body.userIds },
+    });
+    this.logger.log(
+      `Broadcasted users:deletedMany event for users ${body.userIds.join(',')} to admin:users`,
+    );
 
     return {
       success: true,
