@@ -109,18 +109,20 @@ The generated `description:` must start with `"Use when..."` and be enclosed in 
 - **Drop**: Show checklist results + reasoning only (no confirmation needed).
 
 7. Save / Absorb / Adopt to the determined location:
-   - **Save**: write `<location>/<pattern-name>/SKILL.md` AND immediately mirror to parent master catalog `../.agents/skills/<pattern-name>/SKILL.md` (mandatory upstream sync in monorepos).
-   - **Absorb**: update the existing skill's `SKILL.md` AND immediately sync back to parent `../.agents/skills/<name>/SKILL.md`.
+   - **Save**: Create the skill in the **Parent Master Catalog** first (`../.agents/skills/<pattern-name>/SKILL.md`), THEN sync it down to the active project (`.agents/skills/<pattern-name>/SKILL.md`).
+   - **Absorb**: Update the existing skill in the parent catalog first (`../.agents/skills/<name>/SKILL.md`), THEN sync it down to the active project.
+   - **Delete**: If deleting a customization, remove it from the parent catalog first, THEN delete it from the active project.
    - **Adopt from Parent**: copy `../.agents/skills/<name>` to `.agents/skills/<name>`.
    - **Adopt to Global**: copy/promote verified stack-agnostic skill to `~/.gemini/config/skills/<name>`.
    - **Split & Promote Core**: write stack-agnostic core to `~/.gemini/config/skills/<name>-core/` and update local adapter in `.agents/skills/<name>/`.
 
    ### 7b. Mandatory Multi-Tier Synchronization (Anti-Drift Guard)
    In a multi-project workspace (where sibling projects exist under the parent root, e.g. `../<sibling>/.agents/`):
-   - Whenever ANY new skill is saved, or an existing shared workflow (e.g. `learn-eval.md`, `code-review.md`), rule, or skill (e.g. `cross-port-auth`, `workspace-repo-structure`) is created, updated, or absorbed:
-     1. **Parent Catalog Mirror**: Always ensure the Parent Master Catalog (`../.agents/skills/` or `../.agents/rules/` or `../.agents/workflows/`) has the latest canonical copy.
-     2. **Sibling Fan-Out**: Enumerate all sibling projects under the parent root (`../*/.agents/`). Identify any sibling project that **already possesses** a customization file with the same relative path, and automatically propagate the updated file.
-     3. **Zero Customization Drift**: This guarantees that no sibling repository or upstream master catalog is left behind with divergent, un-synchronized, or deprecated instructions.
+   - Whenever ANY new skill is saved, or an existing shared workflow (e.g. `learn-eval.md`, `code-review.md`), rule, or skill (e.g. `cross-port-auth`, `workspace-repo-structure`) is created, updated, deleted, or absorbed:
+     1. **Parent-First Authoring**: ALWAYS execute the creation, update, or deletion in the Parent Master Catalog (`../.agents/`) first.
+     2. **Active Project Sync**: Immediately sync the created/updated file (or apply the deletion) to the active project's local catalog (`.agents/`).
+     3. **Sibling Fan-Out**: Enumerate all sibling projects under the parent root (`../*/.agents/`). Identify any sibling project that **already possesses** a customization file with the same relative path, and automatically propagate the update or deletion.
+     4. **Zero Customization Drift**: This guarantees that no sibling repository or upstream master catalog is left behind with divergent, un-synchronized, or deprecated instructions.
 
 8. **Verify discoverability after writing**:
    - Path format is `<name>/SKILL.md`

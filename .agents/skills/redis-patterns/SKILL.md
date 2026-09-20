@@ -278,109 +278,37 @@ Always set a TTL. Keys without TTL accumulate indefinitely and cause memory pres
 ```python
 from redis import ConnectionPool, Redis
 
-pool = ConnectionPool(
-    host='localhost',
-    port=6379,
-    db=0,
-    max_connections=20,
-    decode_responses=True,
-    socket_connect_timeout=2,
-    socket_timeout=2,
-)
-
+# Standard Connection Pool
+pool = ConnectionPool(host='localhost', port=6379, max_connections=20, decode_responses=True)
 r = Redis(connection_pool=pool)
-```
 
-### Cluster Mode
-
-```python
-from redis.cluster import RedisCluster
-
-r = RedisCluster(
-    startup_nodes=[{"host": "redis-1", "port": 6379}],
-    decode_responses=True,
-    skip_full_coverage_check=True,
-)
-```
-
-### Sentinel (High Availability)
-
-```python
-from redis.sentinel import Sentinel
-
-sentinel = Sentinel(
-    [('sentinel-1', 26379), ('sentinel-2', 26379)],
-    socket_timeout=0.5,
-)
-master = sentinel.master_for('mymaster', decode_responses=True)
-replica = sentinel.slave_for('mymaster', decode_responses=True)
+# Cluster / Sentinel modes
+# r = RedisCluster(startup_nodes=[{"host": "redis-1", "port": 6379}], decode_responses=True)
+# s = Sentinel([('sentinel-1', 26379)]); r = s.master_for('mymaster', decode_responses=True)
 ```
 
 ## Eviction Policies
 
 | Policy | Behavior | Best For |
 |--------|----------|----------|
-| `noeviction` | Error on write when full | Queues / critical data |
-| `allkeys-lru` | Evict least recently used | General cache |
+| `noeviction` | Error on write when full | Queues / persistent stores |
+| `allkeys-lru` | Evict least recently used | General caching (recommended) |
 | `volatile-lru` | LRU only among keys with TTL | Mixed data store |
 | `allkeys-lfu` | Evict least frequently used | Skewed access patterns |
-| `volatile-ttl` | Evict soonest-to-expire | Prioritize long-lived data |
+| `volatile-ttl` | Evict shortest TTL remaining | Prioritize long-lived data |
 
-Set via `redis.conf`: `maxmemory-policy allkeys-lru`
+Configure in `redis.conf`: `maxmemory-policy allkeys-lru`
 
 ## Anti-Patterns
 
 | Anti-Pattern | Problem | Fix |
 |---|---|---|
-| Keys with no TTL | Memory grows unbounded | Always set TTL |
-| `KEYS *` in production | Blocks the server (O(N)) | Use `SCAN` cursor |
-| Storing large blobs (>100KB) | Slow serialization, memory pressure | Store reference + fetch from object store |
-| Single Redis for everything | No isolation between cache & queue | Use separate DBs or instances |
-| Ignoring connection pool limits | Connection exhaustion under load | Size pool to workload |
-| Not handling cache miss stampede | Thundering herd on cold start | Use locks or probabilistic early expiry |
-| `FLUSHALL` without thought | Wipes entire instance | Scope deletes by key pattern |
-
-### Cache Miss Stampede Prevention
-
-```python
-import threading
-
-_locks: dict[str, threading.Lock] = {}
-_locks_mutex = threading.Lock()
-
-def get_with_lock(key: str, fetch_fn, ttl: int = 300):
-    cached = r.get(key)
-    if cached:
-        return json.loads(cached)
-
-    with _locks_mutex:
-        if key not in _locks:
-            _locks[key] = threading.Lock()
-        lock = _locks[key]
-    with lock:
-        cached = r.get(key)  # Re-check after acquiring lock
-        if cached:
-            return json.loads(cached)
-        value = fetch_fn()
-        r.setex(key, ttl, json.dumps(value))
-        return value
-```
-
-> Note: for multi-process deployments, replace the in-process lock with `acquire_lock`/`release_lock` from the Distributed Locks section above.
-
-## Examples
-
-**Add caching to a Django/Flask API endpoint:**
-Use cache-aside with `setex` and a 5-minute TTL on the response. Key on the request parameters.
-
-**Rate-limit an API by user:**
-Use fixed-window with `pipeline(transaction=True)` for low-traffic endpoints; use sliding-window Lua for accurate per-user throttling.
-
-**Coordinate a background job across workers:**
-Use `acquire_lock` with a TTL that exceeds the expected job duration. Always release in a `finally` block.
-
-**Fan-out notifications to multiple subscribers:**
-Use Pub/Sub for fire-and-forget. Switch to Streams if you need guaranteed delivery or replay for late consumers.
+| Keys with no TTL | Memory leaks unbounded | Always set TTL |
+| `KEYS *` in production | Blocks event loop (O(N)) | Use `SCAN` cursor |
+| Large blobs (>100KB) | Serialization lag, memory load | Store in S3; cache only metadata/URL |
+| Single Redis for all | Zero isolation between cache & queue | Separate instances or databases |
+| Stampede on cold start | Thundering herd on cache miss | Use distributed lock + double-checked fetch |
+| `FLUSHALL` in prod | Immediate total downtime | Delete scoped keys with `SCAN` batches |
 
 ## Quick Reference
 
