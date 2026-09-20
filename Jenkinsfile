@@ -204,6 +204,15 @@ pipeline {
         }
         success {
             echo '✅ Jenkins Pipeline Succeeded! All 7 Testing Matrix Layers passed 100%.'
+            sh '''
+                echo "Membersihkan dangling images..."
+                docker image prune -f
+                
+                echo "Menyisakan hanya 2 versi image terbaru (saat ini & 1 versi sebelumnya) untuk tiap microservice..."
+                for repo in dedisalam/backend-gateway dedisalam/backend-user-service dedisalam/backend-notification-service; do
+                    docker images "$repo" -q | uniq | awk 'NR>2' | xargs -r docker rmi -f || true
+                done
+            '''
             script {
                 sendDiscordNotification('SUCCESS', '3066993', '✅ All 7 Testing Matrix Layers passed 100%!')
             }
