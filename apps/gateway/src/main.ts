@@ -31,8 +31,8 @@ async function bootstrap() {
 
   // Hardened Dynamic CORS with strict whitelist & cross-subdomain support
   const allowedOriginPatterns = [
-    /^https?:\/\/([a-zA-Z0-9-]+\.)*localhost:(3000|4000|4001|4002|4200)$/,
-    /^https?:\/\/127\.0\.0\.1:(3000|4000|4001|4002|4200)$/,
+    /^https?:\/\/([a-zA-Z0-9-]+\.)*localhost:(3000|4000|4001|4002|4003|4200)$/,
+    /^https?:\/\/127\.0\.0\.1:(3000|4000|4001|4002|4003|4200)$/,
     /^https:\/\/([a-zA-Z0-9-]+\.)*dedisalam\.my\.id$/,
   ];
 

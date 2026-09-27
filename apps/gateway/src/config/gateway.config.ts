@@ -50,6 +50,10 @@ export class GatewayConfigDto {
   @IsString()
   @IsOptional()
   REFRESH_COOKIE_PATH = '/api/v1/auth';
+
+  @IsString()
+  @IsOptional()
+  BLIP_MONGO_URI?: string;
 }
 
 export function validate(config: Record<string, unknown>) {
