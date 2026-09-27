@@ -35,17 +35,17 @@ export class DocumentService {
   }
 
   private loadAsetGenerator() {
+    const dynamicRequire: (id: string) => any = eval('require');
+
     try {
       // Look up aset/generate.js from workspace root
       const asetPath = path.resolve(process.cwd(), '../aset/generate.js');
-
-      this.asetGenerator = require(asetPath);
+      this.asetGenerator = dynamicRequire(asetPath);
       this.logger.log(`Aset PDF Generator loaded successfully from: ${asetPath}`);
     } catch (err: any) {
       try {
         const fallbackPath = path.resolve(__dirname, '../../../../aset/generate.js');
-
-        this.asetGenerator = require(fallbackPath);
+        this.asetGenerator = dynamicRequire(fallbackPath);
         this.logger.log(`Aset PDF Generator loaded successfully from fallback: ${fallbackPath}`);
       } catch (e: any) {
         this.logger.warn(`Could not load aset generator dynamically: ${err.message}`);
