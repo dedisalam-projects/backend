@@ -45,11 +45,52 @@ describe('DocumentController', () => {
     });
   });
 
+  describe('getDocument', () => {
+    it('should return a single document', async () => {
+      const result = await controller.getDocument('traveloka', '1');
+      expect(result.success).toBe(true);
+      expect(result.data._id).toBe('1');
+    });
+  });
+
   describe('createDocument', () => {
     it('should create document', async () => {
       const result = await controller.createDocument('traveloka', { receiptNo: 'TRV123' });
       expect(result.success).toBe(true);
       expect(result.data.receiptNo).toBe('TRV123');
+    });
+  });
+
+  describe('updateDocument', () => {
+    it('should update document', async () => {
+      const result = await controller.updateDocument('traveloka', '1', { status: 'draft' });
+      expect(result.success).toBe(true);
+      expect(result.data.status).toBe('draft');
+    });
+  });
+
+  describe('deleteDocument', () => {
+    it('should delete document', async () => {
+      const result = await controller.deleteDocument('traveloka', '1');
+      expect(result.success).toBe(true);
+      expect(result.data.id).toBe('1');
+    });
+  });
+
+  describe('generateDocumentPdf', () => {
+    it('should stream generated pdf to response', async () => {
+      const res = {
+        set: jest.fn(),
+        end: jest.fn(),
+      } as any;
+
+      await controller.generateDocumentPdf('traveloka', '1', res);
+      expect(res.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'Content-Type': 'application/pdf',
+        }),
+      );
+      expect(res.end).toHaveBeenCalled();
     });
   });
 });

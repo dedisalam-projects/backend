@@ -76,6 +76,49 @@ describe('DocumentService', () => {
     });
   });
 
+  describe('CRUD operations', () => {
+    it('should findOne document', async () => {
+      const doc = await service.findOne('traveloka', '123');
+      expect(doc).toBeDefined();
+      expect(doc._id).toBe('123');
+    });
+
+    it('should create document and notify gateway', async () => {
+      const data = { receiptNo: 'TRV999', totalAmount: 100000 };
+      const created = await service.create('traveloka', data);
+      expect(created._id).toBe('new_id');
+      expect(mockGateway.notifyCreated).toHaveBeenCalledWith('traveloka', expect.any(Object));
+    });
+
+    it('should update document and notify gateway', async () => {
+      const updated = await service.update('traveloka', '123', { status: 'generated' });
+      expect(updated._id).toBe('123');
+      expect(mockGateway.notifyUpdated).toHaveBeenCalledWith('traveloka', expect.any(Object));
+    });
+
+    it('should delete document and notify gateway', async () => {
+      const res = await service.delete('traveloka', '123');
+      expect(res.success).toBe(true);
+      expect(mockGateway.notifyDeleted).toHaveBeenCalledWith('traveloka', '123');
+    });
+  });
+
+  describe('generatePdf', () => {
+    it('should generate pdf and broadcast event', async () => {
+      (service as any).asetGenerator = {
+        generateBuffer: jest.fn().mockResolvedValue({
+          buffer: Buffer.from('%PDF-1.4'),
+          docType: 'TRAVELOKA',
+        }),
+      };
+
+      const result = await service.generatePdf('traveloka', '123');
+      expect(result.buffer).toBeInstanceOf(Buffer);
+      expect(result.filename).toContain('Traveloka_');
+      expect(mockGateway.notifyGenerated).toHaveBeenCalled();
+    });
+  });
+
   describe('transformToEnginePayload', () => {
     it('should transform Traveloka document correctly', () => {
       const doc = {
@@ -125,6 +168,33 @@ describe('DocumentService', () => {
       expect(payload.template).toBe('gocar');
       expect(payload.header.id_pesanan).toBe('RB-12345');
       expect(payload.page[0].greeting.nama).toBe('Dedi');
+    });
+
+    it('should transform inDrive document correctly', () => {
+      const doc = {
+        invoiceNumber: 'ID-001',
+        tripDate: '2025-07-09',
+        driverName: 'Driver InDrive',
+        fare: 35000,
+      };
+
+      const payload = service.transformToEnginePayload('indrive', doc);
+      expect(payload.invoice_number).toBe('ID-001');
+      expect(payload.fare).toBe(35000);
+      expect(payload.driver_name).toBe('Driver InDrive');
+    });
+
+    it('should transform Jackal document correctly', () => {
+      const doc = {
+        bookingCode: 'JCK-99',
+        customer: { name: 'Dedi', phone: '0812' },
+        payment: { totalPaid: 150000 },
+      };
+
+      const payload = service.transformToEnginePayload('jackal', doc);
+      expect(payload.booking_code).toBe('JCK-99');
+      expect(payload.customer.name).toBe('Dedi');
+      expect(payload.payment.total_paid).toBe(150000);
     });
   });
 });
