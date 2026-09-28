@@ -84,7 +84,7 @@ function renderGoCarHtml(jsonData) {
     const fakturSubtitleTop = isHemat ? 136.9 : 158.0;
     const fakturBoxContainerTop = isHemat ? 168.7 : 189.8;
     const cardHeightP2 = isHemat ? 301.1 : 322.2;
-    const companyInfoTop = isHemat ? 333.4 : 354.5;
+    const companyInfoTop = isHemat ? 332.9 : 354.0;
 
     // Dynamic vertical positioning based on payment rows count
     const deltaPaymentY = (paymentRows.length - 4) * 21.12;
@@ -108,12 +108,12 @@ function renderGoCarHtml(jsonData) {
     let footerSectionTop = 1002.64 + deltaPaymentY + deltaH + deltaHeaderY;
 
     // Default margins in footer section
-    let marginTopHelp = 46.55;
+    let marginTopHelp = 46.15;
     let marginTopDisclaimer = 12.6;
-    let marginTopSocial = 35.1;
+    let marginTopSocial = 35.5;
     let marginTopIcons = 18.7;
     let marginTopLogo = 35.6;
-    let marginTopOffice = 14.93;
+    let marginTopOffice = 14.53;
 
     // Total default footer height is ~367.44px. Page height is 1403.4px.
     // If footer would exceed page boundary (e.g. edge cases with 7 payment rows + long addresses),
@@ -226,6 +226,7 @@ body {
     color: #ffffff;
     font-size: 14.72px;
     line-height: 17.3px;
+    letter-spacing: -0.04px;
 }
 
 /* Page 1 Body Content */
@@ -244,7 +245,7 @@ body {
     font-size: 20.96px;
     font-weight: bold;
     color: #000000;
-    margin-top: 23.0px;
+    margin-top: 22.6px;
 }
 
 /* Total Dibayar Badge Box */
@@ -377,7 +378,7 @@ body {
 .route-section {
     position: relative;
     padding-left: 0;
-    margin-bottom: 17.35px;
+    margin-bottom: 17.07px;
 }
 
 .route-icon {
@@ -421,7 +422,7 @@ body {
     height: ${isHemat ? 42.28 : 25.0}px;
     margin-top: ${marginTopHelp.toFixed(2)}px;
     font-size: 14.72px;
-    ${isHemat ? 'line-height: normal;' : ''}
+    line-height: normal;
 }
 
 .help-link-item {
@@ -522,7 +523,7 @@ body {
 
 <!-- HALAMAN 1: STRUK PERJALANAN -->
 <div class="page" style="height: 1403.4px;">
-    <div class="card" style="top: 0; height: ${cardHeight.toFixed(1)}px;">
+    <div class="card" style="top: -0.5px; height: ${cardHeight.toFixed(1)}px;">
         <div class="header-bar" style="height: ${headerHeight}px;">
             <img class="logo-gocar" style="width: 200.0px; height: ${logoHeight}px;" src="data:image/png;base64,${logoImg}" alt="GoCar">
             <div class="header-meta" style="top: ${headerMetaTop}px;">
@@ -625,7 +626,7 @@ body {
 
 <!-- HALAMAN 2: FAKTUR PAJAK -->
 <div class="page" style="height: 1403.4px;">
-    <div class="card" style="top: 0; height: ${cardHeightP2}px;">
+    <div class="card" style="top: -0.5px; height: ${cardHeightP2}px;">
         <div class="header-bar" style="height: ${headerHeight}px;">
             <img class="logo-gocar" style="width: 200.0px; height: ${logoHeight}px;" src="data:image/png;base64,${logoImg}" alt="GoCar">
             <div class="header-meta" style="top: ${headerMetaTop}px;">

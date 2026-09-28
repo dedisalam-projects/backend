@@ -109,7 +109,7 @@ function renderGoRideHtml(jsonData) {
     const fakturSubtitleTop = 158.0 + deltaHeaderY;
     const fakturBoxContainerTop = 189.8 + deltaHeaderY;
     const cardHeightP2 = 322.2 + deltaHeaderY;
-    const companyInfoTop = 354.5 + deltaHeaderY;
+    const companyInfoTop = 354.0 + deltaHeaderY;
 
     // Dynamic vertical positioning based on payment rows count
     const deltaPaymentY = (paymentRows.length - 4) * 21.12;
@@ -133,12 +133,12 @@ function renderGoRideHtml(jsonData) {
     let footerSectionTop = 1002.64 + deltaPaymentY + deltaH + deltaHeaderY;
 
     // Default margins in footer section
-    let marginTopHelp = 46.55;
+    let marginTopHelp = 46.15;
     let marginTopDisclaimer = 12.6;
-    let marginTopSocial = 35.1;
+    let marginTopSocial = 35.5;
     let marginTopIcons = 18.7;
     let marginTopLogo = 35.6;
-    let marginTopOffice = 14.93;
+    let marginTopOffice = 14.53;
 
     // Check footer bounds to ensure single or double page safety
     const isTwoLineHelp = isHemat || isComfort;
@@ -257,6 +257,7 @@ ${hasPage2 ? `
     color: #ffffff;
     font-size: 14.72px;
     line-height: 17.3px;
+    letter-spacing: -0.04px;
 }
 
 /* Page 1 Body Content */
@@ -275,7 +276,7 @@ ${hasPage2 ? `
     font-size: 20.96px;
     font-weight: bold;
     color: #000000;
-    margin-top: 23.0px;
+    margin-top: 22.6px;
 }
 
 /* Total Dibayar Badge Box */
@@ -409,7 +410,7 @@ ${hasPage2 ? `
 .route-section {
     position: relative;
     padding-left: 0;
-    margin-bottom: 17.35px;
+    margin-bottom: 17.07px;
 }
 
 .route-icon {
@@ -453,7 +454,7 @@ ${hasPage2 ? `
     height: ${isTwoLineHelp ? 42.28 : 25.0}px;
     margin-top: ${marginTopHelp.toFixed(2)}px;
     font-size: 14.72px;
-    ${isTwoLineHelp ? 'line-height: normal;' : ''}
+    line-height: normal;
 }
 
 .help-link-item {
@@ -554,7 +555,7 @@ ${hasPage2 ? `
 
 <!-- HALAMAN 1: STRUK PERJALANAN GORIDE -->
 <div class="page" style="height: 1403.4px;">
-    <div class="card" style="top: 0; height: ${cardHeight.toFixed(1)}px;">
+    <div class="card" style="top: -0.5px; height: ${cardHeight.toFixed(1)}px;">
         <div class="header-bar">
             <img class="logo-goride" src="data:image/png;base64,${logoImg}" alt="GoRide">
             <div class="header-meta">
@@ -658,7 +659,7 @@ ${hasPage2 ? `
 ${hasPage2 ? `
 <!-- HALAMAN 2: FAKTUR PAJAK -->
 <div class="page" style="height: 1403.4px;">
-    <div class="card" style="top: 0; height: ${cardHeightP2}px;">
+    <div class="card" style="top: -0.5px; height: ${cardHeightP2}px;">
         <div class="header-bar">
             <img class="logo-goride" src="data:image/png;base64,${logoImg}" alt="GoRide">
             <div class="header-meta">
