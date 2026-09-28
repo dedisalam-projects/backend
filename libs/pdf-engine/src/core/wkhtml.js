@@ -73,7 +73,7 @@ async function generateWkhtmlPdf(jsonData, outputPdfPath, options = {}) {
 
         const runner = findWkhtmlBinary();
         if (!runner) {
-            throw new Error('No wkhtmltopdf executable or Docker daemon found.');
+            throw new Error('[PDF Engine Error] wkhtmltopdf is mandatory for Gojek receipt generation, but no executable was found in PATH, libs/pdf-engine/bin, or Docker. Fallback to PDFKit is strictly disabled. Please ensure wkhtmltopdf 0.12.6.1 is installed.');
         }
 
         const dpi = options.dpi || '600';
@@ -137,7 +137,7 @@ async function generateWkhtmlBuffer(jsonData, options = {}) {
 
         const runner = findWkhtmlBinary();
         if (!runner) {
-            throw new Error('No wkhtmltopdf executable or Docker daemon found.');
+            throw new Error('[PDF Engine Error] wkhtmltopdf is mandatory for Gojek receipt generation, but no executable was found in PATH, libs/pdf-engine/bin, or Docker. Fallback to PDFKit is strictly disabled. Please ensure wkhtmltopdf 0.12.6.1 is installed.');
         }
 
         const dpi = options.dpi || '600';

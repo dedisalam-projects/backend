@@ -126,12 +126,8 @@ async function generate(input, outputPath, options = {}) {
         }
         const finalPath = path.resolve(process.cwd(), targetOut);
 
-        const engine = (options.engine || '').toLowerCase();
-        if (engine === 'wkhtmltopdf' || engine === 'wkhtml' || engine === 'docker') {
-            generatorFn = () => generateWkhtmlPdf(payload, finalPath, options);
-        } else {
-            generatorFn = () => generateGojekPdf(payload, finalPath);
-        }
+        // STRICT: Gojek receipts mandatorily use wkhtmltopdf C/C++ engine, zero PDFKit fallback
+        generatorFn = () => generateWkhtmlPdf(payload, finalPath, options);
         targetOut = finalPath;
     } else {
         throw new Error('Unrecognized document schema: Could not detect Traveloka, Gojek, inDrive, or Jackal properties.');
@@ -239,19 +235,8 @@ async function generateBuffer(input, options = {}) {
     } else if (isGojek || Array.isArray(payload) || (payload && payload.sections)) {
         const templateName = (payload && payload.template) || (Array.isArray(payload) && payload[0] && payload[0].template) || 'gojek';
         docType = `GOJEK (${templateName.toUpperCase()})`;
-        const engine = (options.engine || 'wkhtmltopdf').toLowerCase();
-        if (engine === 'wkhtmltopdf' || engine === 'wkhtml' || engine === 'docker') {
-            generatorFn = async () => {
-                try {
-                    return await generateWkhtmlBuffer(payload, options);
-                } catch (err) {
-                    console.warn(`[PDF Engine] Wkhtml failed, falling back to PDFKit: ${err.message}`);
-                    return await generateGojekPdf(payload, null);
-                }
-            };
-        } else {
-            generatorFn = () => generateGojekPdf(payload, null);
-        }
+        // STRICT: Gojek receipts mandatorily use wkhtmltopdf C/C++ engine, zero PDFKit fallback
+        generatorFn = () => generateWkhtmlBuffer(payload, options);
     } else {
         throw new Error('Unrecognized document schema: Could not detect Traveloka, Gojek, inDrive, or Jackal properties.');
     }
