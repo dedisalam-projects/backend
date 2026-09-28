@@ -34,8 +34,8 @@ export class DocumentService {
     this.loadAsetGenerator();
   }
 
-  private loadAsetGenerator() {
-    const dynamicRequire: (id: string) => any = eval('require');
+  private loadAsetGenerator(customRequire?: (id: string) => any) {
+    const dynamicRequire: (id: string) => any = customRequire || eval('require');
 
     try {
       // Look up aset/generate.js from workspace root
@@ -83,34 +83,39 @@ export class DocumentService {
       const s = query.search.trim();
       const regex = new RegExp(s, 'i');
       const p = provider.toLowerCase();
-      if (p === 'traveloka') {
-        filter.$or = [
-          { receiptNo: regex },
-          { poNumber: regex },
-          { 'customer.name': regex },
-          { passengerName: regex },
-          { guestName: regex },
-        ];
-      } else if (p === 'gojek') {
-        filter.$or = [
-          { orderId: regex },
-          { customerName: regex },
-          { driverName: regex },
-          { vehiclePlate: regex },
-        ];
-      } else if (p === 'indrive') {
-        filter.$or = [
-          { invoiceNumber: regex },
-          { recipientName: regex },
-          { driverName: regex },
-          { vehicleDetail: regex },
-        ];
-      } else if (p === 'jackal') {
-        filter.$or = [
-          { bookingCode: regex },
-          { 'customer.name': regex },
-          { 'customer.phone': regex },
-        ];
+      switch (p) {
+        case 'traveloka':
+          filter.$or = [
+            { receiptNo: regex },
+            { poNumber: regex },
+            { 'customer.name': regex },
+            { passengerName: regex },
+            { guestName: regex },
+          ];
+          break;
+        case 'gojek':
+          filter.$or = [
+            { orderId: regex },
+            { customerName: regex },
+            { driverName: regex },
+            { vehiclePlate: regex },
+          ];
+          break;
+        case 'indrive':
+          filter.$or = [
+            { invoiceNumber: regex },
+            { recipientName: regex },
+            { driverName: regex },
+            { vehicleDetail: regex },
+          ];
+          break;
+        case 'jackal':
+          filter.$or = [
+            { bookingCode: regex },
+            { 'customer.name': regex },
+            { 'customer.phone': regex },
+          ];
+          break;
       }
     }
 
@@ -224,20 +229,26 @@ export class DocumentService {
 
   private deriveFilename(provider: string, doc: any): string {
     const p = provider.toLowerCase();
-    if (p === 'traveloka') {
-      const no = (doc.receiptNo || 'receipt').replace(/[^a-zA-Z0-9_-]/g, '_');
-      return `Traveloka_${no}.pdf`;
-    } else if (p === 'gojek') {
-      const order = (doc.orderId || 'order').replace(/[^a-zA-Z0-9_-]/g, '_');
-      return `Gojek_${order}.pdf`;
-    } else if (p === 'indrive') {
-      const inv = (doc.invoiceNumber || 'invoice').replace(/[^a-zA-Z0-9_-]/g, '_');
-      return `inDrive_${inv}.pdf`;
-    } else if (p === 'jackal') {
-      const code = (doc.bookingCode || 'booking').replace(/[^a-zA-Z0-9_-]/g, '_');
-      return `Jackal_${code}.pdf`;
+    switch (p) {
+      case 'traveloka': {
+        const no = (doc.receiptNo || 'receipt').replace(/[^a-zA-Z0-9_-]/g, '_');
+        return `Traveloka_${no}.pdf`;
+      }
+      case 'gojek': {
+        const order = (doc.orderId || 'order').replace(/[^a-zA-Z0-9_-]/g, '_');
+        return `Gojek_${order}.pdf`;
+      }
+      case 'indrive': {
+        const inv = (doc.invoiceNumber || 'invoice').replace(/[^a-zA-Z0-9_-]/g, '_');
+        return `inDrive_${inv}.pdf`;
+      }
+      case 'jackal': {
+        const code = (doc.bookingCode || 'booking').replace(/[^a-zA-Z0-9_-]/g, '_');
+        return `Jackal_${code}.pdf`;
+      }
+      default:
+        return `document_${Date.now()}.pdf`;
     }
-    return `document_${Date.now()}.pdf`;
   }
 
   public transformToEnginePayload(provider: string, doc: any): any {

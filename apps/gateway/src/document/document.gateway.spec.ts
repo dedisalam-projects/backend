@@ -69,6 +69,19 @@ describe('DocumentGateway', () => {
     gateway.handleConnection(authClient);
     expect(authClient.data.user).toBeDefined();
 
+    // Authenticated connection with client.data initially undefined
+    const undefinedDataClient: any = {
+      id: 'client-undefined',
+      join: jest.fn(),
+      leave: jest.fn(),
+      handshake: {
+        headers: { authorization: `Bearer ${token}` },
+        query: {},
+      },
+    };
+    gateway.handleConnection(undefinedDataClient);
+    expect(undefinedDataClient.data.user).toBeDefined();
+
     // Connection with invalid Bearer token
     const invalidClient = {
       ...mockClient,
