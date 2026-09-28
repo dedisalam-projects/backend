@@ -1,0 +1,61 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Senin, 17 Agustus 2026",
+    "id_pesanan": "RB-1708194-50000000"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Pejuang Kemerdekaan"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 15000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 3000
+        },
+        {
+          "item": "Diskon HUT RI ke-81",
+          "nominal": -18000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Bambang Soedirman",
+        "kendaraan": {
+          "plat": "RI 1945",
+          "tipe": "Wuling BinguoEV"
+        },
+        "jarak": "4.5 km",
+        "waktu": "12 menit",
+        "penjemputan": {
+          "tanggal": "17 Agustus 2026",
+          "jam": "09:00",
+          "tempat": "Monumen Nasional (Monas)",
+          "alamat": "Gambir, Kecamatan Gambir, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10110, Indonesia"
+        },
+        "tujuan": {
+          "tanggal": "17 Agustus 2026",
+          "jam": "09:12",
+          "tempat": "Istana Merdeka",
+          "alamat": "Jl. Medan Merdeka Utara, Gambir, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10110, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 3000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -3000
+        }
+      ]
+    }
+  ]
+}

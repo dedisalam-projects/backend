@@ -1,0 +1,69 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Selasa, 28 Oktober 2025",
+    "id_pesanan": "RB-3898123-19941249"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 60000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 10000
+        },
+        {
+          "item": "Ongkos tol",
+          "nominal": 7500
+        },
+        {
+          "item": "Diskon",
+          "nominal": -6000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "FITRIANDRY",
+        "kendaraan": {
+          "plat": "R1218KM",
+          "tipe": "Daihatsu Sigra"
+        },
+        "jarak": "16.8 km",
+        "waktu": "23 menit",
+        "penjemputan": {
+          "tanggal": "28 Oktober 2025",
+          "jam": "09:57",
+          "tempat": "Bogor Trade Mall",
+          "alamat": "Jl. Ir. H. Juanda No.68, RT.01/RW.13, Paledang, Bogor Tengah, Kota Bogor, Jawa Barat 16122, ID"
+        },
+        "tujuan": {
+          "tanggal": "28 Oktober 2025",
+          "jam": "10:20",
+          "tempat": "Amanuba Hotel & Resort Rancamaya Bogor",
+          "alamat": "Jl Rancamaya No.37, Bojongkerta, Bogor Selatan, Kota Bogor, Jawa Barat"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 10000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -6000
+        }
+      ]
+    }
+  ]
+}

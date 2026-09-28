@@ -1,0 +1,244 @@
+[
+  {
+    "filename": "tiket-bus 202507091647.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1837161707445701177",
+    "po_number": "1268028452",
+    "transaction_date": "09 Jul 2025, 16:47",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "1475d13385b2af84357b389fa0e54a60fc7c500ed22107dfbec241a82d0ed50c",
+    "source_paths": [
+      "2025\\202507\\20250710 - SPJ Jakarta\\20250710 - Bukti SPJ Jakarta\\10072025 - Tiket Bandung Jakarta PP.pdf"
+    ]
+  },
+  {
+    "filename": "hotel 202507271436.pdf",
+    "category": "Hotel / Akomodasi",
+    "receipt_no": "#1838784688412457486",
+    "po_number": "1272396884",
+    "transaction_date": "27 Jul 2025, 14:36",
+    "details": "Sans Hotel Roxy Jakarta",
+    "page_count": 1,
+    "sha256": "76cac2c3855e9b40d91ffd3aaba63a53830b46f77e5fd1c0c44c80343aaa78d4",
+    "source_paths": [
+      "2025\\202507\\20250728 - SPJ Jakarta\\20250728 - Bukti SPJ Jakarta\\20250728 - Sans Roxy Hotel.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202507271431.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1838784319422742617",
+    "po_number": "1272395805",
+    "transaction_date": "27 Jul 2025, 14:31",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "c0ba0e16a4a94e23520cbc34d609426edcd854a1eb1ee53b5c2600b802eed89d",
+    "source_paths": [
+      "2025\\202507\\20250728 - SPJ Jakarta\\20250728 - Bukti SPJ Jakarta\\20250728 - Transport Jackal Holiday PP.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202508051800.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1839612829987004528",
+    "po_number": "1274682340",
+    "transaction_date": "05 Agu 2025, 18:00",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "c8f443b5f076bdefb0f2474b63d831e41cee4609f892b54256fd1f081f336d54",
+    "source_paths": [
+      "2025\\202508\\20250807 - SPJ Jakarta\\20250807 - Bukti SPJ Jakarta\\Edited\\1. Ongkos Travel PP Jakarta.pdf"
+    ]
+  },
+  {
+    "filename": "hotel 202508051804.pdf",
+    "category": "Hotel / Akomodasi",
+    "receipt_no": "#1839613146856185454",
+    "po_number": "1274683502",
+    "transaction_date": "05 Agu 2025, 18:04",
+    "details": "Asyana Kemayoran Jakarta",
+    "page_count": 1,
+    "sha256": "17478aa9fb32f8c2e016e0143c041b47ebad6ba74b7850e821b40da882523228",
+    "source_paths": [
+      "2025\\202508\\20250807 - SPJ Jakarta\\20250807 - Bukti SPJ Jakarta\\Edited\\10. Hotel Asyana.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202508071708.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1839790782463109133",
+    "po_number": "1275205976",
+    "transaction_date": "07 Agu 2025, 17:08",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "06fb57119b441e7fc73289fc1ab1cbaf924884d05d43c793a33cd984e74edbf8",
+    "source_paths": [
+      "2025\\202508\\20250808 - SPJ Bogor\\20250808 - Bukti SPJ Bogor\\1. Transport Bandung - Bogor.pdf",
+      "2025\\202508\\20250808 - SPJ Bogor\\20250808 - Bukti SPJ Bogor\\Edited\\1. Transport Bandung - Bogor.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202508081413.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1839870353489288814",
+    "po_number": "1275458760",
+    "transaction_date": "08 Agu 2025, 14:13",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "c9effe6f0d223a27ae5a9a7f19ca5657a81cd8fc76851f170dae8969fd6f3e32",
+    "source_paths": [
+      "2025\\202508\\20250808 - SPJ Bogor\\20250808 - Bukti SPJ Bogor\\4. Transport Bogor - Bandung.pdf",
+      "2025\\202508\\20250808 - SPJ Bogor\\20250808 - Bukti SPJ Bogor\\Edited\\4. Transport Bogor - Bandung.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202508131945.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1840344240369982518",
+    "po_number": "1276810052",
+    "transaction_date": "13 Agu 2025, 19:45",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "568230690a4ae63fd7adf04277fbcf12ba8317458f0b728eca9509f76e1d048f",
+    "source_paths": [
+      "2025\\202508\\20250814 - SPJ Jakarta\\20250814 - Bukti SPJ Jakarta\\1. Transport Bandung - Jakarta.pdf",
+      "2025\\202508\\20250814 - SPJ Jakarta\\20250814 - Bukti SPJ Jakarta\\Edited\\1. Transport Bandung - Jakarta.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202508141313.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1840409701630630966",
+    "po_number": "1276961345",
+    "transaction_date": "14 Agu 2025, 13:13",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "a3fc045753a93af7aaef9dc67f2f990d2da9fc0a6338eb160529c6055209ba87",
+    "source_paths": [
+      "2025\\202508\\20250814 - SPJ Jakarta\\20250814 - Bukti SPJ Jakarta\\Transport Jakarta - Bandung.pdf",
+      "2025\\202508\\20250814 - SPJ Jakarta\\20250814 - Bukti SPJ Jakarta\\Edited\\5. Transport Jakarta - Bandung.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202508191510.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1840870551494608929",
+    "po_number": "1278179401",
+    "transaction_date": "19 Agu 2025, 15:10",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "02cb2489661900629160d7fea704d36db367f391692b7f319d44629c9f99e4a5",
+    "source_paths": [
+      "2025\\202508\\20250821 - SPJ Jakarta\\20250821 - Bukti SPJ Jakarta\\Transport Bandung Jakarta PP.pdf",
+      "2025\\202508\\20250821 - SPJ Jakarta\\20250821 - Bukti SPJ Jakarta\\Edited\\1. Transport Bandung Jakarta PP.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202509081240.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1842673047512835760",
+    "po_number": "1283036985",
+    "transaction_date": "08 Sep 2025, 12:40",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "964e06d0cd16724fadc386a4168983120e8f028ba79814af679524664c5776ec",
+    "source_paths": [
+      "2025\\202509\\20250909 - SPJ Jakarta\\20250909 - Bukti SPJ Jakarta\\Transport Travel Bandung Jakarta PP.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202509121150.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1843032271534186067",
+    "po_number": "1284044242",
+    "transaction_date": "12 Sep 2025, 11:50",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "d9dfc63c7b18aeb219bddeaef9c68047631f5b95e03862b2861f66b9f8c4d1d0",
+    "source_paths": [
+      "2025\\202509\\20250913 - SPJ Jakarta\\20250913 - Bukti SPJ Jakarta\\Transport Bandung - Jakarta.pdf",
+      "2025\\202509\\20250913 - SPJ Jakarta\\20250913 - Bukti SPJ Jakarta\\Edited\\2. Transport Bandung - Jakarta.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202509151045.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1843299508948065875",
+    "po_number": "1284672905",
+    "transaction_date": "15 Sep 2025, 10:45",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "35edd6abcba8d91c5675753aa297a1c6349c63d3c4278811352892cd9cb64281",
+    "source_paths": [
+      "2025\\202509\\20250913 - SPJ Tasikmalaya\\20250916 - Bukti SPJ Tasikmalaya\\Transport Bandung - Tasikmalaya.pdf",
+      "2025\\202509\\20250913 - SPJ Tasikmalaya\\20250916 - Bukti SPJ Tasikmalaya\\Edited\\2. Transport Bandung - Tasikmalaya.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202509161118.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1843392667590873402",
+    "po_number": "1284912972",
+    "transaction_date": "16 Sep 2025, 11:18",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "ff8886748e3c4965fdff8c268b817c96d72c9f1095f1450d83c88393d3c4f5f2",
+    "source_paths": [
+      "2025\\202509\\20250913 - SPJ Tasikmalaya\\20250916 - Bukti SPJ Tasikmalaya\\Transport Tasikmalaya - Bandung.pdf",
+      "2025\\202509\\20250913 - SPJ Tasikmalaya\\20250916 - Bukti SPJ Tasikmalaya\\Edited\\5. Transport Tasikmalaya - Bandung.pdf"
+    ]
+  },
+  {
+    "filename": "hotel 202509231111.pdf",
+    "category": "Hotel / Akomodasi",
+    "receipt_no": "#1844026379755092481",
+    "po_number": "1286541206",
+    "transaction_date": "23 Sep 2025, 11:11",
+    "details": "Cipta Hotel Pancoran",
+    "page_count": 1,
+    "sha256": "c93b4cee2f3f5f582e061efe31e81c45db8cacbe90e57335b3228f8162d004a6",
+    "source_paths": [
+      "2025\\202509\\20250923 - SPJ Jakarta\\20250923 - Bukti SPJ Jakarta\\receipt.pdf"
+    ]
+  },
+  {
+    "filename": "hotel 202605190815.pdf",
+    "category": "Hotel / Akomodasi",
+    "receipt_no": "#1865577268670135408",
+    "po_number": "1358053132",
+    "transaction_date": "19 Mei 2026, 08:15",
+    "details": "Sunrise Beach Pangandaran",
+    "page_count": 1,
+    "sha256": "4d932582eaa40e4c5a052b328798d00bc7f245ee76982fc9306649c61c1bc168",
+    "source_paths": [
+      "2026\\202605\\20260521 - SPJ Pangandaran\\20260521 - Bukti SPJ Pangandaran\\Hotel.pdf"
+    ]
+  },
+  {
+    "filename": "tiket-bus 202609081702.pdf",
+    "category": "Tiket Bus & Shuttle",
+    "receipt_no": "#1875757435521615329",
+    "po_number": "1390919792",
+    "transaction_date": "08 Sep 2026, 17:02",
+    "details": "No.",
+    "page_count": 1,
+    "sha256": "f7b626461d64b6d01c167c98d8218fdd5ca36a3f8bb1b47eaf1cdea48ab87617",
+    "source_paths": [
+      "2026\\202609\\20260909 - SPJ Jakarta\\Bukti SPJ Asli\\02. Transport Bus Shuttle Bandung - Jakarta.pdf"
+    ]
+  },
+  {
+    "filename": "hotel 202609071628.pdf",
+    "category": "Hotel / Akomodasi",
+    "receipt_no": "#1875664713692502265",
+    "po_number": "1390625931",
+    "transaction_date": "07 Sep 2026, 16:28",
+    "details": "Dafam Express Jaksa Jakarta",
+    "page_count": 1,
+    "sha256": "d8634fdba5bc77edcbec938e5e45ae2a8f84f12fb1cb8098d9a0e03ab42ab040",
+    "source_paths": [
+      "2026\\202609\\20260909 - SPJ Jakarta\\Bukti SPJ Jakarta\\19. Penginapan Hotel Dafam Express Jaksa.pdf"
+    ]
+  }
+]

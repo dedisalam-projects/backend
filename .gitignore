@@ -56,3 +56,8 @@ Thumbs.db
 # Playwright MCP artifacts
 .playwright-mcp/
 
+# PDF Engine scratch & temporary output
+scratch/
+libs/pdf-engine/scratch/
+*.deb
+

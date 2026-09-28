@@ -1,0 +1,69 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Sabtu, 15 Agustus 2026",
+    "id_pesanan": "RB-9988776-55443322"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Prof. Dr. Raden Mas Arya Suryadiningrat Kusumanegara, S.T., M.Sc."
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 875000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 25000
+        },
+        {
+          "item": "Ongkos tol Trans Jawa",
+          "nominal": 145500
+        },
+        {
+          "item": "Diskon Loyalitas Platinum",
+          "nominal": -50000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Muhammad Rizky Febriansyah",
+        "kendaraan": {
+          "plat": "B 1945 IND",
+          "tipe": "Mercedes-Benz E 300 AMG Line Night Edition"
+        },
+        "jarak": "145.8 km",
+        "waktu": "245 menit",
+        "penjemputan": {
+          "tanggal": "15 Agustus 2026",
+          "jam": "06:15",
+          "tempat": "Bandar Udara Internasional Soekarno-Hatta Terminal 3 Domestik",
+          "alamat": "Gedung Terminal 3 Domestik Lantai 1 Kedatangan, Jl. P1, RT.001/RW.010, Pajang, Benda, Kota Tangerang, Banten 15126, Indonesia"
+        },
+        "tujuan": {
+          "tanggal": "15 Agustus 2026",
+          "jam": "10:20",
+          "tempat": "Apartemen Senopati Suites Tower 2 Penthouse Level",
+          "alamat": "Jl. Senopati No.41, RT.8/RW.2, Senayan, Kec. Kebayoran Baru, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12190, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 25000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -50000
+        }
+      ]
+    }
+  ]
+}

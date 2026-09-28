@@ -1,0 +1,61 @@
+{
+  "template": "goride",
+  "header": {
+    "tanggal": "Senin, 4 Mei 2026",
+    "id_pesanan": "RB-4772651-12975547"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 10000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 2500
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "aditya Yusuf",
+        "kendaraan": {
+          "plat": "T6270IX",
+          "tipe": "Honda Beat"
+        },
+        "jarak": "1 km",
+        "waktu": "5 menit",
+        "penjemputan": {
+          "tanggal": "4 Mei 2026",
+          "jam": "16:29",
+          "tempat": "PT Zen Multimedia Indonesia",
+          "alamat": "Jl. Taman Pahlawan No.166, Purwamekar, Kec. Purwakarta, Kabupaten Purwakarta, Jawa Barat 41119, Indonesia"
+        },
+        "tujuan": {
+          "tanggal": "4 Mei 2026",
+          "jam": "16:35",
+          "tempat": "Bhisa - Bhinneka Shuttle Purwakarta",
+          "alamat": "Seberang Indomaret, Nagri Kaler, Kec. Purwakarta, Kabupaten Purwakarta, Jawa Barat 41119, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 2500
+        },
+        {
+          "item": "Diskon",
+          "nominal": 0
+        }
+      ]
+    }
+  ]
+}

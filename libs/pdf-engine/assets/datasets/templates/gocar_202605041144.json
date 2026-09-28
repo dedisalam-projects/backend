@@ -1,0 +1,61 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Senin, 4 Mei 2026",
+    "id_pesanan": "RB-4771782-89164513"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 15000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 4500
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "ANGGA NUGRAHA",
+        "kendaraan": {
+          "plat": "T1369BG",
+          "tipe": "Daihatsu Sigra"
+        },
+        "jarak": "1 km",
+        "waktu": "3 menit",
+        "penjemputan": {
+          "tanggal": "4 Mei 2026",
+          "jam": "11:44",
+          "tempat": "Indomaret",
+          "alamat": "Jl. Anyelir No.91, Nagri Kaler, Kec. Purwakarta, Kabupaten Purwakarta, Jawa Barat 41119, Indonesia"
+        },
+        "tujuan": {
+          "tanggal": "4 Mei 2026",
+          "jam": "11:48",
+          "tempat": "PT Zen Multimedia Indonesia",
+          "alamat": "Jl. Taman Pahlawan No.166, Purwamekar, Kec. Purwakarta, Kabupaten Purwakarta, Jawa Barat 41119, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 4500
+        },
+        {
+          "item": "Diskon",
+          "nominal": 0
+        }
+      ]
+    }
+  ]
+}

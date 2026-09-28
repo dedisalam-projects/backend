@@ -1,0 +1,43 @@
+{
+  "category": "Hotel / Akomodasi",
+  "receipt_no": "#1838784688412457486",
+  "po_number": "1272396884",
+  "transaction_date": "27 Jul 2025, 14:36 (Minggu)",
+  "payment_method": "BCA Virtual Account",
+  "payment_bar_method": "Virtual Account",
+  "status": "Lunas",
+  "customer": {
+    "nama": "Dedi Salam Permana",
+    "email": "dedispermana20@gmail.com",
+    "phone": "+6285856416338"
+  },
+  "guest_name": "Dedi Salam Permana",
+  "hotel": {
+    "nama": "Sans Hotel Roxy Jakarta",
+    "alamat": "Jalan Biak No.40, RT.2/RW.6, Cideng, Kota Jakarta Pusat, Jakarta, Indonesia, Jakarta Pusat, Indonesia, 10150",
+    "check_in": "28-07-2025",
+    "durasi": "1 malam"
+  },
+  "company": {
+    "nama": "Trinusa Travelindo",
+    "npwp": "0316163203031000",
+    "alamatLines": [
+      ": Traveloka Campus [d/h Green Office Park 1] South Tower",
+      "Lantai 2 Zone 10, Jl. Grand Boulevard BSD Green Office",
+      "Park, Sampora, Cisauk, Kab Tangerang, Banten 15845"
+    ]
+  },
+  "items": [
+    {
+      "no": 1,
+      "jenis": "Akomodasi",
+      "deskripsi": "Sans Hotel Roxy Jakarta, Single Room with Breakfast - 1 tamu",
+      "jml": 1,
+      "harga_satuan": 244821,
+      "total": 244821,
+      "row_height": 15.0
+    }
+  ],
+  "total_amount": 244821,
+  "show_qr": true
+}

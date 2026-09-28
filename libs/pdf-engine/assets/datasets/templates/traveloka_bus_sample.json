@@ -1,0 +1,78 @@
+{
+  "category": "Tiket Bus & Shuttle",
+  "receipt_no": "#1837161707445701177",
+  "po_number": "1268028452",
+  "transaction_date": "09 Jul 2025, 16:47 (Rabu)",
+  "payment_method": "GoPay /GoPay Tabungan",
+  "payment_bar_method": "GoPay/GoPay Tabungan",
+  "status": "Lunas",
+  "customer": {
+    "nama": "Dedi Salam Permana",
+    "email": "dedispermana20@gmail.com",
+    "phone": "+6285856416338"
+  },
+  "passenger": "Dedi Salam Permana",
+  "company": {
+    "nama": "Trinusa Travelindo",
+    "npwp": "0316163203031000",
+    "alamatLines": [
+      ": Traveloka Campus [d/h Green Office Park 1] South Tower",
+      "Lantai 2 Zone 10, Jl. Grand Boulevard BSD Green Office",
+      "Park, Sampora, Cisauk, Kab Tangerang, Banten 15845"
+    ]
+  },
+  "items": [
+    {
+      "no": 1,
+      "jenis": "Tiket Bus",
+      "deskripsi_lines": [
+        "LINTAS Shuttle (Executive Shuttle)",
+        "Bandung (Lintas Simpang Dago (Via Pasteur)) - Jakarta (Lintas",
+        "Cikini)",
+        "",
+        "Tanggal Keberangkatan: Kam, 10 Juli 2025",
+        "Jam Keberangkatan: 05:00",
+        "Tanggal Kedatangan: Kam, 10 Juli 2025",
+        "Jam Kedatangan: 09:00"
+      ],
+      "jml": 1,
+      "harga_satuan": 120000,
+      "total": 120000,
+      "row_height": 83.25
+    },
+    {
+      "no": "",
+      "jenis": "",
+      "deskripsi_lines": [
+        "Jackal Holidays (Luxury Shuttle)",
+        "Jakarta (Jackal Holidays Cikini) - Bandung (Jackal Holidays",
+        "Dipatiukur 89)",
+        "",
+        "Tanggal Keberangkatan: Kam, 10 Juli 2025",
+        "Jam Keberangkatan: 20:30",
+        "Tanggal Kedatangan: Kam, 10 Juli 2025",
+        "Jam Kedatangan: 23:30"
+      ],
+      "jml": 1,
+      "harga_satuan": 115000,
+      "total": 115000,
+      "row_height": 83.25
+    },
+    {
+      "no": 2,
+      "jenis_lines": [
+        "Asuransi Perjalanan",
+        "Bus"
+      ],
+      "deskripsi_lines": [
+        "Asuransi Perjalanan Bus - Perlindungan Pulang-Pergi"
+      ],
+      "jml": 1,
+      "harga_satuan": 18000,
+      "total": 18000,
+      "row_height": 24.75
+    }
+  ],
+  "total_amount": 253000,
+  "show_qr": true
+}

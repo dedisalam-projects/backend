@@ -1,0 +1,65 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Selasa, 23 September 2025",
+    "id_pesanan": "RB-3546309-40199320"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 24500
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 6000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -2000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "NANANG SYAHPUTRA NASUTION",
+        "kendaraan": {
+          "plat": "B1141ZOF",
+          "tipe": "Suzuki XL7"
+        },
+        "jarak": "3.4 km",
+        "waktu": "11 menit",
+        "penjemputan": {
+          "tanggal": "23 September 2025",
+          "jam": "19:16",
+          "tempat": "Cipta Hotel Pancoran",
+          "alamat": "Jalan Raya Pasar Minggu Kav. 19, Pancoran, RT.7/RW.9, Pancoran, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12780, Indonesia"
+        },
+        "tujuan": {
+          "tanggal": "23 September 2025",
+          "jam": "19:28",
+          "tempat": "KOBAin Coffee Sarana Square Tebet",
+          "alamat": "Jl. Tebet Barat IV RT.11/RW.3, Tebet Bar., Kec. Tebet, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12810, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 6000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -2000
+        }
+      ]
+    }
+  ]
+}

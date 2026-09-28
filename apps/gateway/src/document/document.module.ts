@@ -11,6 +11,7 @@ import {
   JackalReceipt,
   JackalReceiptSchema,
 } from '@dedisalam/database';
+import { PdfEngineModule } from '@dedisalam/pdf-engine';
 import { DocumentService } from './document.service';
 import { DocumentController } from './document.controller';
 import { DocumentGateway } from './document.gateway';
@@ -18,6 +19,7 @@ import { DocumentGateway } from './document.gateway';
 @Module({
   imports: [
     ConfigModule,
+    PdfEngineModule,
     MongooseModule.forFeature([
       { name: TravelokaReceipt.name, schema: TravelokaReceiptSchema },
       { name: GojekReceipt.name, schema: GojekReceiptSchema },

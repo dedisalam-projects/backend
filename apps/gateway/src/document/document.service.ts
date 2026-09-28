@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  Optional,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as path from 'path';
@@ -12,6 +18,7 @@ import {
   JackalReceipt,
   JackalReceiptDocument,
 } from '@dedisalam/database';
+import { PdfEngineService } from '@dedisalam/pdf-engine';
 import { DocumentGateway } from './document.gateway';
 import { DocumentQueryDto } from './dto/document-query.dto';
 
@@ -30,27 +37,39 @@ export class DocumentService {
     @InjectModel(JackalReceipt.name)
     private readonly jackalModel: Model<JackalReceiptDocument>,
     private readonly documentGateway: DocumentGateway,
+    @Optional()
+    private readonly pdfEngineService?: PdfEngineService,
   ) {
     this.loadAsetGenerator();
   }
 
   private loadAsetGenerator(customRequire?: (id: string) => any) {
+    if (this.pdfEngineService && typeof this.pdfEngineService.generateBuffer === 'function') {
+      this.asetGenerator = this.pdfEngineService;
+      this.logger.log('PdfEngineService injected successfully from @dedisalam/pdf-engine');
+      return;
+    }
+
     const dynamicRequire: (id: string) => any = customRequire || eval('require');
 
-    try {
-      // Look up aset/generate.js from workspace root
-      const asetPath = path.resolve(process.cwd(), '../aset/generate.js');
-      this.asetGenerator = dynamicRequire(asetPath);
-      this.logger.log(`Aset PDF Generator loaded successfully from: ${asetPath}`);
-    } catch (err: any) {
+    const candidatePaths = [
+      path.resolve(process.cwd(), 'libs/pdf-engine/src/core/generate.js'),
+      path.resolve(__dirname, '../../../libs/pdf-engine/src/core/generate.js'),
+      path.resolve(process.cwd(), '../aset/generate.js'),
+      path.resolve(__dirname, '../../../../aset/generate.js'),
+    ];
+
+    for (const candPath of candidatePaths) {
       try {
-        const fallbackPath = path.resolve(__dirname, '../../../../aset/generate.js');
-        this.asetGenerator = dynamicRequire(fallbackPath);
-        this.logger.log(`Aset PDF Generator loaded successfully from fallback: ${fallbackPath}`);
-      } catch (e: any) {
-        this.logger.warn(`Could not load aset generator dynamically: ${err.message}`);
+        this.asetGenerator = dynamicRequire(candPath);
+        this.logger.log(`PDF Generator loaded successfully from: ${candPath}`);
+        return;
+      } catch (err: any) {
+        // try next candidate
       }
     }
+
+    this.logger.warn('Could not load PDF generator dynamically from any candidate path');
   }
 
   private getModel(provider: string): Model<any> {
@@ -197,7 +216,8 @@ export class DocumentService {
     }
 
     const payload = this.transformToEnginePayload(provider, doc);
-    const generationResult = await this.asetGenerator.generateBuffer(payload);
+    const options = provider.toLowerCase() === 'gojek' ? { engine: 'wkhtmltopdf' } : {};
+    const generationResult = await this.asetGenerator.generateBuffer(payload, options);
 
     // Update document status to generated in database
     const model = this.getModel(provider);

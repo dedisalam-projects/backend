@@ -1,0 +1,65 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Kamis, 10 September 2026",
+    "id_pesanan": "RB-4455667-88990011"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Siti Nurhaliza"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 48000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 7000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -5000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Eko Prasetyo",
+        "kendaraan": {
+          "plat": "B 1234 XYZ",
+          "tipe": "Honda Mobilio"
+        },
+        "jarak": "12.4 km",
+        "waktu": "35 menit",
+        "penjemputan": {
+          "tanggal": "10 September 2026",
+          "jam": "17:30",
+          "tempat": "Gedung Cyber 2 Lantai 18",
+          "alamat": "Gedung Cyber 2 Lantai 18\nJl. H.R. Rasuna Said Blok X-5 No.13\nKuningan Timur, Setiabudi\nJakarta Selatan 12950"
+        },
+        "tujuan": {
+          "tanggal": "10 September 2026",
+          "jam": "18:05",
+          "tempat": "Apartemen Bassura City Tower C",
+          "alamat": "Apartemen Bassura City Tower C No.1205\nJl. Basuki Rahmat No.1A\nCipinang Besar Selatan, Jatinegara\nJakarta Timur 13410"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 7000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -5000
+        }
+      ]
+    }
+  ]
+}
