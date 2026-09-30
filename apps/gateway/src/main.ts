@@ -31,8 +31,8 @@ async function bootstrap() {
 
   // Hardened Dynamic CORS with strict whitelist & cross-subdomain support
   const allowedOriginPatterns = [
-    /^https?:\/\/([a-zA-Z0-9-]+\.)*localhost:(3000|4000|4001|4002|4200)$/,
-    /^https?:\/\/127\.0\.0\.1:(3000|4000|4001|4002|4200)$/,
+    /^https?:\/\/([a-zA-Z0-9-]+\.)*localhost(:[0-9]+)?$/,
+    /^https?:\/\/127\.0\.0\.1(:[0-9]+)?$/,
     /^https:\/\/([a-zA-Z0-9-]+\.)*dedisalam\.my\.id$/,
   ];
 
@@ -95,7 +95,7 @@ async function bootstrap() {
   // Get port from config
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 3000;
-  const tcpPort = configService.get<number>('GATEWAY_TCP_PORT') || 4000;
+  const tcpPort = configService.get<number>('GATEWAY_TCP_PORT') || 4500;
 
   // Setup Redis IO Adapter for Websocket synchronization across instances
   const redisUrl = configService.get<string>('REDIS_URL') || 'redis://localhost:6379';

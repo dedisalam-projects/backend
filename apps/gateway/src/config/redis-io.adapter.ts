@@ -26,8 +26,8 @@ export class RedisIoAdapter extends IoAdapter {
     options?: ServerOptions,
   ): ReturnType<IoAdapter['createIOServer']> {
     const allowedOriginPatterns = [
-      /^https?:\/\/([a-zA-Z0-9-]+\.)*localhost:(3000|4000|4001|4002|4200)$/,
-      /^https?:\/\/127\.0\.0\.1:(3000|4000|4001|4002|4200)$/,
+      /^https?:\/\/([a-zA-Z0-9-]+\.)*localhost(:[0-9]+)?$/,
+      /^https?:\/\/127\.0\.0\.1(:[0-9]+)?$/,
       /^https:\/\/([a-zA-Z0-9-]+\.)*dedisalam\.my\.id$/,
     ];
 

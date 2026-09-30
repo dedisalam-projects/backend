@@ -17,6 +17,8 @@ import { UserGateway } from '../user/user.gateway';
 import { NotificationGateway } from '../notification/notification.gateway';
 import { NotificationConsumer } from '../notification/notification.consumer';
 import { PassportModule } from '@nestjs/passport';
+import { MongooseModule } from '@nestjs/mongoose';
+import { DocumentModule } from '../document/document.module';
 
 import type { SignOptions } from 'jsonwebtoken';
 
@@ -31,6 +33,17 @@ import type { SignOptions } from 'jsonwebtoken';
           ? 'environments/.env.test'
           : 'environments/.env.development',
     }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        uri:
+          configService.get<string>('BLIP_MONGO_URI') ||
+          configService.get<string>('USER_SERVICE_MONGO_URI') ||
+          'mongodb://root:rootpassword@localhost:27017/dedisalam?authSource=admin',
+      }),
+      inject: [ConfigService],
+    }),
+    DocumentModule,
     LoggerModule.forRoot({
       pinoHttp: {
         transport:

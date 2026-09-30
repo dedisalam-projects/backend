@@ -123,8 +123,8 @@ describe('RedisIoAdapter', () => {
       const disallowedOrigins = [
         'https://disallowed.com',
         'http://dedisalam.my.id', // http instead of https for dedisalam
-        'http://localhost:3001', // unsupported port
-        'https://127.0.0.1:80', // unsupported port
+        'https://malicious-site.com',
+        'http://phishing.net',
         'http://attackerlocalhost:3000', // missing dot or protocol
       ];
       disallowedOrigins.forEach((origin) => {
