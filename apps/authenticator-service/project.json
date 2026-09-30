@@ -1,0 +1,24 @@
+{
+  "name": "authenticator-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/authenticator-service/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/authenticator-service",
+        "main": "apps/authenticator-service/src/index.ts",
+        "tsConfig": "apps/authenticator-service/tsconfig.app.json"
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "options": {
+        "buildTarget": "authenticator-service:build"
+      }
+    }
+  }
+}
