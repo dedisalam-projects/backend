@@ -1,0 +1,65 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Selasa, 23 September 2025",
+    "id_pesanan": "RB-3543648-79780411"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 24500
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 5000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -2000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Dian Mardiansyah",
+        "kendaraan": {
+          "plat": "B1441RKJ",
+          "tipe": "Toyota Agya"
+        },
+        "jarak": "2 km",
+        "waktu": "5 menit",
+        "penjemputan": {
+          "tanggal": "23 September 2025",
+          "jam": "21:26",
+          "tempat": "KOBAin Coffee Sarana Square Tebet",
+          "alamat": "Jl. Tebet Barat IV RT.11/RW.3, Tebet Bar., Kec. Tebet, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12810, Indonesia"
+        },
+        "tujuan": {
+          "tanggal": "23 September 2025",
+          "jam": "21:32",
+          "tempat": "Cipta Hotel Pancoran",
+          "alamat": "Jalan Raya Pasar Minggu Kav. 19, Pancoran, RT.7/RW.9, Pancoran, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12780, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 5000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -2000
+        }
+      ]
+    }
+  ]
+}

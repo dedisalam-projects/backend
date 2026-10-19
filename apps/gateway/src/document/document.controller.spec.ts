@@ -1,33 +1,45 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { of } from 'rxjs';
 import { DocumentController } from './document.controller';
-import { DocumentService } from './document.service';
 
 describe('DocumentController', () => {
   let controller: DocumentController;
 
-  const mockDocumentService = {
-    findAll: jest.fn().mockResolvedValue({
-      items: [{ _id: '1', receiptNo: 'TRV123' }],
-      total: 1,
-      page: 1,
-      limit: 10,
-      totalPages: 1,
-    }),
-    findOne: jest.fn().mockResolvedValue({ _id: '1', receiptNo: 'TRV123' }),
-    create: jest.fn().mockResolvedValue({ _id: '1', receiptNo: 'TRV123', status: 'draft' }),
-    update: jest.fn().mockResolvedValue({ _id: '1', receiptNo: 'TRV123', status: 'draft' }),
-    delete: jest.fn().mockResolvedValue({ success: true, id: '1' }),
-    generatePdf: jest.fn().mockResolvedValue({
-      buffer: Buffer.from('%PDF-1.4'),
-      filename: 'Traveloka_TRV123.pdf',
-      docType: 'TRAVELOKA (BUS)',
+  const mockBlipClient = {
+    send: jest.fn<any, [string, any]>((pattern: string, data: any) => {
+      switch (pattern) {
+        case 'document.find_all':
+          return of({
+            items: [{ _id: '1', receiptNo: 'TRV123' }],
+            total: 1,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+          });
+        case 'document.find_one':
+          return of({ _id: '1', receiptNo: 'TRV123' });
+        case 'document.create':
+          return of({ _id: '1', receiptNo: 'TRV123', status: 'draft' });
+        case 'document.update':
+          return of({ _id: '1', receiptNo: 'TRV123', status: 'draft' });
+        case 'document.delete':
+          return of({ success: true, id: '1' });
+        case 'document.generate_pdf':
+          return of({
+            buffer: Buffer.from('%PDF-1.4').toString('base64'),
+            filename: 'Traveloka_TRV123.pdf',
+            docType: 'TRAVELOKA (BUS)',
+          });
+        default:
+          return of(null);
+      }
     }),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DocumentController],
-      providers: [{ provide: DocumentService, useValue: mockDocumentService }],
+      providers: [{ provide: 'BLIP_SERVICES', useValue: mockBlipClient }],
     }).compile();
 
     controller = module.get<DocumentController>(DocumentController);
@@ -41,7 +53,7 @@ describe('DocumentController', () => {
     it('should return list of documents', async () => {
       const result = await controller.listDocuments('traveloka', {});
       expect(result.success).toBe(true);
-      expect(result.data.items).toHaveLength(1);
+      expect((result.data as any).items).toHaveLength(1);
     });
   });
 
@@ -49,7 +61,7 @@ describe('DocumentController', () => {
     it('should return a single document', async () => {
       const result = await controller.getDocument('traveloka', '1');
       expect(result.success).toBe(true);
-      expect(result.data._id).toBe('1');
+      expect((result.data as any)._id).toBe('1');
     });
   });
 
@@ -57,7 +69,7 @@ describe('DocumentController', () => {
     it('should create document', async () => {
       const result = await controller.createDocument('traveloka', { receiptNo: 'TRV123' });
       expect(result.success).toBe(true);
-      expect(result.data.receiptNo).toBe('TRV123');
+      expect((result.data as any).receiptNo).toBe('TRV123');
     });
   });
 
@@ -65,7 +77,7 @@ describe('DocumentController', () => {
     it('should update document', async () => {
       const result = await controller.updateDocument('traveloka', '1', { status: 'draft' });
       expect(result.success).toBe(true);
-      expect(result.data.status).toBe('draft');
+      expect((result.data as any).status).toBe('draft');
     });
   });
 
@@ -73,23 +85,33 @@ describe('DocumentController', () => {
     it('should delete document', async () => {
       const result = await controller.deleteDocument('traveloka', '1');
       expect(result.success).toBe(true);
-      expect(result.data.id).toBe('1');
+      expect((result.data as any).success).toBe(true);
     });
   });
 
   describe('generateDocumentPdf', () => {
-    it('should stream generated pdf to response', async () => {
-      const res = {
-        set: jest.fn(),
-        end: jest.fn(),
-      } as any;
+    const buildRes = () => ({ set: jest.fn(), end: jest.fn() });
 
-      await controller.generateDocumentPdf('traveloka', '1', res);
+    it('should stream pdf using filename from response', async () => {
+      const res = buildRes();
+      await controller.generateDocumentPdf('traveloka', '1', res as any);
       expect(res.set).toHaveBeenCalledWith(
         expect.objectContaining({
           'Content-Type': 'application/pdf',
+          'Content-Disposition': 'inline; filename="Traveloka_TRV123.pdf"',
         }),
       );
+      expect(res.end).toHaveBeenCalledWith(Buffer.from('%PDF-1.4'));
+    });
+
+    it('should fall back to generated filename when response has none', async () => {
+      mockBlipClient.send.mockReturnValueOnce(
+        of({ buffer: Buffer.from('%PDF-1.4').toString('base64') }),
+      );
+      const res = buildRes();
+      await controller.generateDocumentPdf('traveloka', '1', res as any);
+      const headers = res.set.mock.calls[0][0];
+      expect(headers['Content-Disposition']).toMatch(/^inline; filename="document_\d+\.pdf"$/);
       expect(res.end).toHaveBeenCalled();
     });
   });

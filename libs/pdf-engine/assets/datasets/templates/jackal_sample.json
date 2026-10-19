@@ -1,0 +1,50 @@
+{
+  "service": "jackal-shuttle",
+  "booking_code": "BJKL250721UDWZ",
+  "booking_date": "21 Juli 2025 15:00",
+  "customer": {
+    "name": "DEDI SALAM PERMANA",
+    "address": "-",
+    "phone": "085856416338",
+    "email": "dedispermana20@gmail.com",
+    "otp": "543182"
+  },
+  "departure": {
+    "point": "DIPATIUKUR 89 SEBRANG UNIKOM",
+    "address": "JL. DIPATI UKUR NO.89, LEBAKGEDE, KECAMATAN COBLONG, KOTA BANDUNG, JAWA BARAT 40132",
+    "maps_url": "https://maps.google.com/?q=-6.8920,107.6180",
+    "date": "Selasa, 22 Juli 2025",
+    "time": "05:15"
+  },
+  "destination": {
+    "point": "CENTRAL PARK (VIRTUAL POOL)",
+    "address": "( DROP POINT DI INDOMARET DEKAT MITRA GROUP - AREA RUKO SHOPPING CENTER, DEKAT NEO SOHO, SEBRANG DOMINO'S PIZZA, RUKO GARDEN SHOPPING ARCADE B/08/AM, LETJEN S. PARMAN KAV. 28 GROGOL, JAKARTA BARAT )N",
+    "maps_url": "https://maps.google.com/?q=-6.1774,106.7907"
+  },
+  "passengers": [
+    {
+      "qr_code": "Tb436ef02c6b2473934f44cdb641de62e",
+      "name": "DEDI SALAM PERMANA",
+      "seat": "3",
+      "route": "DU - CP",
+      "schedule": "Selasa, 22 Juli 2025 05:15"
+    }
+  ],
+  "tickets": [
+    {
+      "ticket_no": "TJKL250721DKL9",
+      "seat": "3",
+      "route": "DU - CP",
+      "schedule": "Selasa, 22 Juli 2025 05:15",
+      "price": 155000
+    }
+  ],
+  "payment": {
+    "total_price": 155000,
+    "admin_fee": 0,
+    "discount": 35100,
+    "total_paid": 119900,
+    "method": "BCA VIRTUAL ACCOUNT",
+    "time": "21 Juli 2025 15:01"
+  }
+}

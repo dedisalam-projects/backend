@@ -15,15 +15,20 @@ export class UserServiceConfigDto {
   @IsNumber()
   @IsOptional()
   @Type(() => Number)
-  USER_SERVICE_PORT = 3011;
+  PORT = 3011;
 
   @IsNumber()
   @IsOptional()
   @Type(() => Number)
-  USER_SERVICE_TCP_PORT = 3001;
+  USER_SERVICE_PORT?: number;
 
   @IsString()
-  USER_SERVICE_MONGO_URI!: string;
+  @IsOptional()
+  MONGODB_URI?: string;
+
+  @IsString()
+  @IsOptional()
+  USER_SERVICE_MONGO_URI?: string;
 
   @IsString()
   RABBITMQ_URL!: string;
@@ -40,5 +45,10 @@ export function validate(config: Record<string, unknown>) {
   if (errors.length > 0) {
     throw new Error(errors.toString());
   }
+
+  if (!validatedConfig.MONGODB_URI && !validatedConfig.USER_SERVICE_MONGO_URI) {
+    throw new Error('Either MONGODB_URI or USER_SERVICE_MONGO_URI must be provided');
+  }
+
   return validatedConfig;
 }

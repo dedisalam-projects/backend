@@ -9,14 +9,12 @@ describe('UserServiceConfig Property-Based Testing (Fast-Check)', () => {
         fc.string({ minLength: 10, maxLength: 100 }),
         fc.string({ minLength: 10, maxLength: 100 }),
         fc.integer({ min: 1024, max: 65535 }),
-        fc.integer({ min: 1024, max: 65535 }),
         fc.constantFrom(Environment.Development, Environment.Production, Environment.Test),
-        (mongoUri, rmqUrl, port, tcpPort, env) => {
+        (mongoUri, rmqUrl, port, env) => {
           const rawConfig = {
             USER_SERVICE_MONGO_URI: mongoUri,
             RABBITMQ_URL: rmqUrl,
             USER_SERVICE_PORT: String(port),
-            USER_SERVICE_TCP_PORT: String(tcpPort),
             NODE_ENV: env,
           };
 
@@ -25,7 +23,6 @@ describe('UserServiceConfig Property-Based Testing (Fast-Check)', () => {
           expect(config.USER_SERVICE_MONGO_URI).toBe(mongoUri);
           expect(config.RABBITMQ_URL).toBe(rmqUrl);
           expect(config.USER_SERVICE_PORT).toBe(port);
-          expect(config.USER_SERVICE_TCP_PORT).toBe(tcpPort);
           expect(config.NODE_ENV).toBe(env);
         },
       ),
@@ -38,7 +35,6 @@ describe('UserServiceConfig Property-Based Testing (Fast-Check)', () => {
       fc.property(
         fc.record({
           USER_SERVICE_PORT: fc.integer({ min: 1000, max: 9999 }),
-          USER_SERVICE_TCP_PORT: fc.integer({ min: 1000, max: 9999 }),
           NODE_ENV: fc.constantFrom(
             Environment.Development,
             Environment.Production,

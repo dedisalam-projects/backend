@@ -1,0 +1,49 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Minggu, 1 Februari 2026",
+    "id_pesanan": "RB-1002003-00011122"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Budi"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 14000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Iwan",
+        "kendaraan": {
+          "plat": "D 1010 AB",
+          "tipe": "Daihatsu Ayla"
+        },
+        "jarak": "500 m",
+        "waktu": "2 menit",
+        "penjemputan": {
+          "tanggal": "1 Februari 2026",
+          "jam": "08:00",
+          "tempat": "Halte Bus Asia Afrika",
+          "alamat": "Jl. Asia Afrika No.1, Bandung"
+        },
+        "tujuan": {
+          "tanggal": "1 Februari 2026",
+          "jam": "08:02",
+          "tempat": "Kedai Kopi Braga",
+          "alamat": "Jl. Braga No.5, Bandung"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 0
+        }
+      ]
+    }
+  ]
+}

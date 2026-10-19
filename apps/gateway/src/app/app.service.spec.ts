@@ -56,7 +56,9 @@ describe('AppService', () => {
     });
 
     it('should handle observable errors by returning user service error status', async () => {
-      mockUserClient.send.mockReturnValueOnce(throwError(() => new Error('TCP Connection Failed')));
+      mockUserClient.send.mockReturnValueOnce(
+        throwError(() => new Error('Microservice Connection Failed')),
+      );
       const response = await service.getHello();
       expect(response).toEqual({
         message: 'Hello World',
@@ -68,7 +70,7 @@ describe('AppService', () => {
 
     it('should handle synchronous throw by returning user service error status', async () => {
       mockUserClient.send.mockImplementationOnce(() => {
-        throw new Error('TCP Connection Failed');
+        throw new Error('Microservice Connection Failed');
       });
       const response = await service.getHello();
       expect(response).toEqual({

@@ -1,0 +1,449 @@
+{
+  "provider": "Traveloka",
+  "total_analyzed_files": 18,
+  "category_counts": {
+    "Hotel / Akomodasi": 5,
+    "Tiket Bus & Shuttle": 13
+  },
+  "page_dimensions": {
+    "595.28x827.7 pt": 18
+  },
+  "layout_grid_anchors": {
+    "footer_help_left": {
+      "anchor": 151.69,
+      "tolerance": 0.0,
+      "frequency": 18,
+      "clusters": [
+        {
+          "mean": 151.69,
+          "min": 151.69,
+          "max": 151.69,
+          "count": 18
+        },
+        {
+          "mean": 370.46,
+          "min": 370.46,
+          "max": 370.46,
+          "count": 18
+        }
+      ]
+    },
+    "company_label_left": {
+      "anchor": 303.64,
+      "tolerance": 0.0,
+      "frequency": 72,
+      "clusters": [
+        {
+          "mean": 303.64,
+          "min": 303.64,
+          "max": 303.64,
+          "count": 72
+        }
+      ]
+    },
+    "company_val_colon_left": {
+      "anchor": 363.64,
+      "tolerance": 0.0,
+      "frequency": 54,
+      "clusters": [
+        {
+          "mean": 363.64,
+          "min": 363.64,
+          "max": 363.64,
+          "count": 54
+        },
+        {
+          "mean": 367.39,
+          "min": 367.39,
+          "max": 367.39,
+          "count": 35
+        }
+      ]
+    },
+    "customer_label_left": {
+      "anchor": 34.35,
+      "tolerance": 0.0,
+      "frequency": 73,
+      "clusters": [
+        {
+          "mean": 34.35,
+          "min": 34.35,
+          "max": 34.35,
+          "count": 73
+        }
+      ]
+    },
+    "customer_val_left": {
+      "anchor": 94.35,
+      "tolerance": 0.0,
+      "frequency": 54,
+      "clusters": [
+        {
+          "mean": 94.35,
+          "min": 94.35,
+          "max": 94.35,
+          "count": 54
+        }
+      ]
+    },
+    "receipt_meta_left": {
+      "anchor": 37.35,
+      "tolerance": 0.0,
+      "frequency": 63,
+      "clusters": [
+        {
+          "mean": 37.35,
+          "min": 37.35,
+          "max": 37.35,
+          "count": 63
+        }
+      ]
+    },
+    "payment_bar_left": {
+      "anchor": 34.35,
+      "tolerance": 0.0,
+      "frequency": 36,
+      "clusters": [
+        {
+          "mean": 34.35,
+          "min": 34.35,
+          "max": 34.35,
+          "count": 36
+        }
+      ]
+    },
+    "payment_bar_middle": {
+      "anchor": 169.01,
+      "tolerance": 0.0,
+      "frequency": 18,
+      "clusters": [
+        {
+          "mean": 169.01,
+          "min": 169.01,
+          "max": 169.01,
+          "count": 18
+        }
+      ]
+    },
+    "payment_bar_right": {
+      "anchor": 411.38,
+      "tolerance": 0.0,
+      "frequency": 18,
+      "clusters": [
+        {
+          "mean": 411.38,
+          "min": 411.38,
+          "max": 411.38,
+          "count": 18
+        }
+      ]
+    },
+    "table_col_no": {
+      "anchor": 32.48,
+      "tolerance": 0.0,
+      "frequency": 62,
+      "clusters": [
+        {
+          "mean": 32.48,
+          "min": 32.48,
+          "max": 32.48,
+          "count": 62
+        },
+        {
+          "mean": 34.35,
+          "min": 34.35,
+          "max": 34.35,
+          "count": 33
+        }
+      ]
+    },
+    "table_col_jenis": {
+      "anchor": 52.65,
+      "tolerance": 0.9,
+      "frequency": 81,
+      "clusters": [
+        {
+          "mean": 52.65,
+          "min": 52.39,
+          "max": 53.29,
+          "count": 81
+        },
+        {
+          "mean": 56.03,
+          "min": 55.84,
+          "max": 56.21,
+          "count": 4
+        }
+      ]
+    },
+    "table_col_deskripsi": {
+      "anchor": 133.27,
+      "tolerance": 0.9,
+      "frequency": 139,
+      "clusters": [
+        {
+          "mean": 133.27,
+          "min": 133.16,
+          "max": 134.06,
+          "count": 139
+        },
+        {
+          "mean": 136.8,
+          "min": 136.61,
+          "max": 136.99,
+          "count": 4
+        }
+      ]
+    },
+    "table_col_jml": {
+      "anchor": 370.13,
+      "tolerance": 0.0,
+      "frequency": 48,
+      "clusters": [
+        {
+          "mean": 370.13,
+          "min": 370.13,
+          "max": 370.13,
+          "count": 48
+        },
+        {
+          "mean": 355.65,
+          "min": 355.65,
+          "max": 355.65,
+          "count": 18
+        }
+      ]
+    },
+    "table_col_harga_satuan_lbl_left": {
+      "anchor": 382.58,
+      "tolerance": 0.0,
+      "frequency": 54,
+      "clusters": [
+        {
+          "mean": 382.58,
+          "min": 382.58,
+          "max": 382.58,
+          "count": 54
+        },
+        {
+          "mean": 429.68,
+          "min": 429.68,
+          "max": 429.68,
+          "count": 12
+        }
+      ]
+    },
+    "table_col_total_val_right": {
+      "anchor": 562.79,
+      "tolerance": 0.02,
+      "frequency": 103,
+      "clusters": [
+        {
+          "mean": 562.79,
+          "min": 562.77,
+          "max": 562.79,
+          "count": 103
+        },
+        {
+          "mean": 518.38,
+          "min": 518.26,
+          "max": 518.61,
+          "count": 18
+        }
+      ]
+    },
+    "table_col_harga_satuan_val_right": {
+      "anchor": 482.01,
+      "tolerance": 0.02,
+      "frequency": 49,
+      "clusters": [
+        {
+          "mean": 482.01,
+          "min": 482.0,
+          "max": 482.02,
+          "count": 49
+        },
+        {
+          "mean": 468.77,
+          "min": 468.77,
+          "max": 468.77,
+          "count": 17
+        }
+      ]
+    }
+  },
+  "table_columns_spec": {
+    "col_1_no": {
+      "type": "left",
+      "anchor": 32.48
+    },
+    "col_2_jenis_barang": {
+      "type": "left",
+      "anchor": 52.65
+    },
+    "col_3_deskripsi": {
+      "type": "left",
+      "anchor": 133.27
+    },
+    "col_4_jumlah": {
+      "type": "center",
+      "anchor": 370.13
+    },
+    "col_5_harga_satuan": {
+      "type": "right",
+      "anchor": 482.01
+    },
+    "col_6_total": {
+      "type": "right",
+      "anchor": 562.79
+    },
+    "summary_labels": {
+      "type": "left",
+      "anchor": 382.6
+    },
+    "summary_values": {
+      "type": "right",
+      "anchor": 562.8
+    }
+  },
+  "typography_tokens": {
+    "fonts": {
+      "footer": {
+        "ArialUnicodeMS": 54
+      },
+      "company_info": {
+        "ArialUnicodeMS": 161
+      },
+      "customer_info": {
+        "ArialUnicodeMS": 127
+      },
+      "receipt_meta": {
+        "ArialUnicodeMS": 63
+      },
+      "payment_bar": {
+        "ArialUnicodeMS": 72
+      },
+      "table_body": {
+        "ArialUnicodeMS": 654,
+        "Overpass-Regular": 24
+      }
+    },
+    "sizes": {
+      "footer": {
+        "dominant_size": 7.5,
+        "distribution": {
+          "7.5": 36,
+          "6.75": 18
+        }
+      },
+      "company_info": {
+        "dominant_size": 7.5,
+        "distribution": {
+          "7.5": 143,
+          "9.0": 18
+        }
+      },
+      "customer_info": {
+        "dominant_size": 7.5,
+        "distribution": {
+          "7.5": 108,
+          "9.0": 19
+        }
+      },
+      "receipt_meta": {
+        "dominant_size": 7.5,
+        "distribution": {
+          "7.5": 45,
+          "8.78": 18
+        }
+      },
+      "payment_bar": {
+        "dominant_size": 7.5,
+        "distribution": {
+          "7.5": 54,
+          "9.0": 18
+        }
+      },
+      "table_body": {
+        "dominant_size": 7.5,
+        "distribution": {
+          "7.5": 665,
+          "9.0": 13
+        }
+      }
+    },
+    "colors": {
+      "footer": {
+        "#000000": 18,
+        "#0770cd": 18
+      },
+      "company_info": {
+        "#000000": 161
+      },
+      "customer_info": {
+        "#000000": 127
+      },
+      "receipt_meta": {
+        "#000000": 63
+      },
+      "payment_bar": {
+        "#000000": 72
+      },
+      "table_body": {
+        "#000000": 678
+      }
+    }
+  },
+  "structural_banners": [
+    {
+      "bbox": [
+        0.0,
+        802.87,
+        595.28,
+        827.62
+      ],
+      "fill": "#0194f3",
+      "type": "Bottom Blue Banner"
+    },
+    {
+      "bbox": [
+        28.35,
+        82.5,
+        566.92,
+        98.25
+      ],
+      "fill": "#f2f3f3",
+      "type": "Header / Section Bar"
+    },
+    {
+      "bbox": [
+        28.35,
+        205.2,
+        566.92,
+        220.95
+      ],
+      "fill": "#f2f3f3",
+      "type": "Header / Section Bar"
+    },
+    {
+      "bbox": [
+        28.35,
+        251.85,
+        566.92,
+        267.6
+      ],
+      "fill": "#f2f3f3",
+      "type": "Header / Section Bar"
+    },
+    {
+      "bbox": [
+        28.35,
+        321.6,
+        566.92,
+        337.35
+      ],
+      "fill": "#f2f3f3",
+      "type": "Header / Section Bar"
+    }
+  ]
+}

@@ -15,9 +15,14 @@ import { Inject, Logger, UseFilters, UsePipes, ValidationPipe } from '@nestjs/co
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
-import * as jwt from 'jsonwebtoken';
-import * as cookie from 'cookie';
-import { JwtPayload, NotificationBroadcastDto, WsExceptionFilter } from '@dedisalam/common';
+import {
+  NotificationBroadcastDto,
+  WsExceptionFilter,
+  createWsJwtAuthMiddleware,
+  authenticateSocketConnection,
+  assertSocketAdmin,
+  extractSocketToken,
+} from '@dedisalam/common';
 
 @WebSocketGateway({
   namespace: '/notifications',
@@ -41,57 +46,18 @@ export class NotificationGateway
     private readonly configService: ConfigService,
   ) {}
 
-  afterInit(server: Server) {
-    server.use((client: Socket, next: (err?: Error) => void) => {
-      const token = this.extractToken(client);
-      if (!token) {
-        return next(new Error('UNAUTHORIZED: Authentication token is required'));
-      }
+  extractToken(client: Socket): string | null {
+    return extractSocketToken(client);
+  }
 
-      try {
-        const secret = this.configService.get<string>('JWT_SECRET') as string;
-        const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
-        client.data = client.data || {};
-        client.data.user = decoded;
-        next();
-      } catch (err: any) {
-        this.logger.error(`Error verifying token: ${err.message}`);
-        next(new Error('UNAUTHORIZED: Invalid or expired token'));
-      }
-    });
+  afterInit(server: Server) {
+    server.use(createWsJwtAuthMiddleware(this.configService, this.logger));
   }
 
   handleConnection(client: Socket) {
-    let decoded = client.data?.user as JwtPayload | undefined;
-
-    if (!decoded) {
-      const token = this.extractToken(client);
-      if (!token) {
-        this.logger.warn(`Connection rejected for client ${client.id}: Missing token`);
-        client.emit('exception', {
-          success: false,
-          error: { code: 'UNAUTHORIZED', message: 'Authentication token is required' },
-        });
-        client.disconnect(true);
-        return;
-      }
-
-      try {
-        const secret = this.configService.get<string>('JWT_SECRET') as string;
-        decoded = jwt.verify(token, secret) as unknown as JwtPayload;
-        client.data = client.data || {};
-        client.data.user = decoded;
-        this.logger.log(`Client connected to /notifications: ${decoded.email} (${client.id})`);
-      } catch (err: any) {
-        this.logger.warn(`Connection rejected for client ${client.id}: Invalid token`);
-        client.emit('exception', {
-          success: false,
-          error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token' },
-        });
-        client.disconnect(true);
-        return;
-      }
-    }
+    const secret = this.configService.get<string>('JWT_SECRET') || '';
+    const decoded = authenticateSocketConnection(client, secret, this.logger, '/notifications');
+    if (!decoded) return;
 
     // Join personal room for targeted push notifications and notifications broadcast channel
     const userRoom = `user_${decoded.sub}`;
@@ -111,44 +77,8 @@ export class NotificationGateway
     this.logger.log(`Client disconnected from /notifications: ${client.id}`);
   }
 
-  private extractToken(client: Socket): string | null {
-    if (client.handshake?.auth?.token) {
-      const t = client.handshake.auth.token;
-      return t.startsWith('Bearer ') ? t.slice(7) : t;
-    }
-    const authHeader = client.handshake?.headers?.authorization;
-    if (authHeader && typeof authHeader === 'string') {
-      return authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
-    }
-    if (client.handshake?.query?.token && typeof client.handshake.query.token === 'string') {
-      return client.handshake.query.token;
-    }
-    if (client.handshake?.headers?.cookie && typeof client.handshake.headers.cookie === 'string') {
-      const parsedCookies = cookie.parse(client.handshake.headers.cookie);
-      return parsedCookies['accessToken'] || null;
-    }
-    return null;
-  }
-
   private checkAdmin(client: Socket) {
-    const user = client.data?.user;
-    if (!user) {
-      throw new WsException({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
-    }
-    const roles: string[] = Array.isArray(user.roles)
-      ? user.roles
-      : user.roles
-        ? [user.roles]
-        : user.role
-          ? [user.role]
-          : [];
-
-    if (!roles.includes('admin') && !roles.includes('super_admin')) {
-      throw new WsException({
-        code: 'FORBIDDEN',
-        message: 'Forbidden: Admin privileges required',
-      });
-    }
+    assertSocketAdmin(client);
   }
 
   @SubscribeMessage('notification:list')

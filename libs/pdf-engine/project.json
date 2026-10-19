@@ -1,0 +1,8 @@
+{
+  "name": "pdf-engine",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/pdf-engine/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {}
+}

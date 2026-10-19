@@ -1,0 +1,69 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Rabu, 12 Agustus 2026",
+    "id_pesanan": "RB-8899001-33221100"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 2450000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 2000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 35000
+        },
+        {
+          "item": "Ongkos tol Trans Jawa",
+          "nominal": 185500
+        },
+        {
+          "item": "Diskon Perjalanan Jauh",
+          "nominal": -150000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Hendra Kurniawan",
+        "kendaraan": {
+          "plat": "H 8888 BOSS",
+          "tipe": "Toyota Alphard 2.5 G"
+        },
+        "jarak": "452.1 km",
+        "waktu": "390 menit",
+        "penjemputan": {
+          "tanggal": "12 Agustus 2026",
+          "jam": "05:00",
+          "tempat": "Hotel Indonesia Kempinski Jakarta",
+          "alamat": "Jl. M.H. Thamrin No.1, Menteng, Kec. Menteng, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10310, Indonesia"
+        },
+        "tujuan": {
+          "tanggal": "12 Agustus 2026",
+          "jam": "11:30",
+          "tempat": "Hotel Tentrem Semarang",
+          "alamat": "Jl. Gajahmada No.123, Pekunden, Kec. Semarang Tengah, Kota Semarang, Jawa Tengah 50134, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 35000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -15000
+        }
+      ]
+    }
+  ]
+}

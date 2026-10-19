@@ -25,7 +25,7 @@ export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(
-    @Inject('USER_SERVICE') private readonly userService: ClientProxy,
+    @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
     private readonly configService: ConfigService,
   ) {}
 
@@ -84,7 +84,7 @@ export class AuthController {
     try {
       this.logger.log(`Handling POST login for email: ${body.email}`);
       const response = await firstValueFrom(
-        this.userService.send('auth.login', body).pipe(timeout(5000)),
+        this.authService.send('auth.login', body).pipe(timeout(5000)),
       );
 
       const { accessToken, refreshToken, ...sanitizedData } = response || {};
@@ -118,7 +118,7 @@ export class AuthController {
     try {
       this.logger.log(`Handling POST register for email: ${body.email}`);
       const response = await firstValueFrom(
-        this.userService.send('auth.register', body).pipe(timeout(5000)),
+        this.authService.send('auth.register', body).pipe(timeout(5000)),
       );
 
       return {
@@ -158,7 +158,7 @@ export class AuthController {
 
       this.logger.log(`Handling POST refresh for userId: ${userId}`);
       const response = await firstValueFrom(
-        this.userService.send('auth.refresh', { userId, refreshToken }).pipe(timeout(5000)),
+        this.authService.send('auth.refresh', { userId, refreshToken }).pipe(timeout(5000)),
       );
 
       const {
@@ -212,7 +212,7 @@ export class AuthController {
 
       this.logger.log(`Handling POST logout`);
       const response = await firstValueFrom(
-        this.userService
+        this.authService
           .send('auth.logout', { refreshToken, accessToken, userId })
           .pipe(timeout(5000)),
       );

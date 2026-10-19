@@ -13,7 +13,7 @@ export class AppService {
         this.userClient.send('user.hello', payload).pipe(timeout(5000)),
       );
 
-      // Trigger Step 4 E2E Event Flow (fire-and-forget TCP event)
+      // Trigger Step 4 E2E Event Flow (fire-and-forget RMQ event)
       this.userClient.emit('test.event', {
         message: 'Event flow test message',
         correlationId: 'gateway-hello-id',

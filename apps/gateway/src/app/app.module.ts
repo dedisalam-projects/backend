@@ -1,139 +1,60 @@
-import { Module, OnModuleDestroy, Inject } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ClientsModule } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
-import { randomUUID } from 'crypto';
-import Redis from 'ioredis';
+import { PassportModule } from '@nestjs/passport';
 
-import { IncomingMessage } from 'http';
+import {
+  getEnvFilePath,
+  createPinoLoggerOptions,
+  createRmqClient,
+  createJwtOptions,
+  JwtStrategy,
+} from '@dedisalam/common';
 
 import { AppService } from './app.service';
 import { validate } from '../config/gateway.config';
-import { vaultLoader, JwtStrategy } from '@dedisalam/common';
 import { AuthController } from '../auth/auth.controller';
 import { UserController } from '../user/user.controller';
 import { UserGateway } from '../user/user.gateway';
 import { NotificationGateway } from '../notification/notification.gateway';
 import { NotificationConsumer } from '../notification/notification.consumer';
-import { PassportModule } from '@nestjs/passport';
-import { MongooseModule } from '@nestjs/mongoose';
-import { DocumentModule } from '../document/document.module';
-
-import type { SignOptions } from 'jsonwebtoken';
+import { DocumentController } from '../document/document.controller';
+import { DocumentGateway } from '../document/document.gateway';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [vaultLoader],
       validate,
-      envFilePath:
-        process.env.NODE_ENV === 'test'
-          ? 'environments/.env.test'
-          : 'environments/.env.development',
+      envFilePath: getEnvFilePath(),
     }),
-    MongooseModule.forRootAsync({
+    LoggerModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        uri:
-          configService.get<string>('BLIP_MONGO_URI') ||
-          configService.get<string>('USER_SERVICE_MONGO_URI') ||
-          'mongodb://root:rootpassword@localhost:27017/dedisalam?authSource=admin',
-      }),
       inject: [ConfigService],
-    }),
-    DocumentModule,
-    LoggerModule.forRoot({
-      pinoHttp: {
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty', options: { colorize: true } }
-            : undefined,
-        genReqId: (req: IncomingMessage) => {
-          const rawId = req.headers['x-correlation-id'];
-          const correlationId = (Array.isArray(rawId) ? rawId[0] : rawId) || randomUUID();
-          req.headers['x-correlation-id'] = correlationId;
-          return correlationId;
-        },
-        customProps: (req: IncomingMessage) => ({
-          correlationId: req.headers['x-correlation-id'],
-          service: 'gateway',
-        }),
-      },
+      useFactory: (configService: ConfigService) =>
+        createPinoLoggerOptions(configService, 'gateway'),
     }),
     ClientsModule.registerAsync([
-      {
-        name: 'USER_SERVICE',
-        imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.RMQ,
-          options: {
-            urls: [
-              configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672',
-            ],
-            queue: 'user-service',
-            queueOptions: {
-              durable: true,
-            },
-          },
-        }),
-        inject: [ConfigService],
-      },
-      {
-        name: 'NOTIFICATION_SERVICE',
-        imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.RMQ,
-          options: {
-            urls: [
-              configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672',
-            ],
-            queue: 'notification-service',
-            queueOptions: {
-              durable: true,
-              arguments: {
-                'x-dead-letter-exchange': 'notification-service.dlx',
-                'x-dead-letter-routing-key': 'notification-service.dlq',
-              },
-            },
-          },
-        }),
-        inject: [ConfigService],
-      },
+      createRmqClient('USER_SERVICE', 'user-service'),
+      createRmqClient('NOTIFICATION_SERVICE', 'notification-service', {
+        arguments: {
+          'x-dead-letter-exchange': 'notification-service.dlx',
+          'x-dead-letter-routing-key': 'notification-service.dlq',
+        },
+      }),
+      createRmqClient('BLIP_SERVICES', 'blip-services'),
+      createRmqClient('AUTH_SERVICE', 'auth-service'),
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
-            '15m') as SignOptions['expiresIn'],
-        },
-      }),
       inject: [ConfigService],
+      useFactory: createJwtOptions,
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
-  controllers: [NotificationConsumer, AuthController, UserController],
-  providers: [
-    AppService,
-    UserGateway,
-    NotificationGateway,
-    JwtStrategy,
-    {
-      provide: 'REDIS_CLIENT',
-      useFactory: (configService: ConfigService) => {
-        return new Redis(configService.get<string>('REDIS_URL') || 'redis://localhost:6379');
-      },
-      inject: [ConfigService],
-    },
-  ],
+  controllers: [NotificationConsumer, AuthController, UserController, DocumentController],
+  providers: [AppService, UserGateway, NotificationGateway, DocumentGateway, JwtStrategy],
 })
-export class AppModule implements OnModuleDestroy {
-  constructor(@Inject('REDIS_CLIENT') private readonly redis: Redis) {}
-
-  onModuleDestroy() {
-    this.redis.disconnect();
-  }
-}
+export class AppModule {}

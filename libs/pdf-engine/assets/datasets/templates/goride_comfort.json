@@ -1,0 +1,436 @@
+[
+  {
+    "template": "goride_comfort",
+    "sections": {
+      "header": {
+        "texts": [
+          {
+            "text": "Kamis, 10 Juli 2025",
+            "y": 12.86,
+            "w": 77.03
+          },
+          {
+            "text": "ID pesanan: RB-112971-0720831",
+            "y": 23.42,
+            "w": 132.01
+          }
+        ]
+      },
+      "greeting": {
+        "texts": [
+          {
+            "text": "Hai Dedi S. Permana,",
+            "y": 68.75,
+            "w": 92.81,
+            "size": 9.6,
+            "anchor": 127.88
+          },
+          {
+            "text": "Makasih udah pesan GoRide Comfort",
+            "y": 93.66,
+            "w": 223.57,
+            "size": 12.58,
+            "anchor": 127.88,
+            "bold": true
+          }
+        ]
+      },
+      "total_box": {
+        "texts": [
+          {
+            "text": "Total dibayar",
+            "y": 137.89,
+            "w": 64.5,
+            "size": 10.37,
+            "anchor": 187.79,
+            "bold": true
+          },
+          {
+            "text": "Rp10.000",
+            "y": 137.89,
+            "w": 45.48,
+            "size": 10.37,
+            "anchor": 361.47,
+            "color": "#008000",
+            "bold": true
+          },
+          {
+            "text": "Rincian pembayaran",
+            "y": 177.53,
+            "w": 93.84,
+            "size": 9.6,
+            "anchor": 127.02,
+            "bold": true
+          }
+        ]
+      },
+      "payment_rows": {
+        "texts": [
+          {
+            "text": "Biaya perjalanan",
+            "y": 209.67,
+            "w": 65.74
+          },
+          {
+            "text": "Rp14.000",
+            "y": 209.67,
+            "w": 38.25,
+            "align": "right"
+          },
+          {
+            "text": "Biaya jasa aplikasi",
+            "y": 222.54,
+            "w": 72.62
+          },
+          {
+            "text": "Rp3.500",
+            "y": 222.54,
+            "w": 33.35,
+            "align": "right"
+          },
+          {
+            "text": "Diskon",
+            "y": 235.4,
+            "w": 26.95
+          },
+          {
+            "text": "-Rp7.500",
+            "y": 235.4,
+            "w": 36.29,
+            "align": "right"
+          },
+          {
+            "text": "Total pembayaran",
+            "y": 260.37,
+            "w": 75.53,
+            "bold": true
+          },
+          {
+            "text": "Rp10.000",
+            "y": 260.37,
+            "w": 38.74,
+            "align": "right",
+            "bold": true
+          },
+          {
+            "text": "Bayar pakai GoPay Tabungan",
+            "y": 273.23,
+            "w": 118.26
+          },
+          {
+            "text": "Rp9.912",
+            "y": 273.23,
+            "w": 33.35,
+            "align": "right"
+          },
+          {
+            "text": "Dibayar pakai GoPay Coins",
+            "y": 286.1,
+            "w": 108.43
+          },
+          {
+            "text": "88",
+            "y": 286.1,
+            "w": 9.79,
+            "align": "right"
+          }
+        ]
+      },
+      "trip_detail": {
+        "texts": [
+          {
+            "text": "Detail perjalanan",
+            "y": 326.92,
+            "w": 76.78,
+            "size": 9.6,
+            "anchor": 127.02,
+            "bold": true
+          },
+          {
+            "text": "Ahmad Dharmawan",
+            "y": 360.81,
+            "w": 89.57,
+            "size": 9.6,
+            "anchor": 146.12,
+            "bold": true
+          },
+          {
+            "text": "B3149UYF â€¢ Yamaha NMAX",
+            "y": 374.62,
+            "w": 112.09,
+            "anchor": 146.12
+          },
+          {
+            "text": " Jarak 3.2 km",
+            "y": 397.37,
+            "w": 52.98,
+            "anchor": 146.99
+          },
+          {
+            "text": " Waktu perjalanan 6 menit",
+            "y": 412.54,
+            "w": 102.6,
+            "anchor": 146.99
+          },
+          {
+            "text": "Dijemput 10 Juli 2025 jam 08:42",
+            "y": 360.79,
+            "w": 126.1,
+            "anchor": 316.54
+          },
+          {
+            "text": "dari",
+            "y": 371.35,
+            "w": 14.7,
+            "anchor": 316.54
+          },
+          {
+            "text": "RT 13",
+            "y": 384.23,
+            "w": 26.1,
+            "size": 9.6,
+            "anchor": 316.54,
+            "bold": true
+          },
+          {
+            "text": "RR6P+FV5, RT.13/RW.5, Cikini,",
+            "y": 405.34,
+            "w": 127.33,
+            "anchor": 316.54
+          },
+          {
+            "text": "Kec. Menteng, Kota Jakarta Pusat,",
+            "y": 415.9,
+            "w": 136.44,
+            "anchor": 316.54
+          },
+          {
+            "text": "Daerah Khusus Ibukota Jakarta",
+            "y": 426.46,
+            "w": 123.66,
+            "anchor": 316.54
+          },
+          {
+            "text": "10330, Indonesia",
+            "y": 437.02,
+            "w": 67.71,
+            "anchor": 316.54
+          },
+          {
+            "text": "Sampai 10 Juli 2025 jam 08:49 di",
+            "y": 457.95,
+            "w": 130.54,
+            "anchor": 316.54
+          },
+          {
+            "text": "Hotel Dafam Express Jaksa",
+            "y": 472.85,
+            "w": 125.34,
+            "size": 9.6,
+            "anchor": 316.54,
+            "bold": true
+          },
+          {
+            "text": "Jakarta",
+            "y": 484.37,
+            "w": 33.58,
+            "size": 9.6,
+            "anchor": 316.54,
+            "bold": true
+          },
+          {
+            "text": "Jl Jaksa, Kebon Sirih, Menteng,",
+            "y": 505.47,
+            "w": 124.16,
+            "anchor": 316.54
+          },
+          {
+            "text": "Jakarta Pusat, DKI Jakarta",
+            "y": 516.04,
+            "w": 105.0,
+            "anchor": 316.54
+          }
+        ]
+      },
+      "footer_links": {
+        "texts": [
+          {
+            "text": "Bantuan",
+            "y": 573.74,
+            "w": 32.86,
+            "anchor": 179.92
+          },
+          {
+            "text": "Laporkan masalah",
+            "y": 573.74,
+            "w": 72.61,
+            "anchor": 267.67
+          },
+          {
+            "text": "Tentang GoRide",
+            "y": 573.74,
+            "w": 64.76,
+            "anchor": 379.23
+          },
+          {
+            "text": "Comfort",
+            "y": 584.3,
+            "w": 31.39,
+            "anchor": 389.31
+          }
+        ]
+      },
+      "disclaimer": {
+        "texts": [
+          {
+            "text": "Perjalanan ini dijamin asuransi. Total yang tercantum adalah harga yang dibayarkan",
+            "y": 607.05,
+            "w": 328.81
+          },
+          {
+            "text": "ketika pesanan selesai. Biaya tambahan seperti tip yang diberikan setelah pesanan",
+            "y": 617.61,
+            "w": 325.89,
+            "align": "right",
+            "anchor": 459.16
+          },
+          {
+            "text": "selesai tidak dicantumkan di bukti pembayaran ini.",
+            "y": 628.17,
+            "w": 196.8
+          },
+          {
+            "text": "Kontak Gojek lewat",
+            "y": 659.66,
+            "w": 76.06
+          }
+        ]
+      },
+      "social": {
+        "texts": [
+          {
+            "text": "Pasaraya Blok M GD B, 7th Floor, Kebayoran Baru,",
+            "y": 752.31,
+            "w": 201.7
+          },
+          {
+            "text": "DKI Jakarta Indonesia 12160",
+            "y": 762.87,
+            "w": 113.85
+          }
+        ]
+      }
+    }
+  },
+  {
+    "template": "goride_comfort",
+    "sections": {
+      "header": {
+        "texts": [
+          {
+            "text": "Kamis, 10 Juli 2025",
+            "y": 12.86,
+            "w": 77.03
+          },
+          {
+            "text": "ID pesanan: RB-112971-0720831",
+            "y": 23.42,
+            "w": 132.01
+          }
+        ]
+      },
+      "greeting": {
+        "texts": [
+          {
+            "text": "Faktur",
+            "y": 57.35,
+            "w": 40.45,
+            "size": 13.25,
+            "anchor": 126.15,
+            "bold": true
+          },
+          {
+            "text": "Semua jumlah sudah termasuk PPN",
+            "y": 83.81,
+            "w": 142.28,
+            "anchor": 126.15
+          },
+          {
+            "text": "Biaya jasa aplikasi",
+            "y": 114.15,
+            "w": 72.62,
+            "anchor": 135.47
+          },
+          {
+            "text": "Rp3.500",
+            "y": 114.15,
+            "w": 33.35,
+            "align": "right",
+            "anchor": 459.16
+          },
+          {
+            "text": "Diskon biaya jasa aplikasi",
+            "y": 127.01,
+            "w": 101.08,
+            "anchor": 135.47
+          },
+          {
+            "text": "-Rp3.400",
+            "y": 127.01,
+            "w": 36.29,
+            "align": "right",
+            "anchor": 459.16
+          }
+        ]
+      },
+      "total_box": {
+        "texts": [
+          {
+            "text": "Total biaya jasa aplikasi",
+            "y": 151.97,
+            "w": 100.6,
+            "anchor": 135.47,
+            "bold": true
+          },
+          {
+            "text": "Rp100",
+            "y": 151.97,
+            "w": 26.47,
+            "align": "right",
+            "anchor": 459.16,
+            "bold": true
+          }
+        ]
+      },
+      "payment_rows": {
+        "texts": [
+          {
+            "text": "PT GoTo Gojek Tokopedia Tbk",
+            "y": 202.47,
+            "w": 128.53,
+            "anchor": 173.92,
+            "bold": true
+          },
+          {
+            "text": " • NPWP: 0745704361064000",
+            "y": 202.47,
+            "w": 117.99,
+            "anchor": 302.76
+          },
+          {
+            "text": "Gedung Pasaraya Blok M Gd.B Lt.6&7, Jl. Iskandarsyah II, 2, Melawai,",
+            "y": 213.03,
+            "w": 276.81,
+            "align": "center"
+          },
+          {
+            "text": "Kebayoran Baru, Kota Adm. Jakarta Selatan, DKI Jakarta, 12160",
+            "y": 223.6,
+            "w": 254.23,
+            "align": "center"
+          }
+        ]
+      }
+    }
+  }
+]

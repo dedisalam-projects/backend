@@ -1,0 +1,65 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Kamis, 30 April 2026",
+    "id_pesanan": "RB-4735431-18443318"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 68500
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 8000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -5000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Shandra Ardianto",
+        "kendaraan": {
+          "plat": "D1456NK",
+          "tipe": "Toyota Calya"
+        },
+        "jarak": "8.3 km",
+        "waktu": "23 menit",
+        "penjemputan": {
+          "tanggal": "30 April 2026",
+          "jam": "21:36",
+          "tempat": "Stasiun Kereta Api Bandung",
+          "alamat": "Jl. Stasiun Barat, Kb. Jeruk, Kec. Andir, Kota Bandung, Jawa Barat 40181"
+        },
+        "tujuan": {
+          "tanggal": "30 April 2026",
+          "jam": "21:59",
+          "tempat": "Jl. Alamanda Raya No.28",
+          "alamat": "Jl. Alamanda Raya No.28, Cibeunying, Kec. Cimenyan, Kabupaten Bandung, Jawa Barat 40191, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 8000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -5000
+        }
+      ]
+    }
+  ]
+}

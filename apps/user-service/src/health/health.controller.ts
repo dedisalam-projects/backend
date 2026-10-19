@@ -5,8 +5,8 @@ import { RedisService } from '@dedisalam/database';
 @Controller('health')
 export class HealthController {
   constructor(
-    private health: HealthCheckService,
-    private db: MongooseHealthIndicator,
+    private readonly health: HealthCheckService,
+    private readonly db: MongooseHealthIndicator,
     private readonly redisService: RedisService,
   ) {}
 
@@ -15,15 +15,7 @@ export class HealthController {
   check() {
     return this.health.check([
       () => this.db.pingCheck('mongodb'),
-      async () => {
-        try {
-          const status = await this.redisService.getClient().ping();
-          return { redis: { status: status === 'PONG' ? 'up' : 'down' } };
-        } catch (err: unknown) {
-          const message = (err as Error).message;
-          return { redis: { status: 'down', message } };
-        }
-      },
+      () => this.redisService.pingCheck(),
     ]);
   }
 }

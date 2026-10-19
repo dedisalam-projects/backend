@@ -1,0 +1,22 @@
+{
+  "service": "indrive-mobil",
+  "invoice_number": "ID260920215743a4CU",
+  "recipient_name": "Dedi",
+  "order_type": "Perjalanan dalam kota",
+  "driver_name": "John Hariadi Sitepu",
+  "vehicle_detail": "silver Toyota Avanza D1105AHA",
+  "trip_date": "September 21, 2026",
+  "invoice_date": "September 21, 2026",
+  "pickup": {
+    "location": "Warung Seblak Asoy, Bandung, West Java, Indonesia",
+    "time": "5:07 AM, September 21, 2026"
+  },
+  "dropoff": {
+    "location": "Stasiun Bandung, Bandung, West Java, Indonesia",
+    "time": "5:23 AM, September 21, 2026"
+  },
+  "distance": "7.6 km",
+  "description": "Tarif perjalanan (termasuk pajak)",
+  "fare": 30000.0,
+  "payment_method": "Tunai"
+}

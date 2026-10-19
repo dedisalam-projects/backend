@@ -12,11 +12,13 @@
     "lib": ["es2022"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
+    "allowJs": true,
     "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "paths": {
       "@dedisalam/common": ["./libs/common/src/index.ts"],
-      "@dedisalam/database": ["./libs/database/src/index.ts"]
+      "@dedisalam/database": ["./libs/database/src/index.ts"],
+      "@dedisalam/pdf-engine": ["./libs/pdf-engine/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

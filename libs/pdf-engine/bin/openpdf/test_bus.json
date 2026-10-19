@@ -1,0 +1,71 @@
+{
+  "category": "Tiket Bus & Shuttle",
+  "receiptNo": "#1837161707445701177",
+  "poNumber": "1268028452",
+  "transactionDate": "09 Jul 2025, 16:47 (Rabu)",
+  "paymentMethod": "GoPay /GoPay Tabungan",
+  "paymentStatus": "Lunas",
+  "customer": {
+    "name": "Dedi Salam Permana",
+    "email": "dedispermana20@gmail.com",
+    "phone": "+6285856416338"
+  },
+  "passengerName": "MR Dedi Salam Permana",
+  "guestName": "Dedi Salam Permana",
+  "hotel": null,
+  "items": [
+    {
+      "itemNo": 1,
+      "itemType": "Tiket Bus",
+      "descriptionLines": [
+        "LINTAS Shuttle (Executive Shuttle)",
+        "Bandung (Lintas Simpang Dago (Via Pasteur)) - Jakarta (Lintas",
+        "Cikini)",
+        "",
+        "Tanggal Keberangkatan: Kam, 10 Juli 2025",
+        "Jam Keberangkatan: 05:00",
+        "Tanggal Kedatangan: Kam, 10 Juli 2025",
+        "Jam Kedatangan: 09:00"
+      ],
+      "description": "LINTAS Shuttle (Executive Shuttle)\nBandung (Lintas Simpang Dago (Via Pasteur)) - Jakarta (Lintas\nCikini)\n\nTanggal Keberangkatan: Kam, 10 Juli 2025\nJam Keberangkatan: 05:00\nTanggal Kedatangan: Kam, 10 Juli 2025\nJam Kedatangan: 09:00",
+      "quantity": 1,
+      "unitPrice": 120000,
+      "totalPrice": 120000,
+      "rowHeight": 83.25
+    },
+    {
+      "itemNo": 1,
+      "itemType": "",
+      "descriptionLines": [
+        "Jackal Holidays (Luxury Shuttle)",
+        "Jakarta (Jackal Holidays Cikini) - Bandung (Jackal Holidays",
+        "Dipatiukur 89)",
+        "",
+        "Tanggal Keberangkatan: Kam, 10 Juli 2025",
+        "Jam Keberangkatan: 20:30",
+        "Tanggal Kedatangan: Kam, 10 Juli 2025",
+        "Jam Kedatangan: 23:30"
+      ],
+      "description": "Jackal Holidays (Luxury Shuttle)\nJakarta (Jackal Holidays Cikini) - Bandung (Jackal Holidays\nDipatiukur 89)\n\nTanggal Keberangkatan: Kam, 10 Juli 2025\nJam Keberangkatan: 20:30\nTanggal Kedatangan: Kam, 10 Juli 2025\nJam Kedatangan: 23:30",
+      "quantity": 1,
+      "unitPrice": 115000,
+      "totalPrice": 115000,
+      "rowHeight": 83.25
+    },
+    {
+      "itemNo": 2,
+      "itemType": "Asuransi Perjalanan\nBus",
+      "descriptionLines": [
+        "Asuransi Perjalanan Bus - Perlindungan Pulang-Pergi"
+      ],
+      "description": "Asuransi Perjalanan Bus - Perlindungan Pulang-Pergi",
+      "quantity": 1,
+      "unitPrice": 18000,
+      "totalPrice": 18000,
+      "rowHeight": 24.75
+    }
+  ],
+  "totalAmount": 253000,
+  "status": "generated",
+  "sourceOriginalPdf": "tiket-bus 202507091647.pdf"
+}

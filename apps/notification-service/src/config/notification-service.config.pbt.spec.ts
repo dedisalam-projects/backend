@@ -9,16 +9,12 @@ describe('NotificationServiceConfig Property-Based Testing (Fast-Check)', () => 
         fc.string({ minLength: 10, maxLength: 100 }),
         fc.string({ minLength: 10, maxLength: 100 }),
         fc.integer({ min: 1024, max: 65535 }),
-        fc.integer({ min: 1024, max: 65535 }),
-        fc.integer({ min: 1024, max: 65535 }),
         fc.constantFrom(Environment.Development, Environment.Production, Environment.Test),
-        (mongoUri, rmqUrl, port, tcpPort, gatewayPort, env) => {
+        (mongoUri, rmqUrl, port, env) => {
           const rawConfig = {
             NOTIFICATION_SERVICE_MONGO_URI: mongoUri,
             RABBITMQ_URL: rmqUrl,
             NOTIFICATION_SERVICE_PORT: String(port),
-            NOTIFICATION_SERVICE_TCP_PORT: String(tcpPort),
-            GATEWAY_TCP_PORT: String(gatewayPort),
             NODE_ENV: env,
           };
 
@@ -27,8 +23,6 @@ describe('NotificationServiceConfig Property-Based Testing (Fast-Check)', () => 
           expect(config.NOTIFICATION_SERVICE_MONGO_URI).toBe(mongoUri);
           expect(config.RABBITMQ_URL).toBe(rmqUrl);
           expect(config.NOTIFICATION_SERVICE_PORT).toBe(port);
-          expect(config.NOTIFICATION_SERVICE_TCP_PORT).toBe(tcpPort);
-          expect(config.GATEWAY_TCP_PORT).toBe(gatewayPort);
           expect(config.NODE_ENV).toBe(env);
         },
       ),
@@ -41,8 +35,6 @@ describe('NotificationServiceConfig Property-Based Testing (Fast-Check)', () => 
       fc.property(
         fc.record({
           NOTIFICATION_SERVICE_PORT: fc.integer({ min: 1000, max: 9999 }),
-          NOTIFICATION_SERVICE_TCP_PORT: fc.integer({ min: 1000, max: 9999 }),
-          GATEWAY_TCP_PORT: fc.integer({ min: 1000, max: 9999 }),
           NODE_ENV: fc.constantFrom(
             Environment.Development,
             Environment.Production,

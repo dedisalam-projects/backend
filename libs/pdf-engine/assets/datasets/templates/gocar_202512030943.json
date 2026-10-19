@@ -1,0 +1,65 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Rabu, 3 Desember 2025",
+    "id_pesanan": "RB-3255218-47103883"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 174000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 13000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -10000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Robby Asyatra",
+        "kendaraan": {
+          "plat": "D1481YCA",
+          "tipe": "Daihatsu Sigra"
+        },
+        "jarak": "39.1 km",
+        "waktu": "78 menit",
+        "penjemputan": {
+          "tanggal": "3 Desember 2025",
+          "jam": "09:43",
+          "tempat": "Warung Seblak Asoy",
+          "alamat": "Jl. Alamanda Raya No.101, Cibeunying, Kec. Cimenyan, Kota Bandung, Jawa Barat 40191, Indonesia"
+        },
+        "tujuan": {
+          "tanggal": "3 Desember 2025",
+          "jam": "11:02",
+          "tempat": "RSUD Cikalong Wetan",
+          "alamat": "7C4W+MGG, Jl. Cikalong No.290, Ciptagumati, Kec. Cikalong Wetan, Kabupaten Bandung Barat, Jawa Barat 40556, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 13000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -10000
+        }
+      ]
+    }
+  ]
+}

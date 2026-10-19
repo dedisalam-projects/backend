@@ -1,0 +1,61 @@
+{
+  "template": "gocar_hemat",
+  "header": {
+    "tanggal": "Senin, 4 Mei 2026",
+    "id_pesanan": "RB-4770879-91196072"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 29000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 3500
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "WAWAN GUNAWAN",
+        "kendaraan": {
+          "plat": "D1824UBX",
+          "tipe": "Daihatsu Sigra"
+        },
+        "jarak": "5.3 km",
+        "waktu": "20 menit",
+        "penjemputan": {
+          "tanggal": "4 Mei 2026",
+          "jam": "18:56",
+          "tempat": "Bhinneka Shuttle Dipati Ukur",
+          "alamat": "Jl. Dipati Ukur No.108, Lebakgede, Kecamatan Coblong, Kota Bandung, Jawa Barat 40132"
+        },
+        "tujuan": {
+          "tanggal": "4 Mei 2026",
+          "jam": "19:17",
+          "tempat": "Warung Seblak Asoy",
+          "alamat": "Jl. Alamanda Raya No.101, Cibeunying, Kec. Cimenyan, Kota Bandung, Jawa Barat 40191, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 3500
+        },
+        {
+          "item": "Diskon",
+          "nominal": 0
+        }
+      ]
+    }
+  ]
+}

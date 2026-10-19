@@ -18,5 +18,5 @@ COPY --chown=node:node package*.json ./
 RUN npm ci --only=production --ignore-scripts
 COPY --chown=node:node --from=builder /app/dist/apps/notification-service ./dist/apps/notification-service
 USER node
-EXPOSE 3002 4002
+EXPOSE 3012
 CMD ["node", "dist/apps/notification-service/main.js"]

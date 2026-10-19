@@ -1,0 +1,77 @@
+{
+  "template": "gocar",
+  "header": {
+    "tanggal": "Jumat, 20 November 2026",
+    "id_pesanan": "RB-7711223-99887766"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 125000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 12000
+        },
+        {
+          "item": "Ongkos tol",
+          "nominal": 25000
+        },
+        {
+          "item": "Biaya parkir",
+          "nominal": 10000
+        },
+        {
+          "item": "Biaya tambahan zona bandara",
+          "nominal": 15000
+        },
+        {
+          "item": "Diskon voucher promo",
+          "nominal": -30000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Agus Setiawan",
+        "kendaraan": {
+          "plat": "B 2841 SKZ",
+          "tipe": "Toyota Avanza"
+        },
+        "jarak": "32.5 km",
+        "waktu": "65 menit",
+        "penjemputan": {
+          "tanggal": "20 November 2026",
+          "jam": "14:10",
+          "tempat": "Stasiun Gambir Pintu Utara",
+          "alamat": "Jl. Medan Merdeka Tim. No.1, Gambir, Kecamatan Gambir, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10110, Indonesia"
+        },
+        "tujuan": {
+          "tanggal": "20 November 2026",
+          "jam": "15:15",
+          "tempat": "Aeon Mall BSD City Ground Floor",
+          "alamat": "Jl. BSD Raya Utama, Pagedangan, Kec. Pagedangan, Kabupaten Tangerang, Banten 15339, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 12000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -12000
+        }
+      ]
+    }
+  ]
+}

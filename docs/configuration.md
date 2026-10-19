@@ -1,4 +1,4 @@
-﻿---
+---
 type: config
 tags:
   - config
@@ -16,7 +16,6 @@ The backend services rely on environment variables for configuration. All requir
 | --- | --- | --- |
 | `NODE_ENV` | Environment mode (`development`, `production`, `test`) | `development` |
 | `PORT` | The port the Gateway REST API listens on | `3000` |
-| `GATEWAY_TCP_PORT` | The port the Gateway TCP listener binds to | `4000` |
 | `MONGODB_URI` | Connection string for MongoDB (Users, Notifications) | `mongodb://root:4r!M4n3hKuN40n@localhost:27017/dedisalam?authSource=admin` |
 | `REDIS_URL` | Connection string for Redis (Session, Websockets) | `redis://:4r!M4n3hKuN40n@localhost:6379` |
 | `RABBITMQ_URL` | Connection string for RabbitMQ Message Broker | `amqp://guest:4r!M4n3hKuN40n@localhost:5672` |
@@ -31,4 +30,3 @@ The backend services rely on environment variables for configuration. All requir
 
 > [!WARNING]
 > Do not commit `.env` files to version control. The `JWT_SECRET` and database passwords must be kept extremely secure in production.
-

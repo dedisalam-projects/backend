@@ -18,5 +18,5 @@ COPY --chown=node:node package*.json ./
 RUN npm ci --only=production --ignore-scripts
 COPY --chown=node:node --from=builder /app/dist/apps/user-service ./dist/apps/user-service
 USER node
-EXPOSE 3001 4001
+EXPOSE 3011
 CMD ["node", "dist/apps/user-service/main.js"]

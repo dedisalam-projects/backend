@@ -1,0 +1,61 @@
+{
+  "template": "goride_comfort",
+  "header": {
+    "tanggal": "Rabu, 6 Agustus 2025",
+    "id_pesanan": "RB-106487-2529799"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 19500
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 5000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Prayitno",
+        "kendaraan": {
+          "plat": "B5022SVL",
+          "tipe": "electrum H5"
+        },
+        "jarak": "5.8 km",
+        "waktu": "20 menit",
+        "penjemputan": {
+          "tanggal": "6 Agustus 2025",
+          "jam": "10:39",
+          "tempat": "SPBU Pancoran",
+          "alamat": "Jl Raya Pasar Minggu No.11, Pancoran, Pancoran, Jakarta Selatan, DKI Jakarta"
+        },
+        "tujuan": {
+          "tanggal": "6 Agustus 2025",
+          "jam": "11:00",
+          "tempat": "Deheng House",
+          "alamat": "Deheng House, Jl. Taman Kemang No.32, RT.14/RW.1, Bangka, Kec. Mampang Prpt., Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12150, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 5000
+        },
+        {
+          "item": "Diskon",
+          "nominal": 0
+        }
+      ]
+    }
+  ]
+}

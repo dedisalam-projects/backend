@@ -1,0 +1,65 @@
+{
+  "template": "goride_hemat",
+  "header": {
+    "tanggal": "Kamis, 21 Agustus 2025",
+    "id_pesanan": "RB-135204-9375244"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 10000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 1000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -1000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Didin Junaedi",
+        "kendaraan": {
+          "plat": "D6726ABE",
+          "tipe": "Honda Beat"
+        },
+        "jarak": "4 km",
+        "waktu": "16 menit",
+        "penjemputan": {
+          "tanggal": "21 Agustus 2025",
+          "jam": "18:21",
+          "tempat": "Jackal Holidays Shuttle Dipati Ukur",
+          "alamat": "Jl. Dipati Ukur No.89, Lebakgede, Coblong, Bandung, Jawa Barat 40132"
+        },
+        "tujuan": {
+          "tanggal": "21 Agustus 2025",
+          "jam": "18:37",
+          "tempat": "Jl. Alamanda Raya No.28",
+          "alamat": "Jl. Alamanda Raya No.28, Cibeunying, Kec. Cimenyan, Kabupaten Bandung, Jawa Barat 40191, Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 1000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -900
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "template": "goride_hemat",
+  "header": {
+    "tanggal": "Kamis, 30 April 2026",
+    "id_pesanan": "RB-4734298-60648837"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 10500
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        },
+        {
+          "item": "Diskon",
+          "nominal": -2000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Ryan Hinca Paulwijaya",
+        "kendaraan": {
+          "plat": "B5487SDH",
+          "tipe": "Honda Beat"
+        },
+        "jarak": "2 km",
+        "waktu": "9 menit",
+        "penjemputan": {
+          "tanggal": "30 April 2026",
+          "jam": "16:51",
+          "tempat": "Senayan Park",
+          "alamat": "Jl. Gerbang Pemuda No.3, Gelora, Tanah Abang, Jakarta Pusat, DKI Jakarta 10270, ID"
+        },
+        "tujuan": {
+          "tanggal": "30 April 2026",
+          "jam": "17:00",
+          "tempat": "Jackal Holidays Luxury Shuttle (Semanggi)",
+          "alamat": "Lippo Mall Nusantara Lobby Sulawesi (Samping Pendopo, Jl. Jend. Sudirman No.50, RT.1/RW.4, Karet Semanggi, Kecamatan Setiabudi, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12930, Indonesia"
+        }
+      }
+    }
+  ]
+}

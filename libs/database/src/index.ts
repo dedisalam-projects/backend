@@ -1,4 +1,5 @@
 export * from './lib/database.module';
+export * from './lib/mongoose-options.factory';
 export * from './lib/schemas/user.schema';
 export * from './lib/schemas/notification.schema';
 export * from './lib/schemas/traveloka-receipt.schema';

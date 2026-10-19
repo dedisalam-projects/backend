@@ -1,0 +1,61 @@
+{
+  "template": "goride_comfort",
+  "header": {
+    "tanggal": "Rabu, 6 Agustus 2025",
+    "id_pesanan": "RB-152166-9573635"
+  },
+  "page": [
+    {
+      "greeting": {
+        "nama": "Dedi S. Permana"
+      },
+      "payment_rows": [
+        {
+          "item": "Biaya perjalanan",
+          "nominal": 26000
+        },
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 5000
+        },
+        {
+          "item": "Biaya PerjalananAman+",
+          "nominal": 1000
+        }
+      ],
+      "trip_detail": {
+        "pengemudi": "Noor Ardi Bagas Purnayoga",
+        "kendaraan": {
+          "plat": "B5795BWK",
+          "tipe": "smoot De Sultan AT"
+        },
+        "jarak": "7.8 km",
+        "waktu": "19 menit",
+        "penjemputan": {
+          "tanggal": "6 Agustus 2025",
+          "jam": "12:33",
+          "tempat": "Deheng House",
+          "alamat": "Deheng House, Jl. Taman Kemang No.32, RT.14/RW.1, Bangka, Kec. Mampang Prpt., Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12150, Indonesia"
+        },
+        "tujuan": {
+          "tanggal": "6 Agustus 2025",
+          "jam": "12:53",
+          "tempat": "Hotel Mercure Jakarta Simatupang",
+          "alamat": "Jalan .RA. Kartini, Cilandak DKI Jakarta Indonesia"
+        }
+      }
+    },
+    {
+      "total_box": [
+        {
+          "item": "Biaya jasa aplikasi",
+          "nominal": 5000
+        },
+        {
+          "item": "Diskon",
+          "nominal": 0
+        }
+      ]
+    }
+  ]
+}

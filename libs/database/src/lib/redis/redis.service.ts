@@ -42,4 +42,14 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async del(key: string): Promise<number> {
     return this.client.del(key);
   }
+
+  async pingCheck(): Promise<{ redis: { status: 'up' | 'down'; message?: string } }> {
+    try {
+      const status = await this.client.ping();
+      return { redis: { status: status === 'PONG' ? 'up' : 'down' } };
+    } catch (err: unknown) {
+      const message = (err as Error).message;
+      return { redis: { status: 'down', message } };
+    }
+  }
 }
