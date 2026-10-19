@@ -47,6 +47,17 @@ describe('RedisService', () => {
     expect(Logger.prototype.error).toHaveBeenCalled();
   });
 
+  it('creates client with fallback url when REDIS_URL is undefined', () => {
+    const oldUrl = process.env['REDIS_URL'];
+    delete process.env['REDIS_URL'];
+    const fallbackSvc = new RedisService();
+    fallbackSvc.onModuleInit();
+    expect(IoredisMock.Redis).toHaveBeenCalledWith('redis://localhost:6379');
+    if (oldUrl !== undefined) {
+      process.env['REDIS_URL'] = oldUrl;
+    }
+  });
+
   it('onModuleDestroy disconnects', () => {
     svc.onModuleDestroy();
     expect(mockClient.disconnect).toHaveBeenCalled();
