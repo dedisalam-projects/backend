@@ -68,8 +68,38 @@ function writePdfToBuffer(doc) {
     });
 }
 
+/**
+ * High-level generation pipeline: creates PDFDocument, executes renderFn (sync or async),
+ * and safely pipes to output file or resolves to in-memory Buffer.
+ * @param {typeof import('pdfkit')} PDFDocument
+ * @param {{ width: number, height: number }} dimensions
+ * @param {(doc: any, data: any) => void|Promise<void>} renderFn
+ * @param {any} rawData
+ * @param {string} [outputPath]
+ * @returns {Promise<string|Buffer>}
+ */
+async function generatePdfFromDocument(PDFDocument, dimensions, renderFn, rawData, outputPath) {
+    const doc = new PDFDocument({
+        size: [dimensions.width, dimensions.height],
+        margins: { top: 0, bottom: 0, left: 0, right: 0 },
+        autoFirstPage: true
+    });
+
+    if (!outputPath) {
+        const bufferPromise = writePdfToBuffer(doc);
+        await renderFn(doc, rawData);
+        doc.end();
+        return bufferPromise;
+    }
+
+    const writePromise = writePdfToFile(doc, outputPath);
+    await renderFn(doc, rawData);
+    doc.end();
+    return writePromise;
+}
+
 module.exports = {
     writePdfToFile,
-    writePdfToBuffer
+    writePdfToBuffer,
+    generatePdfFromDocument
 };
-

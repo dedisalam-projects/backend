@@ -9,3 +9,4 @@ export * from './interceptors';
 export * from './pipes';
 export * from './utils';
 export * from './lib/config/vault.loader';
+export * from './config';

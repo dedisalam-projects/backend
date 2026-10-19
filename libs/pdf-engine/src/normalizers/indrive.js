@@ -28,7 +28,7 @@ function formatIndriveFare(amount) {
     if (typeof amount === 'string' && amount.startsWith('Rp')) {
         return amount;
     }
-    const num = parseFloat(amount) || 0;
+    const num = Number.parseFloat(amount) || 0;
     return `Rp ${num.toFixed(2)}`;
 }
 

@@ -12,6 +12,7 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
+import { extractSocketToken } from '@dedisalam/common';
 
 @WebSocketGateway({
   namespace: '/documents',
@@ -33,7 +34,7 @@ export class DocumentGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   }
 
   handleConnection(client: Socket) {
-    const token = this.extractToken(client);
+    const token = extractSocketToken(client);
     if (token) {
       try {
         const secret = this.configService.get<string>('JWT_SECRET') as string;
@@ -97,17 +98,5 @@ export class DocumentGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   notifyGenerated(provider: string, doc: any) {
     this.server.to(provider).emit('document:generated', { provider, data: doc });
     this.server.emit('document:generated', { provider, data: doc });
-  }
-
-  private extractToken(client: Socket): string | null {
-    const authHeader = client.handshake.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      return authHeader.split(' ')[1];
-    }
-    const tokenQuery = client.handshake.query?.token;
-    if (typeof tokenQuery === 'string') {
-      return tokenQuery;
-    }
-    return null;
   }
 }

@@ -60,4 +60,6 @@ Thumbs.db
 scratch/
 libs/pdf-engine/scratch/
 *.deb
+# SonarQube scanner work cache
+.scannerwork/
 

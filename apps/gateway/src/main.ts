@@ -95,7 +95,6 @@ async function bootstrap() {
   // Get port from config
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 3000;
-  const tcpPort = configService.get<number>('GATEWAY_TCP_PORT') || 4500;
 
   // Setup Redis IO Adapter for Websocket synchronization across instances
   const redisUrl = configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
@@ -118,22 +117,12 @@ async function bootstrap() {
     },
   });
 
-  // Connect TCP Microservice listener for internal/Docker TCP health checks
-  app.connectMicroservice({
-    transport: Transport.TCP,
-    options: {
-      host: '0.0.0.0',
-      port: tcpPort,
-    },
-  });
-
   app.enableShutdownHooks();
   await app.startAllMicroservices();
   await app.listen(port, '0.0.0.0');
 
   logger.log(`🚀 Realtime API Gateway is active on: http://localhost:${port}`);
   logger.log(`⚡ Socket.IO Namespaces: /users, /notifications`);
-  logger.log(`🔌 API Gateway TCP health probe is listening on port: ${tcpPort}`);
   logger.log(`🎮 Web Socket.IO Playground available at: http://localhost:${port}/`);
 }
 

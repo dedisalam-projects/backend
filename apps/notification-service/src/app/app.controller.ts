@@ -34,7 +34,7 @@ export class AppController {
 
     await this.appService.processNotification(data?.message, data?.userId, data?.type);
 
-    // Forward the event notification to API Gateway over TCP/RMQ
+    // Forward the event notification to API Gateway over RabbitMQ
     this.gatewayClient.emit('notification.push', {
       message: `Notification processed: ${data?.message || 'Hello World'}`,
       correlationId,

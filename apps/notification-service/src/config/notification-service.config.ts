@@ -15,28 +15,23 @@ export class NotificationServiceConfigDto {
   @IsNumber()
   @IsOptional()
   @Type(() => Number)
-  NOTIFICATION_SERVICE_PORT = 3012;
+  PORT = 3012;
 
   @IsNumber()
   @IsOptional()
   @Type(() => Number)
-  NOTIFICATION_SERVICE_TCP_PORT = 3002;
+  NOTIFICATION_SERVICE_PORT?: number;
 
   @IsString()
-  NOTIFICATION_SERVICE_MONGO_URI!: string;
+  @IsOptional()
+  MONGODB_URI?: string;
+
+  @IsString()
+  @IsOptional()
+  NOTIFICATION_SERVICE_MONGO_URI?: string;
 
   @IsString()
   RABBITMQ_URL!: string;
-
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  GATEWAY_TCP_PORT = 4000;
-
-  @IsString()
-  @IsOptional()
-  // Default to localhost for local development outside Docker. Overridden via compose environment variables.
-  GATEWAY_TCP_HOST = 'localhost';
 }
 
 export function validate(config: Record<string, unknown>) {
@@ -46,5 +41,10 @@ export function validate(config: Record<string, unknown>) {
   if (errors.length > 0) {
     throw new Error(errors.toString());
   }
+
+  if (!validatedConfig.MONGODB_URI && !validatedConfig.NOTIFICATION_SERVICE_MONGO_URI) {
+    throw new Error('Either MONGODB_URI or NOTIFICATION_SERVICE_MONGO_URI must be provided');
+  }
+
   return validatedConfig;
 }

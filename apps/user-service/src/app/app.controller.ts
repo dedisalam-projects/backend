@@ -1,5 +1,5 @@
 import { Controller, Logger, Inject } from '@nestjs/common';
-import { MessagePattern, Payload, Ctx, TcpContext, ClientProxy } from '@nestjs/microservices';
+import { MessagePattern, Payload, Ctx, RmqContext, ClientProxy } from '@nestjs/microservices';
 import { AppService } from './app.service';
 import { PinoLogger } from 'nestjs-pino';
 import { RedisService } from '@dedisalam/database';
@@ -21,7 +21,7 @@ export class AppController {
   @MessagePattern('user.hello')
   async hello(
     @Payload() data: { name?: string; correlationId?: string },
-    @Ctx() context: TcpContext,
+    @Ctx() context: RmqContext,
   ) {
     void context;
     const correlationId = data?.correlationId || 'unknown';
@@ -30,7 +30,7 @@ export class AppController {
     try {
       this.pinoLogger.assign({ correlationId });
     } catch {
-      // Fallback: request context is not present in TCP microservice transport
+      // Fallback: request context is not present in microservice transport
     }
 
     // Explicitly include correlationId in the log metadata
@@ -77,7 +77,7 @@ export class AppController {
     const correlationId = data?.correlationId || 'unknown';
     this.logger.log(
       { correlationId },
-      `Received TCP test.event in User Service: ${data?.message || ''}`,
+      `Received test.event in User Service: ${data?.message || ''}`,
     );
 
     // Publish test.hello event to RabbitMQ

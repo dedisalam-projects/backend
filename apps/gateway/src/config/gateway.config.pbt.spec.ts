@@ -8,15 +8,11 @@ describe('GatewayConfig Property-Based Testing (Fast-Check)', () => {
       fc.property(
         fc.string({ minLength: 1, maxLength: 100 }),
         fc.integer({ min: 1024, max: 65535 }),
-        fc.integer({ min: 1024, max: 65535 }),
-        fc.integer({ min: 1024, max: 65535 }),
         fc.constantFrom(Environment.Development, Environment.Production, Environment.Test),
-        (jwtSecret, port, userServicePort, gatewayTcpPort, env) => {
+        (jwtSecret, port, env) => {
           const rawConfig = {
             JWT_SECRET: jwtSecret,
             PORT: String(port),
-            USER_SERVICE_TCP_PORT: String(userServicePort),
-            GATEWAY_TCP_PORT: String(gatewayTcpPort),
             NODE_ENV: env,
           };
 
@@ -24,8 +20,6 @@ describe('GatewayConfig Property-Based Testing (Fast-Check)', () => {
           expect(config).toBeInstanceOf(GatewayConfigDto);
           expect(config.JWT_SECRET).toBe(jwtSecret);
           expect(config.PORT).toBe(port);
-          expect(config.USER_SERVICE_TCP_PORT).toBe(userServicePort);
-          expect(config.GATEWAY_TCP_PORT).toBe(gatewayTcpPort);
           expect(config.NODE_ENV).toBe(env);
         },
       ),

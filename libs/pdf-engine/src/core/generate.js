@@ -1,7 +1,9 @@
-#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
-const { generateTravelokaPdf, determineService: determineTravelokaService } = require('../templates/traveloka/renderer');
+const { generateOpenPdf, generateOpenPdfBuffer } = require('./openpdf');
+const { generateWeasyprintPdf, generateWeasyprintBuffer } = require('./weasyprint');
+const { generateDompdfPdf, generateDompdfBuffer } = require('./dompdf');
+const { determineService: determineTravelokaService } = require('../normalizers/traveloka');
 const { generateGojekPdf } = require('../templates/gojek/renderer');
 const { generateIndrivePdf, isIndrivePayload } = require('../templates/indrive');
 const { generateJackalPdf, isJackalPayload } = require('../templates/jackal');
@@ -75,7 +77,7 @@ async function generate(input, outputPath, options = {}) {
         }
         inputLabel = resolvedPath;
         payload = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
-    } else if (typeof input === 'object' && input !== null) {
+    } else if (Boolean(input) && typeof input === 'object') {
         inputLabel = 'In-Memory Payload';
         payload = input;
     } else {
@@ -98,7 +100,8 @@ async function generate(input, outputPath, options = {}) {
             targetOut = `output_${service}.pdf`;
         }
         const finalPath = path.resolve(process.cwd(), targetOut);
-        generatorFn = () => generateIndrivePdf(payload, finalPath);
+        // STRICT: inDrive receipts mandatorily use WeasyPrint 68.1 engine, zero PDFKit fallback
+        generatorFn = () => generateWeasyprintPdf(payload, finalPath, options);
         targetOut = finalPath;
     } else if (isJackal) {
         const service = payload.service || 'jackal-shuttle';
@@ -107,7 +110,8 @@ async function generate(input, outputPath, options = {}) {
             targetOut = `output_${service}.pdf`;
         }
         const finalPath = path.resolve(process.cwd(), targetOut);
-        generatorFn = () => generateJackalPdf(payload, finalPath);
+        // STRICT: Jackal Holidays tickets mandatorily use dompdf 2.0.3 engine, zero PDFKit fallback
+        generatorFn = () => generateDompdfPdf(payload, finalPath, options);
         targetOut = finalPath;
     } else if (isTraveloka) {
         const service = determineTravelokaService(payload);
@@ -116,7 +120,8 @@ async function generate(input, outputPath, options = {}) {
             targetOut = `output_traveloka_${service}.pdf`;
         }
         const finalPath = path.resolve(process.cwd(), targetOut);
-        generatorFn = () => generateTravelokaPdf(payload, finalPath);
+        // STRICT: Traveloka receipts mandatorily use OpenPDF 1.3.30 engine, zero PDFKit fallback
+        generatorFn = () => generateOpenPdf(payload, finalPath, options);
         targetOut = finalPath;
     } else if (isGojek || Array.isArray(payload) || (payload && payload.sections)) {
         const templateName = (payload && payload.template) || (Array.isArray(payload) && payload[0] && payload[0].template) || 'gojek';
@@ -187,7 +192,8 @@ async function main() {
     }
 }
 
-if (require.main === module) {
+const isDirectExecution = Boolean(require.main && require.main.filename === module.filename);
+if (isDirectExecution) {
     main();
 }
 
@@ -206,7 +212,7 @@ async function generateBuffer(input, options = {}) {
             throw new Error(`Input file not found: ${resolvedPath}`);
         }
         payload = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
-    } else if (typeof input === 'object' && input !== null) {
+    } else if (Boolean(input) && typeof input === 'object') {
         payload = input;
     } else {
         throw new Error('Invalid input: Expected JSON file path or object payload.');
@@ -223,15 +229,18 @@ async function generateBuffer(input, options = {}) {
     if (isIndrive) {
         const service = payload.service || 'indrive-mobil';
         docType = `INDRIVE (${service.toUpperCase()})`;
-        generatorFn = () => generateIndrivePdf(payload, null);
+        // STRICT: inDrive receipts mandatorily use WeasyPrint 68.1 engine, zero PDFKit fallback
+        generatorFn = () => generateWeasyprintBuffer(payload, options);
     } else if (isJackal) {
         const service = payload.service || 'jackal-shuttle';
         docType = `JACKAL HOLIDAYS (${service.toUpperCase()})`;
-        generatorFn = () => generateJackalPdf(payload, null);
+        // STRICT: Jackal Holidays tickets mandatorily use dompdf 2.0.3 engine, zero PDFKit fallback
+        generatorFn = () => generateDompdfBuffer(payload, options);
     } else if (isTraveloka) {
         const service = determineTravelokaService(payload);
         docType = `TRAVELOKA (${service.toUpperCase()})`;
-        generatorFn = () => generateTravelokaPdf(payload, null);
+        // STRICT: Traveloka receipts mandatorily use OpenPDF 1.3.30 engine, zero PDFKit fallback
+        generatorFn = () => generateOpenPdfBuffer(payload, options);
     } else if (isGojek || Array.isArray(payload) || (payload && payload.sections)) {
         const templateName = (payload && payload.template) || (Array.isArray(payload) && payload[0] && payload[0].template) || 'gojek';
         docType = `GOJEK (${templateName.toUpperCase()})`;

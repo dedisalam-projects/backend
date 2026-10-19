@@ -7,8 +7,6 @@ describe('NotificationServiceConfig', () => {
       NOTIFICATION_SERVICE_MONGO_URI: 'mongodb://localhost:27017/notifications',
       RABBITMQ_URL: 'amqp://guest:guest@localhost:5672',
       NOTIFICATION_SERVICE_PORT: '3012',
-      NOTIFICATION_SERVICE_TCP_PORT: '3002',
-      GATEWAY_TCP_PORT: '4000',
     };
 
     const result = validate(validConfig);
@@ -17,9 +15,6 @@ describe('NotificationServiceConfig', () => {
     expect(result.RABBITMQ_URL).toBe('amqp://guest:guest@localhost:5672');
     expect(result.NODE_ENV).toBe(Environment.Development);
     expect(result.NOTIFICATION_SERVICE_PORT).toBe(3012);
-    expect(result.NOTIFICATION_SERVICE_TCP_PORT).toBe(3002);
-    expect(result.GATEWAY_TCP_PORT).toBe(4000);
-    expect(result.GATEWAY_TCP_HOST).toBe('localhost');
   });
 
   it('should throw an error when required properties are missing', () => {
@@ -28,5 +23,20 @@ describe('NotificationServiceConfig', () => {
     };
 
     expect(() => validate(invalidConfig)).toThrow();
+  });
+
+  it('should convert PORT from string to number', () => {
+    const result = validate({
+      MONGODB_URI: 'mongodb://localhost:27017/notifications',
+      RABBITMQ_URL: 'amqp://guest:guest@localhost:5672',
+      PORT: '4000',
+    });
+    expect(result.PORT).toBe(4000);
+  });
+
+  it('should throw when neither MONGODB_URI nor NOTIFICATION_SERVICE_MONGO_URI is provided', () => {
+    expect(() => validate({ RABBITMQ_URL: 'amqp://guest:guest@localhost:5672' })).toThrow(
+      'Either MONGODB_URI or NOTIFICATION_SERVICE_MONGO_URI must be provided',
+    );
   });
 });

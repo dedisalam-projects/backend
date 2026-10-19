@@ -1,6 +1,7 @@
 const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs');
+const http = require('node:http');
 
 /**
  * src/core/helpers.js - Shared Formatting, Calculation & Drawing Primitives
@@ -32,7 +33,7 @@ function getSharedMeasurerDoc() {
  */
 function formatRupiah(val, prefix = false) {
     if (typeof val === 'string') return val.trim();
-    if (val === null || val === undefined || isNaN(val)) {
+    if (val == null || Number.isNaN(Number(val))) {
         return prefix ? 'Rp0' : '0';
     }
     if (prefix) {
@@ -206,6 +207,61 @@ const drawTextExact = (doc, text, x, y, width, size, color, font) => {
     doc.text(text, x, y, options);
 };
 
+/**
+ * Ping microservice health endpoint
+ */
+async function checkMicroserviceHealth(host, port, timeoutMs = 500) {
+    return new Promise((resolve) => {
+        const req = http.request({
+            hostname: host,
+            port: port,
+            path: '/health',
+            method: 'GET',
+            timeout: timeoutMs
+        }, (res) => {
+            resolve(res.statusCode === 200);
+        });
+        req.on('error', () => resolve(false));
+        req.on('timeout', () => {
+            req.destroy();
+            resolve(false);
+        });
+        req.end();
+    });
+}
+
+/**
+ * Render PDF buffer via HTTP microservice
+ */
+async function renderViaHttpService(host, port, bodyPayload, endpoint = '/render') {
+    return new Promise((resolve, reject) => {
+        const payloadStr = typeof bodyPayload === 'string' ? bodyPayload : JSON.stringify(bodyPayload);
+        const req = http.request({
+            hostname: host,
+            port: port,
+            path: endpoint,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payloadStr)
+            }
+        }, (res) => {
+            if (res.statusCode !== 200) {
+                let errBody = '';
+                res.on('data', chunk => errBody += chunk);
+                res.on('end', () => reject(new Error(`Microservice render failed (HTTP ${res.statusCode}): ${errBody}`)));
+                return;
+            }
+            const chunks = [];
+            res.on('data', chunk => chunks.push(chunk));
+            res.on('end', () => resolve(Buffer.concat(chunks)));
+        });
+        req.on('error', (err) => reject(new Error(`Microservice request error: ${err.message}`)));
+        req.write(payloadStr);
+        req.end();
+    });
+}
+
 module.exports = {
     formatRupiah,
     getAmountX,
@@ -214,5 +270,7 @@ module.exports = {
     drawHR,
     drawInnerBorder,
     plotImage,
-    drawTextExact
+    drawTextExact,
+    checkMicroserviceHealth,
+    renderViaHttpService
 };

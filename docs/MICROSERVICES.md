@@ -8,7 +8,7 @@ status: active
 ---
 # Microservices & Common Library Reference
 
-Dokumen ini berisi struktur layanan backend internal (`user-service`, `notification-service`) yang berjalan sebagai microservice via TCP/RabbitMQ, serta pustaka kode umum (Libraries) yang dibagikan antar layanan.
+Dokumen ini berisi struktur layanan backend internal (`user-service`, `notification-service`, `blip-services`, `auth-service`) yang berjalan sebagai microservice via RabbitMQ (RMQ), serta pustaka kode umum (Libraries) yang dibagikan antar layanan.
 
 <!-- AUTO-GENERATED -->
 
@@ -36,7 +36,7 @@ Menerima RPC / Message Queue (dari [[API_GATEWAY|Gateway]]) untuk eksekusi logik
 Menangani penyimpanan dan pengiriman notifikasi antar pengguna.
 
 ### **`AppController`**
-Menerima event RabbitMQ/TCP dan memanggil Service layer:
+Menerima event RabbitMQ dan memanggil Service layer:
 - **Core event**: `handleNotificationSend(data)`, `handleNotificationList(data)`, `handleMarkAsRead(data)`, `handleNotificationBroadcast(data)`.
 - **Event listener**: `handleUserCreated(data)`, `handleUserUpdated(data)`, `handleUserDeleted(data)`, `handleUserLoggedIn(data)`.
 

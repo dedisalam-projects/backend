@@ -15,7 +15,7 @@ describe('HealthController', () => {
   let controller: HealthController;
   let healthCheckService: { check: jest.Mock };
   let dbIndicator: { pingCheck: jest.Mock };
-  let redisService: { getClient: jest.Mock };
+  let redisService: { getClient: jest.Mock; pingCheck: jest.Mock };
   let mockRedisPing: jest.Mock;
 
   beforeEach(async () => {
@@ -31,6 +31,14 @@ describe('HealthController', () => {
     mockRedisPing = jest.fn().mockResolvedValue('PONG');
     redisService = {
       getClient: jest.fn().mockReturnValue({ ping: mockRedisPing }),
+      pingCheck: jest.fn().mockImplementation(async () => {
+        try {
+          const status = await mockRedisPing();
+          return { redis: { status: status === 'PONG' ? 'up' : 'down' } };
+        } catch (err: unknown) {
+          return { redis: { status: 'down', message: (err as Error).message } };
+        }
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({

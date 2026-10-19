@@ -29,7 +29,7 @@ function formatJackalCurrency(amount) {
     if (typeof amount === 'string' && amount.startsWith('Rp')) {
         return amount;
     }
-    const num = Math.round(parseFloat(amount) || 0);
+    const num = Math.round(Number.parseFloat(amount) || 0);
     return `Rp ${num.toLocaleString('id-ID')}`;
 }
 

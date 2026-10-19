@@ -20,8 +20,13 @@
     "test:security": "jest libs/common/src/test/security/websocket-security.spec.ts --testPathIgnorePatterns=node_modules --runInBand --forceExit",
     "test:soak": "jest libs/common/src/test/soak/memory-soak.spec.ts --testPathIgnorePatterns=node_modules --runInBand --forceExit",
     "test:matrix:all": "npm run test:unit && npm run test:contract && npm run test:security && npm run test:soak && npm run test:integration && npm run test:resilience && npm run test:load",
-    "docker:build:prod": "docker build -t dedisalam/backend-gateway:latest -f docker/gateway/Dockerfile . && docker build -t dedisalam/backend-user-service:latest -f docker/user-service/Dockerfile . && docker build -t dedisalam/backend-notification-service:latest -f docker/notification-service/Dockerfile .",
-    "docker:push:prod": "docker push dedisalam/backend-gateway:latest && docker push dedisalam/backend-user-service:latest && docker push dedisalam/backend-notification-service:latest"
+    "docker:build:prod": "docker build -t dedisalam/backend-gateway:latest -f docker/gateway/Dockerfile . && docker build -t dedisalam/backend-user-service:latest -f docker/user-service/Dockerfile . && docker build -t dedisalam/backend-notification-service:latest -f docker/notification-service/Dockerfile . && docker build -t dedisalam/backend-blip-services:latest -f docker/blip-services/Dockerfile . && docker build -t dedisalam/backend-auth-service:latest -f docker/auth-service/Dockerfile .",
+    "docker:push:prod": "docker push dedisalam/backend-gateway:latest && docker push dedisalam/backend-user-service:latest && docker push dedisalam/backend-notification-service:latest && docker push dedisalam/backend-blip-services:latest && docker push dedisalam/backend-auth-service:latest",
+    "sonar:up": "docker compose -f ../infrastructure/docker-compose.sonarqube.yml up -d",
+    "sonar:down": "docker compose -f ../infrastructure/docker-compose.sonarqube.yml down",
+    "sonar:logs": "docker compose -f ../infrastructure/docker-compose.sonarqube.yml logs -f",
+    "sonar:scan": "docker run --rm --network infrastructure_sonar_network -e SONAR_HOST_URL=http://sonarqube:9000 -v ${PWD}:/usr/src sonarsource/sonar-scanner-cli",
+    "sonar:scan:root": "docker run --rm --network infrastructure_sonar_network -e SONAR_HOST_URL=http://sonarqube:9000 -v ${PWD}/..:/usr/src sonarsource/sonar-scanner-cli"
   },
   "private": true,
   "devDependencies": {

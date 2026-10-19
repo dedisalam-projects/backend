@@ -13,5 +13,5 @@ module.exports = {
     '!src/**/*.module.ts',
     '!src/**/index.ts',
   ],
-  coverageReporters: ['text', 'text-summary', 'html'],
+  coverageReporters: ['text', 'text-summary', 'html', 'lcov'],
 };

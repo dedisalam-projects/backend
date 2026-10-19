@@ -9,13 +9,14 @@ import {
   Body,
   Res,
   Logger,
+  Inject,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom, timeout } from 'rxjs';
 import { Response } from 'express';
-import { Public } from '@dedisalam/common';
-import { DocumentService } from './document.service';
-import { DocumentQueryDto } from './dto/document-query.dto';
+import { Public, DocumentQueryDto } from '@dedisalam/common';
 
 @Controller('api/v1/documents')
 @Public()
@@ -23,12 +24,14 @@ import { DocumentQueryDto } from './dto/document-query.dto';
 export class DocumentController {
   private readonly logger = new Logger(DocumentController.name);
 
-  constructor(private readonly documentService: DocumentService) {}
+  constructor(@Inject('BLIP_SERVICES') private readonly blipClient: ClientProxy) {}
 
   @Get(':provider')
   async listDocuments(@Param('provider') provider: string, @Query() query: DocumentQueryDto) {
-    this.logger.log(`Listing documents for provider: ${provider}`);
-    const result = await this.documentService.findAll(provider, query);
+    this.logger.log(`Forwarding list documents for provider: ${provider} to blip-services`);
+    const result = await firstValueFrom(
+      this.blipClient.send('document.find_all', { provider, query }).pipe(timeout(10000)),
+    );
     return {
       success: true,
       data: result,
@@ -38,8 +41,10 @@ export class DocumentController {
 
   @Get(':provider/:id')
   async getDocument(@Param('provider') provider: string, @Param('id') id: string) {
-    this.logger.log(`Fetching document: ${provider}/${id}`);
-    const doc = await this.documentService.findOne(provider, id);
+    this.logger.log(`Forwarding get document: ${provider}/${id} to blip-services`);
+    const doc = await firstValueFrom(
+      this.blipClient.send('document.find_one', { provider, id }).pipe(timeout(10000)),
+    );
     return {
       success: true,
       data: doc,
@@ -49,8 +54,10 @@ export class DocumentController {
 
   @Post(':provider')
   async createDocument(@Param('provider') provider: string, @Body() body: any) {
-    this.logger.log(`Creating document for provider: ${provider}`);
-    const created = await this.documentService.create(provider, body);
+    this.logger.log(`Forwarding create document for provider: ${provider} to blip-services`);
+    const created = await firstValueFrom(
+      this.blipClient.send('document.create', { provider, payload: body }).pipe(timeout(10000)),
+    );
     return {
       success: true,
       data: created,
@@ -65,8 +72,10 @@ export class DocumentController {
     @Param('id') id: string,
     @Body() body: any,
   ) {
-    this.logger.log(`Updating document: ${provider}/${id}`);
-    const updated = await this.documentService.update(provider, id, body);
+    this.logger.log(`Forwarding update document: ${provider}/${id} to blip-services`);
+    const updated = await firstValueFrom(
+      this.blipClient.send('document.update', { provider, id, payload: body }).pipe(timeout(10000)),
+    );
     return {
       success: true,
       data: updated,
@@ -77,8 +86,10 @@ export class DocumentController {
 
   @Delete(':provider/:id')
   async deleteDocument(@Param('provider') provider: string, @Param('id') id: string) {
-    this.logger.log(`Deleting document: ${provider}/${id}`);
-    const result = await this.documentService.delete(provider, id);
+    this.logger.log(`Forwarding delete document: ${provider}/${id} to blip-services`);
+    const result = await firstValueFrom(
+      this.blipClient.send('document.delete', { provider, id }).pipe(timeout(10000)),
+    );
     return {
       success: true,
       data: result,
@@ -93,8 +104,13 @@ export class DocumentController {
     @Param('id') id: string,
     @Res() res: Response,
   ) {
-    this.logger.log(`Generating PDF for document: ${provider}/${id}`);
-    const { buffer, filename } = await this.documentService.generatePdf(provider, id);
+    this.logger.log(`Forwarding PDF generation for document: ${provider}/${id} to blip-services`);
+    const response = await firstValueFrom(
+      this.blipClient.send('document.generate_pdf', { provider, id }).pipe(timeout(30000)),
+    );
+
+    const buffer = Buffer.from(response.buffer, 'base64');
+    const filename = response.filename || `document_${Date.now()}.pdf`;
 
     res.set({
       'Content-Type': 'application/pdf',

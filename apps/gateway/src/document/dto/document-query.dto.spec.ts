@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { DocumentQueryDto } from './document-query.dto';
+import { DocumentQueryDto } from '@dedisalam/common';
 
 describe('DocumentQueryDto', () => {
   it('should instantiate with default values', () => {

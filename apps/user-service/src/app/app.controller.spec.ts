@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PinoLogger } from 'nestjs-pino';
-import { TcpContext } from '@nestjs/microservices';
+import { RmqContext } from '@nestjs/microservices';
 import { getConnectionToken } from '@nestjs/mongoose';
 import { RedisService } from '@dedisalam/database';
 import { Logger } from '@nestjs/common';
@@ -78,7 +78,7 @@ describe('AppController', () => {
   describe('hello', () => {
     it('should return hello message and correlation ID', async () => {
       const appController = app.get<AppController>(AppController);
-      const mockContext = {} as TcpContext;
+      const mockContext = {} as RmqContext;
       const result = await appController.hello(
         { name: 'Nest', correlationId: 'test-123' },
         mockContext,
@@ -109,7 +109,7 @@ describe('AppController', () => {
 
     it('should handle missing payload properties gracefully (Negative Test)', async () => {
       const appController = app.get<AppController>(AppController);
-      const mockContext = {} as TcpContext;
+      const mockContext = {} as RmqContext;
       const result = await appController.hello({}, mockContext);
 
       expect(result).toEqual({
@@ -124,7 +124,7 @@ describe('AppController', () => {
       });
 
       const appController = app.get<AppController>(AppController);
-      const mockContext = {} as TcpContext;
+      const mockContext = {} as RmqContext;
       const result = await appController.hello(
         { name: 'Alice', correlationId: 'cid-err' },
         mockContext,
@@ -140,7 +140,7 @@ describe('AppController', () => {
       mockRedisClient.set.mockRejectedValueOnce(new Error('Redis Connection Refused'));
 
       const appController = app.get<AppController>(AppController);
-      const mockContext = {} as TcpContext;
+      const mockContext = {} as RmqContext;
       const result = await appController.hello(
         { name: 'Bob', correlationId: 'redis-fail' },
         mockContext,
@@ -160,7 +160,7 @@ describe('AppController', () => {
       mockConnection.readyState = 0;
 
       const appController = app.get<AppController>(AppController);
-      const mockContext = {} as TcpContext;
+      const mockContext = {} as RmqContext;
       const result = await appController.hello(
         { name: 'Charlie', correlationId: 'mongo-fail' },
         mockContext,
@@ -190,7 +190,7 @@ describe('AppController', () => {
       });
       expect(loggerLogSpy).toHaveBeenCalledWith(
         { correlationId: 'test-corr-456' },
-        'Received TCP test.event in User Service: Hello RMQ',
+        'Received test.event in User Service: Hello RMQ',
       );
     });
 
@@ -205,7 +205,7 @@ describe('AppController', () => {
       });
       expect(loggerLogSpy).toHaveBeenCalledWith(
         { correlationId: 'unknown' },
-        'Received TCP test.event in User Service: ',
+        'Received test.event in User Service: ',
       );
     });
   });

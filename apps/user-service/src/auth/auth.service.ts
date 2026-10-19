@@ -1,196 +1,28 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  BadRequestException,
-  Inject,
-  OnApplicationBootstrap,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { randomBytes, createHash } from 'crypto';
 import { User, UserDocument, RedisService } from '@dedisalam/database';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   AdminCreateUserDto,
   JwtPayload,
-  LoginDto,
-  RefreshTokenDto,
-  RegisterDto,
   UserPaginationQueryDto,
   UserRole,
+  BaseAuthService,
 } from '@dedisalam/common';
 
 @Injectable()
-export class AuthService implements OnApplicationBootstrap {
-  private readonly logger = new Logger(AuthService.name);
-  private readonly jwtSecret: string;
-
+export class AuthService extends BaseAuthService {
   constructor(
-    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-    private readonly redisService: RedisService,
-    private readonly configService: ConfigService,
-    @Inject('NOTIFICATION_SERVICE_RMQ') private readonly notificationClient: ClientProxy,
+    @InjectModel(User.name) userModel: Model<UserDocument>,
+    redisService: RedisService,
+    configService: ConfigService,
+    @Inject('NOTIFICATION_SERVICE_RMQ') notificationClient: ClientProxy,
   ) {
-    const secret = this.configService.get<string>('JWT_SECRET');
-    if (!secret) {
-      throw new Error('FATAL: JWT_SECRET environment variable is not defined');
-    }
-    this.jwtSecret = secret;
-  }
-
-  async onApplicationBootstrap() {
-    try {
-      const superAdminCount = await this.userModel.countDocuments({
-        role: UserRole.SUPER_ADMIN,
-      });
-
-      if (superAdminCount === 0) {
-        const defaultEmail =
-          this.configService.get<string>('DEFAULT_SUPERADMIN_EMAIL') || 'superadmin@example.com';
-        const defaultPassword =
-          this.configService.get<string>('DEFAULT_SUPERADMIN_PASSWORD') || 'Admin123!';
-        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-
-        await this.userModel.create({
-          name: 'Super Administrator',
-          email: defaultEmail,
-          password: hashedPassword,
-          role: UserRole.SUPER_ADMIN,
-          isActive: true,
-        });
-
-        this.logger.log(
-          `🚀 Bootstrap: Default superadmin initialized successfully (${defaultEmail})`,
-        );
-      }
-    } catch (err: unknown) {
-      const errMsg = (err as Error).message;
-      const errStack = (err as Error).stack;
-      this.logger.error(`Bootstrap superadmin check failed: ${errMsg}`, errStack);
-    }
-  }
-
-  async register(
-    data: RegisterDto | { email: string; password: string; name: string; role?: string },
-  ) {
-    const { email, password, name } = data;
-    if (!email || !password || !name) {
-      throw new BadRequestException('Email, password, and name are required');
-    }
-
-    const existingUser = await this.userModel.findOne({ email });
-    if (existingUser) {
-      throw new BadRequestException('User already exists');
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await this.userModel.create({
-      email,
-      name,
-      password: hashedPassword,
-      role: data.role || 'user',
-    });
-
-    const userPayload = {
-      id: newUser._id.toString(),
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      isActive: (newUser as unknown as { isActive?: boolean }).isActive ?? true,
-    };
-    const timestamp = new Date().toISOString();
-
-    this.notificationClient.emit('user.created', {
-      userId: newUser._id.toString(),
-      name: newUser.name,
-      user: userPayload,
-      timestamp,
-    });
-
-    return {
-      message: 'User registered successfully',
-      user: {
-        id: newUser._id,
-        email: newUser.email,
-        name: newUser.name,
-      },
-    };
-  }
-
-  async login(data: LoginDto | { email: string; password: string }) {
-    const { email, password } = data;
-    const user = await this.userModel.findOne({ email }).select('+password');
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const accessToken = jwt.sign(
-      { sub: user._id, email: user.email, role: user.role, roles: [user.role] },
-      this.jwtSecret,
-      { expiresIn: '15m' },
-    );
-
-    const refreshToken = randomBytes(40).toString('hex');
-    const hashedRefreshToken = createHash('sha256').update(refreshToken).digest('hex');
-    // Store hashed refresh token in Redis for 7 days
-    await this.redisService.set(`refresh_token:${user._id}`, hashedRefreshToken, 7 * 24 * 60 * 60);
-
-    this.notificationClient.emit('user.logged_in', {
-      userId: user._id,
-      email: user.email,
-      name: user.name,
-      timestamp: new Date().toISOString(),
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
-    };
-  }
-
-  async refresh(data: RefreshTokenDto | { userId: string; refreshToken: string }) {
-    const { userId, refreshToken } = data;
-    if (!userId || !refreshToken) {
-      throw new UnauthorizedException('Missing refresh token or userId');
-    }
-
-    const storedHashedToken = await this.redisService.get(`refresh_token:${userId}`);
-    const incomingHashedToken = createHash('sha256').update(refreshToken).digest('hex');
-
-    if (!storedHashedToken || storedHashedToken !== incomingHashedToken) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    const user = await this.userModel.findById(userId);
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    // Rotate refresh token
-    const newRefreshToken = randomBytes(40).toString('hex');
-    const newHashedRefreshToken = createHash('sha256').update(newRefreshToken).digest('hex');
-    await this.redisService.set(`refresh_token:${userId}`, newHashedRefreshToken, 7 * 24 * 60 * 60);
-
-    const accessToken = jwt.sign(
-      { sub: user._id, email: user.email, role: user.role, roles: [user.role] },
-      this.jwtSecret,
-      { expiresIn: '15m' },
-    );
-
-    return {
-      accessToken,
-      refreshToken: newRefreshToken,
-    };
+    super(userModel, redisService, configService, notificationClient, AuthService.name);
   }
 
   async getProfile(userId: string) {
@@ -254,7 +86,7 @@ export class AuthService implements OnApplicationBootstrap {
     const changes: { name?: string } = {};
     if (name) changes.name = name;
 
-    this.notificationClient.emit('user.updated', {
+    this.notificationClient?.emit('user.updated', {
       userId,
       changes,
       timestamp: new Date().toISOString(),
@@ -302,7 +134,7 @@ export class AuthService implements OnApplicationBootstrap {
     };
     const timestamp = new Date().toISOString();
 
-    this.notificationClient.emit('user.created', {
+    this.notificationClient?.emit('user.created', {
       userId: newUser._id.toString(),
       name: newUser.name,
       email: newUser.email,
@@ -397,7 +229,7 @@ export class AuthService implements OnApplicationBootstrap {
     if (data.role !== undefined) changes.role = data.role;
     if (typeof data.isActive === 'boolean') changes.isActive = data.isActive;
 
-    this.notificationClient.emit('user.updated', {
+    this.notificationClient?.emit('user.updated', {
       userId,
       changes,
       timestamp: new Date().toISOString(),
@@ -429,7 +261,7 @@ export class AuthService implements OnApplicationBootstrap {
     // Invalidate refresh tokens in Redis
     await this.redisService.set(`refresh_token:${userId}`, '', 1);
 
-    this.notificationClient.emit('user.deleted', {
+    this.notificationClient?.emit('user.deleted', {
       userId,
       timestamp: new Date().toISOString(),
     });
@@ -460,7 +292,7 @@ export class AuthService implements OnApplicationBootstrap {
       await this.redisService.set(`refresh_token:${id.toString()}`, '', 1);
     }
 
-    this.notificationClient.emit('users.deletedMany', {
+    this.notificationClient?.emit('users.deletedMany', {
       userIds: validUserIds,
       timestamp: new Date().toISOString(),
     });
