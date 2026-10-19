@@ -82,8 +82,9 @@ describe('config helpers', () => {
     const c: any = createRmqClient('N', 'q', { x: 1 });
     expect(c.name).toBe('N');
     expect(c.useFactory({ get: () => 'amqp://x' }).options.urls).toEqual(['amqp://x']);
-    const d = c.useFactory({ get: () => undefined });
-    expect(d.options.urls[0]).toContain('localhost');
+    expect(() => c.useFactory({ get: () => undefined })).toThrow(
+      'RabbitMQ URL is not configured. Set RABBITMQ_URL.',
+    );
     expect(createRmqClient('N', 'q').useFactory!({ get: () => 'u' } as any)).toBeDefined();
   });
 });
