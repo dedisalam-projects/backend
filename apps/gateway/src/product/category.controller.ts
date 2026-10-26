@@ -9,7 +9,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { Public } from '@dedisalam/common';
+import { Public, CreateCategoryDto, UpdateCategoryDto } from '@dedisalam/common';
 import { ProductService } from './product.service';
 
 @Controller('api/v1/categories')
@@ -29,7 +29,7 @@ export class CategoryController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createCategory(@Body() body: any) {
+  async createCategory(@Body() body: CreateCategoryDto) {
     const data = await this.productService.createCategory(body);
     return {
       success: true,
@@ -40,7 +40,7 @@ export class CategoryController {
   }
 
   @Put(':id')
-  async updateCategory(@Param('id') id: string, @Body() body: any) {
+  async updateCategory(@Param('id') id: string, @Body() body: UpdateCategoryDto) {
     const data = await this.productService.updateCategory(id, body);
     return {
       success: true,

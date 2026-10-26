@@ -82,6 +82,24 @@ export const VERIFIED_INDOGROSIR_CATALOG = [
   },
 ];
 
+interface RawProductDetail {
+  prdcd?: string | number;
+  plu?: string | number;
+  long_description?: string;
+  nama_produk?: string;
+  brand?: string;
+  division?: string;
+  deskripsi?: string;
+  url_pic_prod?: string;
+  unit?: string;
+  hrg_jual?: number | string;
+  prmd_hrgjual?: number | string;
+  hrg_termurah?: number | string;
+  pricing_tier?: unknown[];
+  isAvailable?: boolean;
+  spec?: Record<string, unknown>;
+}
+
 @Injectable()
 export class IndogrosirSyncService {
   private readonly logger = new Logger(IndogrosirSyncService.name);
@@ -114,7 +132,7 @@ export class IndogrosirSyncService {
     );
     const branchId = branchDoc?._id;
 
-    let productsToUpsert: any[] = [];
+    let productsToUpsert: Record<string, unknown>[] = [];
     let syncSource: 'live_api' | 'verified_catalog_dump' = 'verified_catalog_dump';
 
     const token = process.env.KLIKINDOGROSIR_TOKEN;
@@ -134,7 +152,7 @@ export class IndogrosirSyncService {
         );
 
         if (searchRes.data?.product_details && Array.isArray(searchRes.data.product_details)) {
-          productsToUpsert = searchRes.data.product_details.map((item: any) => ({
+          productsToUpsert = (searchRes.data.product_details as RawProductDetail[]).map((item) => ({
             plu: String(item.prdcd || item.plu),
             name: item.long_description || item.nama_produk,
             brand: item.brand || 'INDOGROSIR',
@@ -157,9 +175,10 @@ export class IndogrosirSyncService {
           }));
           syncSource = 'live_api';
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
         this.logger.warn(
-          `Live search request gagal (${err.message}). Menggunakan katalog terverifikasi.`,
+          `Live search request gagal (${errMsg}). Menggunakan katalog terverifikasi.`,
         );
       }
     }
@@ -180,8 +199,9 @@ export class IndogrosirSyncService {
 
     for (const item of productsToUpsert) {
       try {
+        const pluVal = String(item.plu);
         const res = await this.productModel.updateOne(
-          { plu: item.plu },
+          { plu: pluVal },
           { $set: item, $setOnInsert: { createdAt: new Date() } },
           { upsert: true },
         );

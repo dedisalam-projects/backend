@@ -9,7 +9,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { Public } from '@dedisalam/common';
+import { Public, CreateBranchDto, UpdateBranchDto } from '@dedisalam/common';
 import { ProductService } from './product.service';
 
 @Controller('api/v1/branches')
@@ -39,7 +39,7 @@ export class BranchController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createBranch(@Body() body: any) {
+  async createBranch(@Body() body: CreateBranchDto) {
     const data = await this.productService.createBranch(body);
     return {
       success: true,
@@ -50,7 +50,7 @@ export class BranchController {
   }
 
   @Put(':id')
-  async updateBranch(@Param('id') id: string, @Body() body: any) {
+  async updateBranch(@Param('id') id: string, @Body() body: UpdateBranchDto) {
     const data = await this.productService.updateBranch(id, body);
     return {
       success: true,

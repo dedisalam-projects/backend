@@ -16,8 +16,44 @@ import {
   UpdateProductDto,
   ProductPaginationQueryDto,
   SyncIndogrosirDto,
+  CreateBranchDto,
+  UpdateBranchDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
+  CreateBrandDto,
+  UpdateBrandDto,
 } from '@dedisalam/common';
 import { IndogrosirSyncService } from './indogrosir-sync.service';
+
+export interface BranchRawMetadata {
+  island_name?: string;
+  [key: string]: unknown;
+}
+
+export interface IslandBranchItem {
+  code: string;
+  name: string;
+  city?: string;
+  address?: string;
+  phone?: string;
+}
+
+export interface IslandGroup {
+  count: number;
+  branches: IslandBranchItem[];
+}
+
+export interface CategoryRecapItem {
+  code?: string;
+  name?: string;
+  divisionCode?: string;
+  level?: string;
+}
+
+export interface InventoryAggRow {
+  _id: null;
+  totalValue: number;
+}
 
 @Injectable()
 export class ProductService {
@@ -36,7 +72,7 @@ export class ProductService {
     const limit = Math.max(1, Math.min(100, Number(query.limit) || 10));
     const skip = (page - 1) * limit;
 
-    const filter: Record<string, any> = {};
+    const filter: Record<string, unknown> = {};
 
     if (query.search && query.search.trim().length > 0) {
       const searchRegex = new RegExp(query.search.trim(), 'i');
@@ -141,9 +177,10 @@ export class ProductService {
     ]);
 
     // Island breakdown
-    const islandMap: Record<string, { count: number; branches: any[] }> = {};
+    const islandMap: Record<string, IslandGroup> = {};
     for (const b of branches) {
-      const island = (b as any).rawMetadata?.island_name || 'LAINNYA';
+      const island =
+        (b as { rawMetadata?: BranchRawMetadata }).rawMetadata?.island_name || 'LAINNYA';
       if (!islandMap[island]) islandMap[island] = { count: 0, branches: [] };
       islandMap[island].count++;
       islandMap[island].branches.push({
@@ -155,21 +192,22 @@ export class ProductService {
       });
     }
 
+    const categoryList = categories as unknown as CategoryRecapItem[];
     const categoryLevels = {
-      division: categories.filter((c: any) => c.level === 'division').length,
-      department: categories.filter((c: any) => c.level === 'department').length,
-      category: categories.filter((c: any) => c.level === 'category').length,
+      division: categoryList.filter((c) => c.level === 'division').length,
+      department: categoryList.filter((c) => c.level === 'department').length,
+      category: categoryList.filter((c) => c.level === 'category').length,
       total: categories.length,
     };
 
-    const divisions = categories
-      .filter((c: any) => c.level === 'division')
-      .map((d: any) => {
-        const depts = categories.filter(
-          (c: any) => c.level === 'department' && c.divisionCode === d.divisionCode,
+    const divisions = categoryList
+      .filter((c) => c.level === 'division')
+      .map((d) => {
+        const depts = categoryList.filter(
+          (c) => c.level === 'department' && c.divisionCode === d.divisionCode,
         );
-        const kats = categories.filter(
-          (c: any) => c.level === 'category' && c.divisionCode === d.divisionCode,
+        const kats = categoryList.filter(
+          (c) => c.level === 'category' && c.divisionCode === d.divisionCode,
         );
         return {
           code: d.code,
@@ -314,14 +352,14 @@ export class ProductService {
     };
   }
 
-  async createBranch(data: any) {
+  async createBranch(data: CreateBranchDto) {
     const existing = await this.branchModel.findOne({ code: data.code }).exec();
     if (existing) throw new ConflictException(`Cabang dengan kode '${data.code}' sudah ada`);
     const branch = new this.branchModel(data);
     return (await branch.save()).toObject();
   }
 
-  async updateBranch(id: string, data: any) {
+  async updateBranch(id: string, data: UpdateBranchDto) {
     const updated = await this.branchModel
       .findByIdAndUpdate(id, { $set: data }, { new: true })
       .lean()
@@ -341,14 +379,16 @@ export class ProductService {
     return this.categoryModel.find().sort({ name: 1 }).lean().exec();
   }
 
-  async createCategory(data: any) {
-    const existing = await this.categoryModel.findOne({ code: data.code }).exec();
-    if (existing) throw new ConflictException(`Kategori dengan kode '${data.code}' sudah ada`);
+  async createCategory(data: CreateCategoryDto) {
+    if (data.code) {
+      const existing = await this.categoryModel.findOne({ code: data.code }).exec();
+      if (existing) throw new ConflictException(`Kategori dengan kode '${data.code}' sudah ada`);
+    }
     const category = new this.categoryModel(data);
     return (await category.save()).toObject();
   }
 
-  async updateCategory(id: string, data: any) {
+  async updateCategory(id: string, data: UpdateCategoryDto) {
     const updated = await this.categoryModel
       .findByIdAndUpdate(id, { $set: data }, { new: true })
       .lean()
@@ -368,14 +408,16 @@ export class ProductService {
     return this.brandModel.find().sort({ name: 1 }).lean().exec();
   }
 
-  async createBrand(data: any) {
-    const existing = await this.brandModel.findOne({ code: data.code }).exec();
-    if (existing) throw new ConflictException(`Brand dengan kode '${data.code}' sudah ada`);
+  async createBrand(data: CreateBrandDto) {
+    if (data.code) {
+      const existing = await this.brandModel.findOne({ code: data.code }).exec();
+      if (existing) throw new ConflictException(`Brand dengan kode '${data.code}' sudah ada`);
+    }
     const brand = new this.brandModel(data);
     return (await brand.save()).toObject();
   }
 
-  async updateBrand(id: string, data: any) {
+  async updateBrand(id: string, data: UpdateBrandDto) {
     const updated = await this.brandModel
       .findByIdAndUpdate(id, { $set: data }, { new: true })
       .lean()

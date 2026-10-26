@@ -9,7 +9,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { Public } from '@dedisalam/common';
+import { Public, CreateBrandDto, UpdateBrandDto } from '@dedisalam/common';
 import { ProductService } from './product.service';
 
 @Controller('api/v1/brands')
@@ -29,7 +29,7 @@ export class BrandController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createBrand(@Body() body: any) {
+  async createBrand(@Body() body: CreateBrandDto) {
     const data = await this.productService.createBrand(body);
     return {
       success: true,
@@ -40,7 +40,7 @@ export class BrandController {
   }
 
   @Put(':id')
-  async updateBrand(@Param('id') id: string, @Body() body: any) {
+  async updateBrand(@Param('id') id: string, @Body() body: UpdateBrandDto) {
     const data = await this.productService.updateBrand(id, body);
     return {
       success: true,

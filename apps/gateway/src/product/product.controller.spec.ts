@@ -8,6 +8,7 @@ import {
   ProductPaginationQueryDto,
   SyncIndogrosirDto,
 } from '@dedisalam/common';
+import { ProductDocument } from '@dedisalam/database';
 
 describe('ProductController', () => {
   let controller: ProductController;
@@ -20,7 +21,7 @@ describe('ProductController', () => {
     price: 35000,
     category: 'Minyak',
     isAvailable: true,
-  };
+  } as unknown as ProductDocument;
 
   const mockProductService = {
     findAll: jest.fn(),
@@ -57,13 +58,13 @@ describe('ProductController', () => {
     it('should return paginated products list', async () => {
       const query: ProductPaginationQueryDto = { page: 1, limit: 10 };
       const expectedResult = {
-        data: [mockProduct],
+        items: [mockProduct],
         total: 1,
         page: 1,
         limit: 10,
         totalPages: 1,
       };
-      service.findAll.mockResolvedValue(expectedResult as any);
+      service.findAll.mockResolvedValue(expectedResult as never);
 
       const res = await controller.getProducts(query);
       expect(res.success).toBe(true);
@@ -83,7 +84,7 @@ describe('ProductController', () => {
         categoriesCount: 5,
         lastSyncedAt: new Date().toISOString(),
       };
-      service.getStats.mockResolvedValue(stats as any);
+      service.getStats.mockResolvedValue(stats as never);
 
       const res = await controller.getProductStats();
       expect(res.success).toBe(true);
@@ -95,10 +96,13 @@ describe('ProductController', () => {
   describe('getRecap', () => {
     it('should return recap summary data', async () => {
       const recap = {
-        total: 10,
+        totalProducts: 10,
+        totalBranches: 1,
         byCategory: [{ category: 'Minyak', count: 10 }],
+        byIsland: [],
+        byBrand: [],
       };
-      service.getRecap.mockResolvedValue(recap as any);
+      service.getRecap.mockResolvedValue(recap as never);
 
       const res = await controller.getRecap();
       expect(res.success).toBe(true);
@@ -109,7 +113,7 @@ describe('ProductController', () => {
 
   describe('getProductById', () => {
     it('should return product by id', async () => {
-      service.findOne.mockResolvedValue(mockProduct as any);
+      service.findOne.mockResolvedValue(mockProduct as never);
 
       const res = await controller.getProductById('prod-123');
       expect(res.success).toBe(true);
@@ -134,7 +138,7 @@ describe('ProductController', () => {
         category: 'Minyak',
         isAvailable: true,
       };
-      service.create.mockResolvedValue(mockProduct as any);
+      service.create.mockResolvedValue(mockProduct as never);
 
       const res = await controller.createProduct(dto);
       expect(res.success).toBe(true);
@@ -147,8 +151,8 @@ describe('ProductController', () => {
   describe('updateProduct', () => {
     it('should update product successfully', async () => {
       const dto: UpdateProductDto = { price: 36000 };
-      const updated = { ...mockProduct, price: 36000 };
-      service.update.mockResolvedValue(updated as any);
+      const updated = { ...mockProduct, price: 36000 } as unknown as ProductDocument;
+      service.update.mockResolvedValue(updated as never);
 
       const res = await controller.updateProduct('prod-123', dto);
       expect(res.success).toBe(true);
