@@ -30,6 +30,10 @@ export class GatewayConfigDto {
 
   @IsString()
   @IsOptional()
+  MONGODB_URI?: string;
+
+  @IsString()
+  @IsOptional()
   COOKIE_DOMAIN?: string;
 
   @IsString()

@@ -12,6 +12,8 @@ import {
   createJwtOptions,
   JwtStrategy,
 } from '@dedisalam/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { createMongooseOptions } from '@dedisalam/database';
 
 import { AppService } from './app.service';
 import { validate } from '../config/gateway.config';
@@ -22,6 +24,7 @@ import { NotificationGateway } from '../notification/notification.gateway';
 import { NotificationConsumer } from '../notification/notification.consumer';
 import { DocumentController } from '../document/document.controller';
 import { DocumentGateway } from '../document/document.gateway';
+import { ProductModule } from '../product/product.module';
 
 @Module({
   imports: [
@@ -36,6 +39,12 @@ import { DocumentGateway } from '../document/document.gateway';
       useFactory: (configService: ConfigService) =>
         createPinoLoggerOptions(configService, 'gateway'),
     }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: createMongooseOptions('dedisalam'),
+    }),
+    ProductModule,
     ClientsModule.registerAsync([
       createRmqClient('USER_SERVICE', 'user-service'),
       createRmqClient('NOTIFICATION_SERVICE', 'notification-service', {

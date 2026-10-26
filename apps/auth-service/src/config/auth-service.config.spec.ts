@@ -3,11 +3,16 @@ import { validate, Environment, AuthServiceConfigDto } from './auth-service.conf
 
 describe('AuthServiceConfig', () => {
   it('should apply defaults and convert types', () => {
-    const result = validate({ PORT: '3016', AUTH_SERVICE_PORT: '3017' });
+    const result = validate({
+      PORT: '3016',
+      AUTH_SERVICE_PORT: '3017',
+      AUTH_SERVICE_MONGO_URI: 'mongodb://localhost:27017/custom_db',
+    });
     expect(result).toBeInstanceOf(AuthServiceConfigDto);
     expect(result.NODE_ENV).toBe(Environment.Development);
     expect(result.PORT).toBe(3016);
     expect(result.AUTH_SERVICE_PORT).toBe(3017);
+    expect(result.AUTH_SERVICE_MONGO_URI).toBe('mongodb://localhost:27017/custom_db');
     expect(result.JWT_SECRET).toBeDefined();
   });
 

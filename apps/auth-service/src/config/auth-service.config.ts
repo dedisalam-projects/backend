@@ -24,7 +24,11 @@ export class AuthServiceConfigDto {
 
   @IsString()
   @IsOptional()
-  MONGODB_URI = 'mongodb://root:rootpassword@localhost:27017?authSource=admin';
+  MONGODB_URI = 'mongodb://root:***@localhost:27017?authSource=admin';
+
+  @IsString()
+  @IsOptional()
+  AUTH_SERVICE_MONGO_URI?: string;
 
   @IsString()
   @IsOptional()

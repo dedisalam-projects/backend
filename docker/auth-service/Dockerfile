@@ -2,7 +2,7 @@
 FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
 # Stage 2: Build application
 FROM node:24-alpine AS builder
@@ -15,7 +15,7 @@ RUN npx nx build auth-service --configuration=production
 FROM node:24-alpine AS production
 WORKDIR /app
 COPY --chown=node:node package*.json ./
-RUN npm ci --only=production --ignore-scripts
+RUN npm ci --only=production --ignore-scripts --legacy-peer-deps || npm install --omit=dev --ignore-scripts --legacy-peer-deps
 COPY --chown=node:node --from=builder /app/dist/apps/auth-service ./dist/apps/auth-service
 USER node
 EXPOSE 3015

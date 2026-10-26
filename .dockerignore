@@ -8,3 +8,6 @@ tmp
 .idea
 *.log
 .docker-data
+.env
+.env.*
+environments/.env*

@@ -18,7 +18,13 @@ import { createMongooseOptions } from '@dedisalam/database';
     TerminusModule,
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: createMongooseOptions('user_db'),
+      useFactory: (configService: ConfigService) => {
+        const uri =
+          configService.get<string>('AUTH_SERVICE_MONGO_URI') ||
+          configService.get<string>('MONGODB_URI');
+        if (!uri) throw new Error('MongoDB URI is not configured.');
+        return { uri, dbName: 'user_db' };
+      },
       inject: [ConfigService],
     }),
     AuthModule,
