@@ -19,7 +19,11 @@
     "ioredis": "*",
     "jsonwebtoken": "^9.0.2",
     "socket.io": "^4.8.3",
-    "cookie": "^0.7.2"
+    "cookie": "^0.7.2",
+    "@nestjs/jwt": "^11.0.2",
+    "nestjs-pino": "^4.6.1",
+    "bcrypt": "^6.0.0",
+    "mongoose": "^9.7.4"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.1.28",
